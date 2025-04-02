@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "outDir": "./assets/js/dist",
+    "rootDir": "./assets/js/src",
+    "declaration": false,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./assets/js/src/*"]
+    }
+  },
+  "include": ["./assets/js/**/*.ts"],
+  "exclude": ["node_modules", "dist", "exampleSite"]
+}

@@ -1,0 +1,17 @@
+{{- /*
+  Button Group Component
+  
+  Parameters:
+    - buttons: Array - List of button configurations
+    - class: String - Additional custom classes
+*/ -}}
+
+{{- $buttons := .buttons | default slice -}}
+{{- $class := .class | default "" -}}
+
+<div class="uk-btn-group {{ $class }}">
+  {{- range $button := $buttons -}}
+    {{- $buttonParams := merge $button (dict "group" true) -}}
+    {{ partial "components/button" $buttonParams }}
+  {{- end -}}
+</div>

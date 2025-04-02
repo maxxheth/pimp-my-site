@@ -1,0 +1,127 @@
+{{- /*
+  Button Component
+  
+  Parameters:
+    - text: String - The text for the button (default: "Button")
+    - href: String - URL for link buttons (omit for <button> element)
+    - type: String - Button type attribute (default: "button")
+    - style: String - Button style (default: "default")
+      Options: default, ghost, primary, secondary, destructive, text, link
+    - size: String - Button size (default: "")
+      Options: xs, sm, md, lg
+    - width: String - Custom width class (default: "")
+    - icon: String - Icon class or HTML (default: "")
+    - iconPosition: String - Icon position (default: "left")
+      Options: left, right
+    - disabled: Boolean - Whether button is disabled (default: false)
+    - group: Boolean - Used internally for button groups (default: false)
+    - class: String - Additional custom classes (default: "")
+    - attr: String - Additional HTML attributes (default: "")
+    - dropdown: Map - Dropdown configuration (default: nil)
+      - content: String - Dropdown content HTML
+    - isIconButton: Boolean - Whether this is an icon-only button (default: false)
+*/ -}}
+
+{{- $text := .text | default "Button" -}}
+{{- $href := .href | default "" -}}
+{{- $type := .type | default "button" -}}
+{{- $style := .style | default "default" -}}
+{{- $size := .size | default "" -}}
+{{- $width := .width | default "" -}}
+{{- $icon := .icon | default "" -}}
+{{- $iconPosition := .iconPosition | default "left" -}}
+{{- $disabled := .disabled | default false -}}
+{{- $group := .group | default false -}}
+{{- $class := .class | default "" -}}
+{{- $attr := .attr | default "" -}}
+{{- $dropdown := .dropdown | default nil -}}
+{{- $isIconButton := .isIconButton | default false -}}
+
+{{- /* Base button class */ -}}
+{{- $buttonClass := "uk-btn" -}}
+
+{{- /* Style modifier */ -}}
+{{- if eq $style "default" -}}
+  {{- $buttonClass = printf "%s uk-btn-default" $buttonClass -}}
+{{- else if eq $style "ghost" -}}
+  {{- $buttonClass = printf "%s uk-btn-ghost" $buttonClass -}}
+{{- else if eq $style "primary" -}}
+  {{- $buttonClass = printf "%s uk-btn-primary" $buttonClass -}}
+{{- else if eq $style "secondary" -}}
+  {{- $buttonClass = printf "%s uk-btn-secondary" $buttonClass -}}
+{{- else if eq $style "destructive" -}}
+  {{- $buttonClass = printf "%s uk-btn-destructive" $buttonClass -}}
+{{- else if eq $style "text" -}}
+  {{- $buttonClass = printf "%s uk-btn-text" $buttonClass -}}
+{{- else if eq $style "link" -}}
+  {{- $buttonClass = printf "%s uk-btn-link" $buttonClass -}}
+{{- end -}}
+
+{{- /* Size modifier */ -}}
+{{- if eq $size "xs" -}}
+  {{- $buttonClass = printf "%s uk-btn-xs" $buttonClass -}}
+{{- else if eq $size "sm" -}}
+  {{- $buttonClass = printf "%s uk-btn-sm" $buttonClass -}}
+{{- else if eq $size "md" -}}
+  {{- $buttonClass = printf "%s uk-btn-md" $buttonClass -}}
+{{- else if eq $size "lg" -}}
+  {{- $buttonClass = printf "%s uk-btn-lg" $buttonClass -}}
+{{- end -}}
+
+{{- /* Icon button */ -}}
+{{- if $isIconButton -}}
+  {{- $buttonClass = printf "%s uk-btn-icon" $buttonClass -}}
+{{- end -}}
+
+{{- /* Width classes */ -}}
+{{- if $width -}}
+  {{- $buttonClass = printf "%s %s" $buttonClass $width -}}
+{{- end -}}
+
+{{- /* Custom classes */ -}}
+{{- if $class -}}
+  {{- $buttonClass = printf "%s %s" $buttonClass $class -}}
+{{- end -}}
+
+{{- /* Group class adjustment - no need to add if used within a group */ -}}
+{{- if not $group -}}
+  {{- /* Final classes */ -}}
+{{- end -}}
+
+{{- /* Render as link or button */ -}}
+{{- if $href -}}
+  <a href="{{ $href }}" class="{{ $buttonClass }}" {{ if $disabled }}disabled tabindex="-1" aria-disabled="true"{{ end }} {{ $attr | safeHTMLAttr }}>
+    {{- if and $icon (eq $iconPosition "left") -}}
+      {{ $icon | safeHTML }}
+    {{- end -}}
+    
+    {{- if not $isIconButton -}}
+      <span>{{ $text }}</span>
+    {{- end -}}
+    
+    {{- if and $icon (eq $iconPosition "right") -}}
+      {{ $icon | safeHTML }}
+    {{- end -}}
+  </a>
+{{- else -}}
+  <button type="{{ $type }}" class="{{ $buttonClass }}" {{ if $disabled }}disabled{{ end }} {{ $attr | safeHTMLAttr }}>
+    {{- if and $icon (eq $iconPosition "left") -}}
+      {{ $icon | safeHTML }}
+    {{- end -}}
+    
+    {{- if not $isIconButton -}}
+      <span>{{ $text }}</span>
+    {{- end -}}
+    
+    {{- if and $icon (eq $iconPosition "right") -}}
+      {{ $icon | safeHTML }}
+    {{- end -}}
+  </button>
+{{- end -}}
+
+{{- /* Render dropdown if provided */ -}}
+{{- if $dropdown -}}
+  <div data-uk-dropdown>
+    {{ $dropdown.content | safeHTML }}
+  </div>
+{{- end -}}

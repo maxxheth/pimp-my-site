@@ -1,0 +1,39 @@
+{{/* layouts/partials/components/button.html */}}
+{{/*
+  Expects a dict with:
+  - .label (string, required)
+  - .href (string, optional) - Renders an <a> tag if present
+  - .type (string, optional, default "button") - e.g., "submit" for forms
+  - .variant (string, optional, default "primary") - e.g., "primary", "secondary", "outline"
+  - .class (string, optional) - Extra CSS classes
+*/}}
+{{ $label := .label | default "Button" }}
+{{ $href := .href }}
+{{ $type := .type | default "button" }}
+{{ $variant := .variant | default "primary" }}
+{{ $extraClass := .class }}
+
+{{/* Base styles */}}
+{{ $base := "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background px-6 py-3" }}
+
+{{/* Variant styles */}}
+{{ $variantStyles := "" }}
+{{ if eq $variant "primary" }}
+  {{ $variantStyles = "bg-brand-blue text-white hover:bg-blue-700" }} {{/* Adjust hover state */}}
+{{ else if eq $variant "secondary" }}
+  {{ $variantStyles = "bg-gray-200 text-gray-800 hover:bg-gray-300" }} {{/* Example */}}
+{{ else if eq $variant "outline" }}
+    {{ $variantStyles = "border border-input hover:bg-accent hover:text-accent-foreground" }} {{/* Adapt ShadCN class names or define your own */}}
+{{ end }}
+
+{{ $finalClass := printf "%s %s %s" $base $variantStyles $extraClass }}
+
+{{ if $href }}
+  <a href="{{ $href }}" class="{{ $finalClass | chomp }}">
+    {{ $label }}
+  </a>
+{{ else }}
+  <button type="{{ $type }}" class="{{ $finalClass | chomp }}">
+    {{ $label }}
+  </button>
+{{ end }}

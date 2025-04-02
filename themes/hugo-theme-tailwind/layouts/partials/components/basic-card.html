@@ -1,0 +1,147 @@
+{{- /*
+  Card Component
+  
+  Parameters:
+    - title: String - Card title (default: "")
+    - header: String - Custom header content (overrides title if provided) (default: "")
+    - body: String - Card body content (default: "")
+    - footer: String - Card footer content (default: "")
+    - style: String - Card style variant (default: "default")
+      Options: default, primary, secondary
+    - hover: Boolean - Whether to add hover effect (default: false)
+    - size: String - Card size (default: "")
+      Options: small, large
+    - width: String - Card width class (default: "")
+    - image: Map - Card image properties (default: nil)
+      - src: String - Image URL
+      - alt: String - Image alt text (default: "")
+      - position: String - Image position (default: "top")
+        Options: top, bottom, left, right
+    - showHeader: Boolean - Whether to show the header section (default: true)
+    - showBody: Boolean - Whether to show the body section (default: true)
+    - showFooter: Boolean - Whether to show the footer section (default: true)
+    - class: String - Additional custom classes (default: "")
+    - headerClass: String - Additional header custom classes (default: "")
+    - bodyClass: String - Additional body custom classes (default: "")
+    - footerClass: String - Additional footer custom classes (default: "")
+*/ -}}
+
+{{- $title := .title | default "" -}}
+{{- $header := .header | default "" -}}
+{{- $body := .body | default "" -}}
+{{- $footer := .footer | default "" -}}
+{{- $style := .style | default "default" -}}
+{{- $hover := .hover | default false -}}
+{{- $size := .size | default "" -}}
+{{- $width := .width | default "" -}}
+{{- $image := .image | default nil -}}
+{{- $showHeader := .showHeader | default true -}}
+{{- $showBody := .showBody | default true -}}
+{{- $showFooter := .showFooter | default true -}}
+{{- $class := .class | default "" -}}
+{{- $headerClass := .headerClass | default "" -}}
+{{- $bodyClass := .bodyClass | default "" -}}
+{{- $footerClass := .footerClass | default "" -}}
+
+{{- /* Base card class */ -}}
+{{- $cardClass := "uk-card" -}}
+
+{{- /* Style variant */ -}}
+{{- if eq $style "default" -}}
+  {{- $cardClass = printf "%s uk-card-default" $cardClass -}}
+{{- else if eq $style "primary" -}}
+  {{- $cardClass = printf "%s uk-card-primary" $cardClass -}}
+{{- else if eq $style "secondary" -}}
+  {{- $cardClass = printf "%s uk-card-secondary" $cardClass -}}
+{{- end -}}
+
+{{- /* Hover effect */ -}}
+{{- if $hover -}}
+  {{- $cardClass = printf "%s uk-card-hover" $cardClass -}}
+{{- end -}}
+
+{{- /* Size */ -}}
+{{- if eq $size "small" -}}
+  {{- $cardClass = printf "%s uk-card-small" $cardClass -}}
+{{- else if eq $size "large" -}}
+  {{- $cardClass = printf "%s uk-card-large" $cardClass -}}
+{{- end -}}
+
+{{- /* Width class */ -}}
+{{- if $width -}}
+  {{- $cardClass = printf "%s %s" $cardClass $width -}}
+{{- end -}}
+
+{{- /* Image position classes */ -}}
+{{- if $image -}}
+  {{- $imagePosition := $image.position | default "top" -}}
+  {{- if eq $imagePosition "left" -}}
+    {{- $cardClass = printf "%s uk-grid uk-child-width-1-2@s uk-grid-collapse" $cardClass -}}
+  {{- else if eq $imagePosition "right" -}}
+    {{- $cardClass = printf "%s uk-grid uk-child-width-1-2@s uk-grid-collapse" $cardClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Custom classes */ -}}
+{{- if $class -}}
+  {{- $cardClass = printf "%s %s" $cardClass $class -}}
+{{- end -}}
+
+<div class="{{ $cardClass }}">
+  {{- /* Card image - top position */ -}}
+  {{- if and $image (eq ($image.position | default "top") "top") -}}
+    <div class="uk-card-media-top">
+      <img src="{{ $image.src }}" alt="{{ $image.alt | default "" }}">
+    </div>
+  {{- end -}}
+
+  {{- /* Card image - left position */ -}}
+  {{- if and $image (eq ($image.position | default "top") "left") -}}
+    <div class="uk-card-media-left uk-cover-container">
+      <img src="{{ $image.src }}" alt="{{ $image.alt | default "" }}" uk-cover>
+      <canvas width="600" height="400"></canvas>
+    </div>
+  {{- end -}}
+
+  <div {{ if or (eq ($image.position | default "") "left") (eq ($image.position | default "") "right") }}class="uk-flex uk-flex-column"{{ end }}>
+    {{- /* Card header */ -}}
+    {{- if and $showHeader (or $title $header) -}}
+      <div class="uk-card-header {{ $headerClass }}">
+        {{- if $header -}}
+          {{ $header | safeHTML }}
+        {{- else -}}
+          <h3 class="uk-card-title">{{ $title }}</h3>
+        {{- end -}}
+      </div>
+    {{- end -}}
+
+    {{- /* Card body */ -}}
+    {{- if and $showBody $body -}}
+      <div class="uk-card-body {{ $bodyClass }}">
+        {{ $body | safeHTML }}
+      </div>
+    {{- end -}}
+
+    {{- /* Card footer */ -}}
+    {{- if and $showFooter $footer -}}
+      <div class="uk-card-footer {{ $footerClass }}">
+        {{ $footer | safeHTML }}
+      </div>
+    {{- end -}}
+  </div>
+
+  {{- /* Card image - right position */ -}}
+  {{- if and $image (eq ($image.position | default "top") "right") -}}
+    <div class="uk-card-media-right uk-cover-container">
+      <img src="{{ $image.src }}" alt="{{ $image.alt | default "" }}" uk-cover>
+      <canvas width="600" height="400"></canvas>
+    </div>
+  {{- end -}}
+
+  {{- /* Card image - bottom position */ -}}
+  {{- if and $image (eq ($image.position | default "top") "bottom") -}}
+    <div class="uk-card-media-bottom">
+      <img src="{{ $image.src }}" alt="{{ $image.alt | default "" }}">
+    </div>
+  {{- end -}}
+</div>

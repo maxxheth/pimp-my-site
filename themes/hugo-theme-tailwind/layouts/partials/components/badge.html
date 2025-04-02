@@ -1,0 +1,30 @@
+{{- /* 
+  Badge Component
+  
+  Parameters:
+    - text: String - The text to display in the badge (default: empty)
+    - color: String - Badge color (default: "primary") - options: primary, secondary, success, danger, warning, info
+    - rounded: Boolean - Whether to use rounded corners (default: true)
+    - class: String - Additional custom classes
+*/ -}}
+
+{{- $text := .text | default "" -}}
+{{- $color := .color | default "primary" -}}
+{{- $rounded := .rounded | default true -}}
+{{- $class := .class | default "" -}}
+
+{{- $colorClasses := dict 
+  "primary" "bg-blue-500 text-white"
+  "secondary" "bg-gray-500 text-white"
+  "success" "bg-green-500 text-white"
+  "danger" "bg-red-500 text-white"
+  "warning" "bg-yellow-500 text-black"
+  "info" "bg-cyan-500 text-white"
+-}}
+
+{{- $colorClass := index $colorClasses $color | default (index $colorClasses "primary") -}}
+{{- $roundedClass := cond $rounded "rounded-full" "rounded" -}}
+
+<span class="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-medium {{ $colorClass }} {{ $roundedClass }} {{ $class }}">
+  {{- $text -}}
+</span>

@@ -1,0 +1,47 @@
+{{/* filepath: /var/www/pimp-my-site/themes/hugo-theme-tailwind/layouts/partials/components/animation.html */}}
+{{ $animation := .animation | default "fade" }}
+{{ $reverse := .reverse | default false }}
+{{ $fast := .fast | default false }}
+{{ $origin := .origin | default "" }}
+{{ $stroke := .stroke | default false }}
+{{ $strokeLength := .strokeLength | default 0 }}
+{{ $content := .content | default "" }}
+{{ $image := .image | default "" }}
+{{ $alt := .alt | default "" }}
+{{ $width := .width | default "" }}
+{{ $height := .height | default "" }}
+{{ $class := .class | default "" }}
+{{ $id := .id | default (printf "animation-%s" (now.UnixNano)) }}
+
+{{ $classes := slice (printf "uk-anmt-%s" $animation) }}
+{{ if $reverse }}
+  {{ $classes = $classes | append "uk-anmt-reverse" }}
+{{ end }}
+{{ if $fast }}
+  {{ $classes = $classes | append "uk-anmt-fast" }}
+{{ end }}
+{{ if $origin }}
+  {{ $classes = $classes | append (printf "uk-transform-origin-%s" $origin) }}
+{{ end }}
+{{ if ne $class "" }}
+  {{ $classes = $classes | append $class }}
+{{ end }}
+{{ $classString := delimit $classes " " }}
+
+{{ if $image }}
+  {{ if eq $animation "kenburns" }}
+    <img id="{{ $id }}" class="{{ $classString }}" src="{{ $image }}" {{ with $width }}width="{{ . }}"{{ end }} {{ with $height }}height="{{ . }}"{{ end }} alt="{{ $alt }}">
+  {{ else if $stroke }}
+    <img id="{{ $id }}" class="{{ $classString }}" src="{{ $image }}" {{ with $width }}width="{{ . }}"{{ end }} {{ with $height }}height="{{ . }}"{{ end }} alt="{{ $alt }}" data-uk-svg="stroke-animation: true">
+  {{ else }}
+    <img id="{{ $id }}" class="{{ $classString }}" src="{{ $image }}" {{ with $width }}width="{{ . }}"{{ end }} {{ with $height }}height="{{ . }}"{{ end }} alt="{{ $alt }}">
+  {{ end }}
+{{ else if $stroke }}
+  <svg id="{{ $id }}" class="{{ $classString }}" {{ if gt $strokeLength 0 }}style="--uk-anmt-stroke: {{ $strokeLength }};"{{ end }} viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    {{ $content | safeHTML }}
+  </svg>
+{{ else }}
+  <div id="{{ $id }}" class="{{ $classString }}">
+    {{ $content | safeHTML }}
+  </div>
+{{ end }}

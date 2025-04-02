@@ -1,0 +1,12 @@
+{{/* filepath: /var/www/pimp-my-site/themes/hugo-theme-tailwind/layouts/partials/components/alert.html */}}
+{{ $message := .message | default "" }}
+{{ $type := .type | default "" }}
+{{ $close := .close | default true }}
+{{ $class := .class | default "" }}
+
+<div class="uk-alert{{ with $type }} uk-alert-{{ . }}{{ end }}{{ with $class }} {{ . }}{{ end }}" data-uk-alert>
+  {{ if $close }}
+  <a class="uk-alert-close" data-uk-close></a>
+  {{ end }}
+  {{ $message | safeHTML }}
+</div>

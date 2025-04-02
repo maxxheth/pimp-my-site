@@ -1,0 +1,76 @@
+{{- /*
+  Calendar Component
+  
+  Parameters:
+    - today: Boolean - Whether to highlight today's date (default: true)
+    - date: String - Initial date in YYYY-MM-DD format (default: "")
+    - min: String - Minimum selectable date in YYYY-MM-DD format (default: "")
+    - max: String - Maximum selectable date in YYYY-MM-DD format (default: "")
+    - weekstart: Number - First day of the week (0 for Sunday, 1 for Monday) (default: 1)
+    - centered: Boolean - Whether to center the calendar in its container (default: true)
+    - bordered: Boolean - Whether to show a border around the calendar (default: true)
+    - rounded: Boolean - Whether to show rounded corners (default: true)
+    - shadow: Boolean - Whether to show a shadow effect (default: true)
+    - class: String - Additional custom classes (default: "")
+    - attr: String - Additional HTML attributes (default: "")
+*/ -}}
+
+{{- $today := .today | default true -}}
+{{- $date := .date | default "" -}}
+{{- $min := .min | default "" -}}
+{{- $max := .max | default "" -}}
+{{- $weekstart := .weekstart | default 1 -}}
+{{- $centered := .centered | default true -}}
+{{- $bordered := .bordered | default true -}}
+{{- $rounded := .rounded | default true -}}
+{{- $shadow := .shadow | default true -}}
+{{- $class := .class | default "" -}}
+{{- $attr := .attr | default "" -}}
+
+{{- /* Container classes based on parameters */ -}}
+{{- $containerClass := "" -}}
+{{- if $centered -}}
+  {{- $containerClass = printf "%s %s" $containerClass "flex justify-center" -}}
+{{- end -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- /* Calendar wrapper classes based on parameters */ -}}
+{{- $wrapperClass := "p-3" -}}
+{{- if $bordered -}}
+  {{- $wrapperClass = printf "%s %s" $wrapperClass "border border-border" -}}
+{{- end -}}
+{{- if $rounded -}}
+  {{- $wrapperClass = printf "%s %s" $wrapperClass "uk-rounded" -}}
+{{- end -}}
+{{- if $shadow -}}
+  {{- $wrapperClass = printf "%s %s" $wrapperClass "uk-shadow" -}}
+{{- end -}}
+
+{{- /* Calendar component attributes */ -}}
+{{- $calendarAttr := "" -}}
+{{- if $today -}}
+  {{- $calendarAttr = printf "%s %s" $calendarAttr "today" -}}
+{{- end -}}
+{{- if $date -}}
+  {{- $calendarAttr = printf "%s %s" $calendarAttr (printf "date=%q" $date) -}}
+{{- end -}}
+{{- if $min -}}
+  {{- $calendarAttr = printf "%s %s" $calendarAttr (printf "min=%q" $min) -}}
+{{- end -}}
+{{- if $max -}}
+  {{- $calendarAttr = printf "%s %s" $calendarAttr (printf "max=%q" $max) -}}
+{{- end -}}
+{{- if ne $weekstart 1 -}}
+  {{- $calendarAttr = printf "%s %s" $calendarAttr (printf "weekstart=%d" $weekstart) -}}
+{{- end -}}
+{{- if $attr -}}
+  {{- $calendarAttr = printf "%s %s" $calendarAttr $attr -}}
+{{- end -}}
+
+<div{{ with $containerClass }} class="{{ . }}"{{ end }}>
+  <div class="{{ $wrapperClass }}">
+    <uk-calendar{{ with $calendarAttr }} {{ . | safeHTMLAttr }}{{ end }}></uk-calendar>
+  </div>
+</div>

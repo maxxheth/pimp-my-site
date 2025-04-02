@@ -1,0 +1,144 @@
+{{- /*
+  Form Card Component
+  
+  Parameters:
+    - title: String - Card title (default: "")
+    - subtitle: String - Card subtitle (default: "")
+    - headerContent: String - Additional header content (default: "")
+    - bodyContent: String - Card body content (default: "")
+    - footerContent: String - Card footer content (default: "")
+    - formFields: Array - Form fields configuration (default: [])
+      Each field is a map with:
+        - type: String - Field type (text, email, select, textarea, etc.)
+        - name: String - Field name attribute
+        - id: String - Field id attribute
+        - label: String - Field label text
+        - placeholder: String - Field placeholder (optional)
+        - helpText: String - Help text for the field (optional)
+        - required: Boolean - Whether the field is required (optional)
+        - options: Array - Options for select fields (optional)
+          Each option is a map with:
+            - value: String - Option value
+            - text: String - Option text
+            - selected: Boolean - Whether the option is selected (optional)
+    - primaryButton: Map - Primary button configuration (default: nil)
+      - text: String - Button text
+      - style: String - Button style (default: "primary")
+      - onClick: String - JavaScript onclick handler (optional)
+    - secondaryButton: Map - Secondary button configuration (default: nil)
+      - text: String - Button text
+      - style: String - Button style (default: "default")
+      - onClick: String - JavaScript onclick handler (optional)
+    - maxWidth: String - Maximum width class (default: "max-w-sm")
+    - class: String - Additional custom classes (default: "")
+*/ -}}
+
+{{- $title := .title | default "" -}}
+{{- $subtitle := .subtitle | default "" -}}
+{{- $headerContent := .headerContent | default "" -}}
+{{- $bodyContent := .bodyContent | default "" -}}
+{{- $footerContent := .footerContent | default "" -}}
+{{- $formFields := .formFields | default slice -}}
+{{- $primaryButton := .primaryButton | default nil -}}
+{{- $secondaryButton := .secondaryButton | default nil -}}
+{{- $maxWidth := .maxWidth | default "max-w-sm" -}}
+{{- $class := .class | default "" -}}
+
+<div class="uk-card {{ $maxWidth }} {{ $class }}">
+  {{- /* Card header */ -}}
+  <div class="uk-card-header">
+    {{- if $title -}}
+      <h3 class="uk-card-title">{{ $title }}</h3>
+    {{- end -}}
+    
+    {{- if $subtitle -}}
+      <p class="mt-2 text-muted-foreground">{{ $subtitle }}</p>
+    {{- end -}}
+    
+    {{- if $headerContent -}}
+      {{ $headerContent | safeHTML }}
+    {{- end -}}
+  </div>
+
+  {{- /* Card body */ -}}
+  <div class="uk-card-body">
+    {{- if $bodyContent -}}
+      {{ $bodyContent | safeHTML }}
+    {{- end -}}
+
+    {{- /* Form fields */ -}}
+    {{- range $index, $field := $formFields -}}
+      <div class="{{ if gt $index 0 }}mt-4{{ end }}">
+        <label class="uk-form-label" for="{{ $field.id }}">{{ $field.label }}</label>
+        <div class="uk-form-controls mt-2">
+          {{- if eq $field.type "select" -}}
+            <select 
+              class="uk-select" 
+              id="{{ $field.id }}" 
+              name="{{ $field.name }}"
+              {{- if $field.required }} required{{ end -}}
+            >
+              {{- range $option := $field.options -}}
+                <option 
+                  value="{{ $option.value }}"
+                  {{- if $option.selected }} selected{{ end -}}
+                >
+                  {{- $option.text -}}
+                </option>
+              {{- end -}}
+            </select>
+          {{- else if eq $field.type "textarea" -}}
+            <textarea 
+              class="uk-textarea" 
+              id="{{ $field.id }}" 
+              name="{{ $field.name }}"
+              placeholder="{{ $field.placeholder | default "" }}"
+              {{- if $field.required }} required{{ end -}}
+            ></textarea>
+          {{- else -}}
+            <input
+              class="uk-input"
+              id="{{ $field.id }}"
+              name="{{ $field.name }}"
+              type="{{ $field.type }}"
+              {{- if $field.placeholder }} placeholder="{{ $field.placeholder }}"{{ end -}}
+              {{- if $field.required }} required{{ end -}}
+              {{- if $field.helpText }} aria-describedby="{{ $field.id }}-help-block"{{ end -}}
+            />
+          {{- end -}}
+          
+          {{- if $field.helpText -}}
+            <div id="{{ $field.id }}-help-block" class="uk-form-help mt-2">
+              {{ $field.helpText }}
+            </div>
+          {{- end -}}
+        </div>
+      </div>
+    {{- end -}}
+  </div>
+
+  {{- /* Card footer */ -}}
+  <div class="uk-card-footer flex justify-between">
+    {{- if $footerContent -}}
+      {{ $footerContent | safeHTML }}
+    {{- else -}}
+      {{- if $secondaryButton -}}
+        <button 
+          class="uk-btn uk-btn-{{ $secondaryButton.style | default "default" }}"
+          {{- if $secondaryButton.onClick }} onclick="{{ $secondaryButton.onClick }}"{{ end -}}
+        >
+          {{ $secondaryButton.text }}
+        </button>
+      {{- end -}}
+      
+      {{- if $primaryButton -}}
+        <button 
+          class="uk-btn uk-btn-{{ $primaryButton.style | default "primary" }}"
+          {{- if $primaryButton.onClick }} onclick="{{ $primaryButton.onClick }}"{{ end -}}
+        >
+          {{ $primaryButton.text }}
+        </button>
+      {{- end -}}
+    {{- end -}}
+  </div>
+</div>

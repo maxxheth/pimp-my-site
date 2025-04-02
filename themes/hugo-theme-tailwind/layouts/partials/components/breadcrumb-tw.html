@@ -1,0 +1,32 @@
+{{- /*
+  Breadcrumb Component (Tailwind)
+  
+  Parameters:
+    - items: Array of objects with:
+      - title: String - The text to display
+      - url: String - The URL to link to (optional, if not present item will be rendered as current/active)
+    - class: String - Additional custom classes
+*/ -}}
+
+{{- $items := .items | default slice -}}
+{{- $class := .class | default "" -}}
+
+<nav aria-label="Breadcrumb">
+  <ol class="flex items-center space-x-1 text-sm text-gray-600 {{ $class }}">
+    {{- range $index, $item := $items -}}
+      <li class="flex items-center">
+        {{- if gt $index 0 -}}
+          <svg class="h-4 w-4 flex-shrink-0 text-gray-400 mx-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+          </svg>
+        {{- end -}}
+        
+        {{- if $item.url -}}
+          <a href="{{ $item.url }}" class="hover:text-blue-600 hover:underline">{{ $item.title }}</a>
+        {{- else -}}
+          <span class="font-medium text-gray-900">{{ $item.title }}</span>
+        {{- end -}}
+      </li>
+    {{- end -}}
+  </ol>
+</nav>

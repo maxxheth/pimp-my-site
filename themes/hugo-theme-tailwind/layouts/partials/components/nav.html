@@ -1,0 +1,251 @@
+{{- /*
+  Nav Component
+  
+  Parameters:
+    - items: Array - Navigation items (required)
+      Format: Each item can have:
+        - text: Text to display
+        - href: Link URL
+        - icon: Icon name (optional)
+        - active: Boolean indicating active state
+        - badge: Badge text (optional)
+        - items: Array of sub-items for dropdown/nested menus
+    - orientation: String - Nav orientation (default: "horizontal")
+      Options: horizontal, vertical
+    - variant: String - Visual style (default: "default")
+      Options: default, tabs, pills, underline, border
+    - size: String - Size of nav items (default: "md")
+      Options: sm, md, lg
+    - spacing: String - Space between items (default: "normal")
+      Options: compact, normal, relaxed
+    - fullWidth: Boolean - Make nav take full width (default: false)
+    - iconPosition: String - Position of icons (default: "left")
+      Options: left, right, top
+    - mobileBehavior: String - How nav behaves on mobile (default: "stack")
+      Options: stack, scroll, dropdown
+    - class: String - Additional custom classes (default: "")
+    - itemClass: String - Additional classes for nav items (default: "")
+*/ -}}
+
+{{- $items := .items | default slice -}}
+{{- $orientation := .orientation | default "horizontal" -}}
+{{- $variant := .variant | default "default" -}}
+{{- $size := .size | default "md" -}}
+{{- $spacing := .spacing | default "normal" -}}
+{{- $fullWidth := .fullWidth | default false -}}
+{{- $iconPosition := .iconPosition | default "left" -}}
+{{- $mobileBehavior := .mobileBehavior | default "stack" -}}
+{{- $class := .class | default "" -}}
+{{- $itemClass := .itemClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $navClass := "flex" -}}
+{{- $itemBaseClass := "flex items-center transition-colors focus:outline-none" -}}
+{{- $activeClass := "" -}}
+{{- $inactiveClass := "" -}}
+{{- $childNavClass := "" -}}
+
+{{- /* Orientation classes */ -}}
+{{- if eq $orientation "horizontal" -}}
+  {{- $navClass = printf "%s flex-row" $navClass -}}
+  {{- if eq $mobileBehavior "stack" -}}
+    {{- $navClass = printf "%s flex-col sm:flex-row" $navClass -}}
+  {{- else if eq $mobileBehavior "scroll" -}}
+    {{- $navClass = printf "%s flex-nowrap overflow-x-auto" $navClass -}}
+  {{- end -}}
+{{- else -}}
+  {{- $navClass = printf "%s flex-col" $navClass -}}
+{{- end -}}
+
+{{- /* Variant classes */ -}}
+{{- if eq $variant "default" -}}
+  {{- $activeClass = "text-blue-600 font-medium dark:text-blue-400" -}}
+  {{- $inactiveClass = "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200" -}}
+{{- else if eq $variant "tabs" -}}
+  {{- $itemBaseClass = printf "%s border-b-2 mx-1 first:ml-0 last:mr-0" $itemBaseClass -}}
+  {{- $activeClass = "text-blue-600 border-blue-600 dark:text-blue-400 dark:border-blue-400" -}}
+  {{- $inactiveClass = "text-gray-600 border-transparent hover:text-gray-900 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600" -}}
+{{- else if eq $variant "pills" -}}
+  {{- $itemBaseClass = printf "%s rounded-full mx-1 first:ml-0 last:mr-0" $itemBaseClass -}}
+  {{- $activeClass = "text-white bg-blue-600 dark:bg-blue-500" -}}
+  {{- $inactiveClass = "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800" -}}
+{{- else if eq $variant "underline" -}}
+  {{- $itemBaseClass = printf "%s border-b-2 mx-1 first:ml-0 last:mr-0" $itemBaseClass -}}
+  {{- $activeClass = "text-blue-600 border-blue-600 dark:text-blue-400 dark:border-blue-400" -}}
+  {{- $inactiveClass = "text-gray-600 border-transparent hover:border-gray-300 dark:text-gray-400 dark:hover:border-gray-600" -}}
+{{- else if eq $variant "border" -}}
+  {{- $navClass = printf "%s border rounded-lg divide-y sm:divide-y-0" $navClass -}}
+  {{- if eq $orientation "horizontal" -}}
+    {{- $navClass = printf "%s sm:divide-x" $navClass -}}
+  {{- else -}}
+    {{- $navClass = printf "%s divide-y" $navClass -}}
+  {{- end -}}
+  {{- $activeClass = "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30" -}}
+  {{- $inactiveClass = "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/50" -}}
+{{- end -}}
+
+{{- /* Size classes */ -}}
+{{- if eq $size "sm" -}}
+  {{- $itemBaseClass = printf "%s text-sm py-2 px-3" $itemBaseClass -}}
+{{- else if eq $size "md" -}}
+  {{- $itemBaseClass = printf "%s py-2 px-4" $itemBaseClass -}}
+{{- else if eq $size "lg" -}}
+  {{- $itemBaseClass = printf "%s text-lg py-3 px-5" $itemBaseClass -}}
+{{- end -}}
+
+{{- /* Spacing classes */ -}}
+{{- if eq $spacing "compact" -}}
+  {{- if eq $orientation "horizontal" -}}
+    {{- $navClass = printf "%s gap-1" $navClass -}}
+  {{- else -}}
+    {{- $navClass = printf "%s space-y-1" $navClass -}}
+  {{- end -}}
+{{- else if eq $spacing "normal" -}}
+  {{- if eq $orientation "horizontal" -}}
+    {{- $navClass = printf "%s gap-2" $navClass -}}
+  {{- else -}}
+    {{- $navClass = printf "%s space-y-2" $navClass -}}
+  {{- end -}}
+{{- else if eq $spacing "relaxed" -}}
+  {{- if eq $orientation "horizontal" -}}
+    {{- $navClass = printf "%s gap-4" $navClass -}}
+  {{- else -}}
+    {{- $navClass = printf "%s space-y-3" $navClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Full width class */ -}}
+{{- if $fullWidth -}}
+  {{- $navClass = printf "%s w-full" $navClass -}}
+  {{- if eq $orientation "horizontal" -}}
+    {{- $itemBaseClass = printf "%s flex-1 text-center justify-center" $itemBaseClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $navClass = printf "%s %s" $navClass $class -}}
+{{- end -}}
+
+{{- if $itemClass -}}
+  {{- $itemBaseClass = printf "%s %s" $itemBaseClass $itemClass -}}
+{{- end -}}
+
+<nav class="{{ $navClass }}" role="navigation">
+  {{- range $items -}}
+    {{- $itemText := .text | default "" -}}
+    {{- $itemHref := .href | default "#" -}}
+    {{- $itemIcon := .icon | default "" -}}
+    {{- $itemActive := .active | default false -}}
+    {{- $itemBadge := .badge | default "" -}}
+    {{- $itemSubItems := .items | default slice -}}
+    
+    {{- $currentItemClass := $itemBaseClass -}}
+    {{- if $itemActive -}}
+      {{- $currentItemClass = printf "%s %s" $currentItemClass $activeClass -}}
+    {{- else -}}
+      {{- $currentItemClass = printf "%s %s" $currentItemClass $inactiveClass -}}
+    {{- end -}}
+    
+    <div class="relative group">
+      <a 
+        href="{{ $itemHref }}" 
+        class="{{ $currentItemClass }}"
+        {{- if $itemActive }} aria-current="page"{{ end -}}
+      >
+        {{- if and $itemIcon (or (eq $iconPosition "left") (eq $iconPosition "top")) -}}
+          <span class="inline-flex {{ if eq $iconPosition "left" }}mr-2{{ else }}mb-1{{ end }}">
+            {{ partial "icon.html" (dict "name" $itemIcon "size" "sm") }}
+          </span>
+        {{- end -}}
+        
+        {{- if eq $iconPosition "top" -}}
+          <span class="flex flex-col items-center">
+        {{- end -}}
+        
+        <span>{{ $itemText }}</span>
+        
+        {{- if $itemBadge -}}
+          <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+            {{ $itemBadge }}
+          </span>
+        {{- end -}}
+        
+        {{- if eq $iconPosition "top" -}}
+          </span>
+        {{- end -}}
+        
+        {{- if and $itemIcon (eq $iconPosition "right") -}}
+          <span class="inline-flex ml-2">
+            {{ partial "icon.html" (dict "name" $itemIcon "size" "sm") }}
+          </span>
+        {{- end -}}
+        
+        {{- if $itemSubItems -}}
+          <span class="inline-flex ml-1">
+            {{ partial "icon.html" (dict "name" "chevron-down" "size" "xs") }}
+          </span>
+        {{- end -}}
+      </a>
+      
+      {{- if $itemSubItems -}}
+        <div class="hidden group-hover:block absolute z-10 w-40 mt-1 {{ if eq $orientation "horizontal" }}left-0{{ else }}left-full top-0{{ end }}">
+          <div class="py-1 bg-white rounded-md shadow-lg dark:bg-gray-800 ring-1 ring-black ring-opacity-5">
+            {{- range $itemSubItems -}}
+              {{- $subItemText := .text | default "" -}}
+              {{- $subItemHref := .href | default "#" -}}
+              {{- $subItemIcon := .icon | default "" -}}
+              {{- $subItemActive := .active | default false -}}
+              
+              <a 
+                href="{{ $subItemHref }}" 
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 {{ if $subItemActive }}bg-gray-100 dark:bg-gray-700 font-medium{{ end }}"
+                {{- if $subItemActive }} aria-current="page"{{ end -}}
+              >
+                {{- if $subItemIcon -}}
+                  <span class="inline-flex mr-2">
+                    {{ partial "icon.html" (dict "name" $subItemIcon "size" "sm") }}
+                  </span>
+                {{- end -}}
+                <span>{{ $subItemText }}</span>
+              </a>
+            {{- end -}}
+          </div>
+        </div>
+      {{- end -}}
+    </div>
+  {{- end -}}
+</nav>
+
+{{- if eq $mobileBehavior "dropdown" -}}
+<div class="sm:hidden">
+  <select class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:border-blue-500 focus:ring-blue-500" aria-label="Navigation">
+    {{- range $items -}}
+      {{- $itemText := .text | default "" -}}
+      {{- $itemHref := .href | default "#" -}}
+      {{- $itemActive := .active | default false -}}
+      
+      <option value="{{ $itemHref }}" {{ if $itemActive }}selected{{ end }}>{{ $itemText }}</option>
+      
+      {{- range .items | default slice -}}
+        {{- $subItemText := .text | default "" -}}
+        {{- $subItemHref := .href | default "#" -}}
+        {{- $subItemActive := .active | default false -}}
+        
+        <option value="{{ $subItemHref }}" {{ if $subItemActive }}selected{{ end }}>&nbsp;&nbsp;{{ $subItemText }}</option>
+      {{- end -}}
+    {{- end -}}
+  </select>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const navDropdown = document.querySelector('select[aria-label="Navigation"]');
+    if (navDropdown) {
+      navDropdown.addEventListener('change', function() {
+        window.location.href = this.value;
+      });
+    }
+  });
+</script>
+{{- end -}}

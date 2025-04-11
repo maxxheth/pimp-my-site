@@ -1,0 +1,92 @@
+{{- /*
+  Masonry Grid Component
+  
+  Parameters:
+    - items: Array - Grid items (required)
+    - columns: Object/Map - Column configuration for different breakpoints (default: responsive defaults)
+      Example: (dict "default" 1 "sm" 2 "md" 3 "lg" 4 "xl" 5)
+    - gap: String - Space between grid items (default: "normal")
+      Options: none, xs, sm, normal, md, lg, xl
+    - itemClass: String - Additional classes for grid items (default: "")
+    - class: String - Additional custom classes for the grid container (default: "")
+*/ -}}
+
+{{- $items := .items | default slice -}}
+{{- $columns := .columns | default (dict "default" 1 "sm" 2 "md" 3 "lg" 4) -}}
+{{- $gap := .gap | default "normal" -}}
+{{- $itemClass := .itemClass | default "" -}}
+{{- $class := .class | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "grid w-full box-border" -}}
+{{- $itemBaseClass := "break-inside-avoid" -}}
+
+{{- /* Gap classes */ -}}
+{{- if eq $gap "none" -}}
+  {{- $containerClass = printf "%s gap-0" $containerClass -}}
+{{- else if eq $gap "xs" -}}
+  {{- $containerClass = printf "%s gap-1" $containerClass -}}
+{{- else if eq $gap "sm" -}}
+  {{- $containerClass = printf "%s gap-2" $containerClass -}}
+{{- else if eq $gap "normal" -}}
+  {{- $containerClass = printf "%s gap-4" $containerClass -}}
+{{- else if eq $gap "md" -}}
+  {{- $containerClass = printf "%s gap-6" $containerClass -}}
+{{- else if eq $gap "lg" -}}
+  {{- $containerClass = printf "%s gap-8" $containerClass -}}
+{{- else if eq $gap "xl" -}}
+  {{- $containerClass = printf "%s gap-10" $containerClass -}}
+{{- end -}}
+
+{{- /* Add column count classes */ -}}
+{{- if isset $columns "default" -}}
+  {{- $containerClass = printf "%s columns-%d" $containerClass (index $columns "default") -}}
+{{- else -}}
+  {{- $containerClass = printf "%s columns-1" $containerClass -}}
+{{- end -}}
+
+{{- if isset $columns "sm" -}}
+  {{- $containerClass = printf "%s sm:columns-%d" $containerClass (index $columns "sm") -}}
+{{- end -}}
+
+{{- if isset $columns "md" -}}
+  {{- $containerClass = printf "%s md:columns-%d" $containerClass (index $columns "md") -}}
+{{- end -}}
+
+{{- if isset $columns "lg" -}}
+  {{- $containerClass = printf "%s lg:columns-%d" $containerClass (index $columns "lg") -}}
+{{- end -}}
+
+{{- if isset $columns "xl" -}}
+  {{- $containerClass = printf "%s xl:columns-%d" $containerClass (index $columns "xl") -}}
+{{- end -}}
+
+{{- if isset $columns "2xl" -}}
+  {{- $containerClass = printf "%s 2xl:columns-%d" $containerClass (index $columns "2xl") -}}
+{{- end -}}
+
+{{- /* Item classes */ -}}
+{{- if $itemClass -}}
+  {{- $itemBaseClass = printf "%s %s" $itemBaseClass $itemClass -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+<div class="{{ $containerClass }}">
+  {{- range $index, $item := $items -}}
+    <div class="{{ $itemBaseClass }} mb-4 inline-block w-full">
+      {{- if reflect.IsMap $item -}}
+        {{- /* If items are maps/dictionaries with content property */ -}}
+        {{- with $item.content -}}
+          {{ . | safeHTML }}
+        {{- end -}}
+      {{- else -}}
+        {{- /* If items are direct HTML content */ -}}
+        {{ $item | safeHTML }}
+      {{- end -}}
+    </div>
+  {{- end -}}
+</div>

@@ -1,0 +1,148 @@
+{{- /*
+  List Component
+  
+  Parameters:
+    - items: Array - List items (default: empty slice)
+    - type: String - List type (default: "ul")
+      Options: ul, ol, description
+    - variant: String - Style variant (default: "default")
+      Options: default, bullet, disc, circle, decimal, none
+    - size: String - Text size (default: "md")
+      Options: xs, sm, md, lg, xl
+    - spacing: String - Space between items (default: "normal")
+      Options: compact, normal, relaxed, loose
+    - bordered: Boolean - Add borders between items (default: false)
+    - horizontal: Boolean - Display list horizontally (default: false)
+    - iconStart: String - Icon name to display before each item (default: "")
+    - iconEnd: String - Icon name to display after each item (default: "")
+    - class: String - Additional custom classes (default: "")
+    - itemClass: String - Additional classes for list items (default: "")
+*/ -}}
+
+{{- $items := .items | default slice -}}
+{{- $type := .type | default "ul" -}}
+{{- $variant := .variant | default "default" -}}
+{{- $size := .size | default "md" -}}
+{{- $spacing := .spacing | default "normal" -}}
+{{- $bordered := .bordered | default false -}}
+{{- $horizontal := .horizontal | default false -}}
+{{- $iconStart := .iconStart | default "" -}}
+{{- $iconEnd := .iconEnd | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $itemClass := .itemClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $listClass := "" -}}
+{{- $itemBaseClass := "flex items-start" -}}
+
+{{- /* List style classes */ -}}
+{{- if eq $type "ul" -}}
+  {{- if eq $variant "default" -}}
+    {{- $listClass = "list-disc pl-5" -}}
+  {{- else if eq $variant "bullet" -}}
+    {{- $listClass = "list-disc pl-5" -}}
+  {{- else if eq $variant "circle" -}}
+    {{- $listClass = "list-[circle] pl-5" -}}
+  {{- else if eq $variant "none" -}}
+    {{- $listClass = "list-none pl-0" -}}
+  {{- end -}}
+{{- else if eq $type "ol" -}}
+  {{- if eq $variant "default" -}}
+    {{- $listClass = "list-decimal pl-5" -}}
+  {{- else if eq $variant "none" -}}
+    {{- $listClass = "list-none pl-0" -}}
+  {{- end -}}
+{{- else if eq $type "description" -}}
+  {{- $listClass = "text-left" -}}
+{{- end -}}
+
+{{- /* Spacing classes */ -}}
+{{- if eq $spacing "compact" -}}
+  {{- $listClass = printf "%s space-y-1" $listClass -}}
+{{- else if eq $spacing "normal" -}}
+  {{- $listClass = printf "%s space-y-2" $listClass -}}
+{{- else if eq $spacing "relaxed" -}}
+  {{- $listClass = printf "%s space-y-3" $listClass -}}
+{{- else if eq $spacing "loose" -}}
+  {{- $listClass = printf "%s space-y-4" $listClass -}}
+{{- end -}}
+
+{{- /* Size classes */ -}}
+{{- if eq $size "xs" -}}
+  {{- $listClass = printf "%s text-xs" $listClass -}}
+{{- else if eq $size "sm" -}}
+  {{- $listClass = printf "%s text-sm" $listClass -}}
+{{- else if eq $size "lg" -}}
+  {{- $listClass = printf "%s text-lg" $listClass -}}
+{{- else if eq $size "xl" -}}
+  {{- $listClass = printf "%s text-xl" $listClass -}}
+{{- end -}}
+
+{{- /* Horizontal layout */ -}}
+{{- if $horizontal -}}
+  {{- $listClass = printf "%s flex flex-wrap" $listClass -}}
+  {{- if eq $spacing "compact" -}}
+    {{- $listClass = printf "%s gap-x-2" $listClass -}}
+  {{- else if eq $spacing "normal" -}}
+    {{- $listClass = printf "%s gap-x-4" $listClass -}}
+  {{- else if eq $spacing "relaxed" -}}
+    {{- $listClass = printf "%s gap-x-6" $listClass -}}
+  {{- else if eq $spacing "loose" -}}
+    {{- $listClass = printf "%s gap-x-8" $listClass -}}
+  {{- end -}}
+  {{- $listClass = replace $listClass "space-y-1" "" -}}
+  {{- $listClass = replace $listClass "space-y-2" "" -}}
+  {{- $listClass = replace $listClass "space-y-3" "" -}}
+  {{- $listClass = replace $listClass "space-y-4" "" -}}
+{{- end -}}
+
+{{- /* Item classes */ -}}
+{{- if $bordered -}}
+  {{- if $horizontal -}}
+    {{- $itemBaseClass = printf "%s border-r last:border-r-0 pr-2 last:pr-0" $itemBaseClass -}}
+  {{- else -}}
+    {{- $itemBaseClass = printf "%s border-b last:border-b-0 pb-2 last:pb-0" $itemBaseClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $itemClass -}}
+  {{- $itemBaseClass = printf "%s %s" $itemBaseClass $itemClass -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $listClass = printf "%s %s" $listClass $class -}}
+{{- end -}}
+
+{{- if eq $type "description" -}}
+<dl class="{{ $listClass }}">
+  {{- range $item := $items -}}
+    <div class="{{ $itemBaseClass }} flex-col">
+      <dt class="font-medium text-gray-900 dark:text-gray-100">
+        {{- if $iconStart -}}
+          <span class="inline-flex mr-2">{{ partial "icon.html" (dict "name" $iconStart "size" "sm") }}</span>
+        {{- end -}}
+        {{ $item.term }}
+        {{- if $iconEnd -}}
+          <span class="inline-flex ml-2">{{ partial "icon.html" (dict "name" $iconEnd "size" "sm") }}</span>
+        {{- end -}}
+      </dt>
+      <dd class="text-gray-600 dark:text-gray-400">{{ $item.description }}</dd>
+    </div>
+  {{- end -}}
+</dl>
+{{- else -}}
+<{{ $type }} class="{{ $listClass }}">
+  {{- range $item := $items -}}
+    <li class="{{ $itemBaseClass }}">
+      {{- if $iconStart -}}
+        <span class="inline-flex mr-2">{{ partial "icon.html" (dict "name" $iconStart "size" "sm") }}</span>
+      {{- end -}}
+      <span>{{ $item | safeHTML }}</span>
+      {{- if $iconEnd -}}
+        <span class="inline-flex ml-2">{{ partial "icon.html" (dict "name" $iconEnd "size" "sm") }}</span>
+      {{- end -}}
+    </li>
+  {{- end -}}
+</{{ $type }}>
+{{- end -}}

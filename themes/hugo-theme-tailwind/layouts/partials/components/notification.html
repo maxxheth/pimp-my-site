@@ -1,0 +1,293 @@
+{{- /*
+  Notification Component
+  
+  Parameters:
+    - id: String - Unique ID for the notification (default: auto-generated)
+    - title: String - Notification title (default: "")
+    - content: String - Notification content (default: "")
+    - variant: String - Visual style (default: "info")
+      Options: info, success, warning, error
+    - icon: String - Icon name (default: based on variant)
+    - dismissible: Boolean - Whether notification can be dismissed (default: true)
+    - duration: Number - Auto-dismiss duration in ms, 0 for persistent (default: 5000)
+    - position: String - Notification position (default: "top-right")
+      Options: top-right, top-left, bottom-right, bottom-left, top-center, bottom-center
+    - actions: Array - Action buttons (default: empty slice)
+      Format: Each action can have:
+        - text: Text to display
+        - href: Link URL
+        - onClick: JavaScript function name to call
+        - variant: Button variant (default, primary, outline)
+    - showProgressBar: Boolean - Show countdown progress bar (default: false)
+    - class: String - Additional custom classes (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "notification-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $title := .title | default "" -}}
+{{- $content := .content | default "" -}}
+{{- $variant := .variant | default "info" -}}
+{{- $dismissible := .dismissible | default true -}}
+{{- $duration := .duration | default 5000 -}}
+{{- $position := .position | default "top-right" -}}
+{{- $actions := .actions | default slice -}}
+{{- $showProgressBar := .showProgressBar | default false -}}
+{{- $class := .class | default "" -}}
+
+{{- /* Determine default icon based on variant */ -}}
+{{- $defaultIcon := "" -}}
+{{- if eq $variant "info" -}}
+  {{- $defaultIcon = "info-circle" -}}
+{{- else if eq $variant "success" -}}
+  {{- $defaultIcon = "check-circle" -}}
+{{- else if eq $variant "warning" -}}
+  {{- $defaultIcon = "exclamation-triangle" -}}
+{{- else if eq $variant "error" -}}
+  {{- $defaultIcon = "x-circle" -}}
+{{- end -}}
+{{- $icon := .icon | default $defaultIcon -}}
+
+{{- /* Base classes */ -}}
+{{- $notificationClass := "max-w-sm w-full flex shadow-lg rounded-lg pointer-events-auto overflow-hidden transform transition-all duration-300 ease-in-out" -}}
+{{- $iconClass := "flex-shrink-0 flex items-center justify-center w-12" -}}
+{{- $contentClass := "w-0 flex-1 pt-2 pb-3 px-4" -}}
+{{- $titleClass := "font-medium" -}}
+{{- $messageClass := "mt-1 text-sm" -}}
+{{- $actionsClass := "flex border-t border-gray-200 dark:border-gray-700" -}}
+{{- $actionButtonClass := "flex flex-1 items-center justify-center py-2 px-4 text-sm font-medium text-center focus:outline-none focus:ring-2 focus:ring-offset-2" -}}
+{{- $closeButtonClass := "flex-shrink-0 ml-auto pr-2 pt-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" -}}
+{{- $progressBarClass := "absolute bottom-0 left-0 h-1 bg-opacity-80" -}}
+
+{{- /* Variant classes */ -}}
+{{- if eq $variant "info" -}}
+  {{- $notificationClass = printf "%s bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5" $notificationClass -}}
+  {{- $iconClass = printf "%s bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300" $iconClass -}}
+  {{- $titleClass = printf "%s text-gray-900 dark:text-gray-100" $titleClass -}}
+  {{- $messageClass = printf "%s text-gray-600 dark:text-gray-300" $messageClass -}}
+  {{- $progressBarClass = printf "%s bg-blue-600 dark:bg-blue-500" $progressBarClass -}}
+{{- else if eq $variant "success" -}}
+  {{- $notificationClass = printf "%s bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5" $notificationClass -}}
+  {{- $iconClass = printf "%s bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300" $iconClass -}}
+  {{- $titleClass = printf "%s text-gray-900 dark:text-gray-100" $titleClass -}}
+  {{- $messageClass = printf "%s text-gray-600 dark:text-gray-300" $messageClass -}}
+  {{- $progressBarClass = printf "%s bg-green-600 dark:bg-green-500" $progressBarClass -}}
+{{- else if eq $variant "warning" -}}
+  {{- $notificationClass = printf "%s bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5" $notificationClass -}}
+  {{- $iconClass = printf "%s bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-300" $iconClass -}}
+  {{- $titleClass = printf "%s text-gray-900 dark:text-gray-100" $titleClass -}}
+  {{- $messageClass = printf "%s text-gray-600 dark:text-gray-300" $messageClass -}}
+  {{- $progressBarClass = printf "%s bg-yellow-600 dark:bg-yellow-500" $progressBarClass -}}
+{{- else if eq $variant "error" -}}
+  {{- $notificationClass = printf "%s bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5" $notificationClass -}}
+  {{- $iconClass = printf "%s bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300" $iconClass -}}
+  {{- $titleClass = printf "%s text-gray-900 dark:text-gray-100" $titleClass -}}
+  {{- $messageClass = printf "%s text-gray-600 dark:text-gray-300" $messageClass -}}
+  {{- $progressBarClass = printf "%s bg-red-600 dark:bg-red-500" $progressBarClass -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $notificationClass = printf "%s %s" $notificationClass $class -}}
+{{- end -}}
+
+{{- /* Position classes - these will be applied via JS to the container */ -}}
+{{- $positionClass := "" -}}
+{{- if eq $position "top-right" -}}
+  {{- $positionClass = "fixed top-4 right-4 z-50" -}}
+{{- else if eq $position "top-left" -}}
+  {{- $positionClass = "fixed top-4 left-4 z-50" -}}
+{{- else if eq $position "bottom-right" -}}
+  {{- $positionClass = "fixed bottom-4 right-4 z-50" -}}
+{{- else if eq $position "bottom-left" -}}
+  {{- $positionClass = "fixed bottom-4 left-4 z-50" -}}
+{{- else if eq $position "top-center" -}}
+  {{- $positionClass = "fixed top-4 left-1/2 -translate-x-1/2 z-50" -}}
+{{- else if eq $position "bottom-center" -}}
+  {{- $positionClass = "fixed bottom-4 left-1/2 -translate-x-1/2 z-50" -}}
+{{- end -}}
+
+<div 
+  id="{{ $id }}" 
+  class="{{ $notificationClass }} scale-95 opacity-0" 
+  role="alert"
+  aria-live="assertive"
+  data-duration="{{ $duration }}"
+  data-position="{{ $position }}"
+  data-position-class="{{ $positionClass }}"
+  style="display: none;"
+>
+  {{- if $icon -}}
+  <div class="{{ $iconClass }}">
+    {{ partial "icon.html" (dict "name" $icon "size" "md") }}
+  </div>
+  {{- end -}}
+  
+  <div class="{{ $contentClass }}">
+    {{- if $title -}}
+    <div class="{{ $titleClass }}">
+      {{ $title }}
+    </div>
+    {{- end -}}
+    
+    <div class="{{ $messageClass }}">
+      {{ $content | safeHTML }}
+    </div>
+    
+    {{- if $actions -}}
+    <div class="{{ $actionsClass }}">
+      {{- range $actions -}}
+        {{- $actionText := .text | default "Action" -}}
+        {{- $actionHref := .href | default "#" -}}
+        {{- $actionOnClick := .onClick | default "" -}}
+        {{- $actionVariant := .variant | default "default" -}}
+        
+        {{- $currentActionClass := $actionButtonClass -}}
+        
+        {{- if eq $actionVariant "primary" -}}
+          {{- $currentActionClass = printf "%s text-blue-600 hover:text-blue-800 focus:ring-blue-500 dark:text-blue-400 dark:hover:text-blue-300" $currentActionClass -}}
+        {{- else if eq $actionVariant "outline" -}}
+          {{- $currentActionClass = printf "%s border-r border-gray-200 dark:border-gray-700 text-gray-700 hover:text-gray-900 focus:ring-gray-500 dark:text-gray-300 dark:hover:text-gray-100" $currentActionClass -}}
+        {{- else -}}
+          {{- $currentActionClass = printf "%s text-gray-700 hover:text-gray-900 focus:ring-gray-500 dark:text-gray-300 dark:hover:text-gray-100" $currentActionClass -}}
+        {{- end -}}
+        
+        <a 
+          href="{{ $actionHref }}" 
+          class="{{ $currentActionClass }}"
+          {{- if $actionOnClick }} onclick="{{ $actionOnClick }}; return false;"{{ end -}}
+        >
+          {{ $actionText }}
+        </a>
+      {{- end -}}
+    </div>
+    {{- end -}}
+    
+    {{- if $showProgressBar -}}
+    <div id="{{ $id }}-progress" class="{{ $progressBarClass }}" style="width: 100%;"></div>
+    {{- end -}}
+  </div>
+  
+  {{- if $dismissible -}}
+  <div class="{{ $closeButtonClass }}">
+    <button type="button" aria-label="Close" data-dismiss="{{ $id }}">
+      <span aria-hidden="true">
+        {{ partial "icon.html" (dict "name" "x" "size" "sm") }}
+      </span>
+    </button>
+  </div>
+  {{- end -}}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize notification
+    const notification = document.getElementById('{{ $id }}');
+    if (!notification) return;
+    
+    // Create or get container based on position
+    const position = notification.dataset.position;
+    const positionClass = notification.dataset.positionClass;
+    let container = document.querySelector(`.notification-container[data-position="${position}"]`);
+    
+    if (!container) {
+      container = document.createElement('div');
+      container.className = `notification-container ${positionClass} flex flex-col space-y-2`;
+      container.dataset.position = position;
+      document.body.appendChild(container);
+    }
+    
+    // Move notification to the container
+    notification.style.display = 'flex';
+    container.appendChild(notification);
+    
+    // Show notification with animation
+    setTimeout(() => {
+      notification.classList.remove('scale-95', 'opacity-0');
+      notification.classList.add('scale-100', 'opacity-100');
+    }, 10);
+    
+    // Setup auto-dismiss
+    const duration = parseInt(notification.dataset.duration, 10);
+    let progressBar = null;
+    let timer = null;
+    let startTime = null;
+    let remainingTime = duration;
+    
+    // Get progress bar if exists
+    if ({{ $showProgressBar }}) {
+      progressBar = document.getElementById('{{ $id }}-progress');
+    }
+    
+    function startTimer() {
+      if (duration <= 0) return;
+      
+      startTime = Date.now();
+      
+      if (progressBar) {
+        // Animate progress bar
+        progressBar.style.transition = `width ${remainingTime}ms linear`;
+        progressBar.style.width = '0%';
+      }
+      
+      timer = setTimeout(() => {
+        dismissNotification();
+      }, remainingTime);
+    }
+    
+    function pauseTimer() {
+      if (duration <= 0 || !timer) return;
+      
+      clearTimeout(timer);
+      timer = null;
+      
+      // Calculate remaining time
+      remainingTime = Math.max(0, remainingTime - (Date.now() - startTime));
+      
+      if (progressBar) {
+        // Pause progress bar animation
+        const computedWidth = getComputedStyle(progressBar).width;
+        progressBar.style.transition = 'none';
+        progressBar.style.width = computedWidth;
+      }
+    }
+    
+    function dismissNotification() {
+      notification.classList.remove('scale-100', 'opacity-100');
+      notification.classList.add('scale-95', 'opacity-0');
+      
+      // Remove after animation
+      setTimeout(() => {
+        notification.remove();
+        
+        // Remove container if empty
+        if (container.children.length === 0) {
+          container.remove();
+        }
+      }, 300);
+    }
+    
+    // Setup dismiss button
+    const dismissButton = notification.querySelector('[data-dismiss="{{ $id }}"]');
+    if (dismissButton) {
+      dismissButton.addEventListener('click', () => {
+        pauseTimer();
+        dismissNotification();
+      });
+    }
+    
+    // Pause timer on hover
+    notification.addEventListener('mouseenter', pauseTimer);
+    
+    // Resume timer on mouse leave
+    notification.addEventListener('mouseleave', startTimer);
+    
+    // Start the timer
+    startTimer();
+    
+    // Expose notification API
+    window.notifications = window.notifications || {};
+    window.notifications['{{ $id }}'] = {
+      dismiss: dismissNotification
+    };
+  });
+</script>

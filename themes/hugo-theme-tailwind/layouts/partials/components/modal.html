@@ -2,144 +2,234 @@
   Modal Component
   
   Parameters:
-    - id: String - Modal ID for targeting (default: "modal")
+    - id: String - Unique ID for the modal (required)
     - title: String - Modal title (default: "")
     - content: String - Modal content (default: "")
-    - footer: String - Modal footer content (default: "")
-    - size: String - Modal size (default: "")
-      Options: container, small, medium, large, xlarge, xxlarge, full
-    - position: String - Modal position (default: "")
-      Options: top, center, bottom
-    - overlay: Boolean - Whether to show darker overlay (default: false)
-    - closeButton: Boolean - Whether to show close button (default: true)
-    - closeOutside: Boolean - Whether clicking outside closes modal (default: true)
-    - escClose: Boolean - Whether ESC key closes modal (default: true)
-    - bgClose: Boolean - Whether clicking background closes modal (default: true)
-    - stack: Boolean - Whether to stack modal on top of previous modal (default: false)
-    - fullscreen: Boolean - Whether modal should be fullscreen (default: false)
-    - animation: String - Animation for modal (default: "")
-      Options: slide, scale, fade
-    - showHeader: Boolean - Whether to show the header section (default: true)
-    - showFooter: Boolean - Whether to show the footer section (default: false)
-    - class: String - Additional classes for modal (default: "")
-    - dialogClass: String - Additional classes for modal dialog (default: "")
-    - bodyClass: String - Additional classes for modal body (default: "")
+    - size: String - Modal size (default: "md")
+      Options: sm, md, lg, xl, full
+    - position: String - Modal position (default: "center")
+      Options: center, top, bottom
+    - showClose: Boolean - Show close button in header (default: true)
+    - showHeader: Boolean - Show modal header (default: true)
+    - showFooter: Boolean - Show modal footer (default: false)
+    - cancelText: String - Text for cancel button (default: "Cancel")
+    - confirmText: String - Text for confirm button (default: "Confirm")
+    - closeOnClickOutside: Boolean - Close when clicking outside (default: true)
+    - closeOnEsc: Boolean - Close when pressing ESC key (default: true)
+    - modalClass: String - Additional classes for modal container (default: "")
     - headerClass: String - Additional classes for modal header (default: "")
+    - bodyClass: String - Additional classes for modal body (default: "")
     - footerClass: String - Additional classes for modal footer (default: "")
+    - overlayClass: String - Additional classes for modal overlay (default: "")
 */ -}}
 
-{{- $id := .id | default "modal" -}}
+{{- $id := .id -}}
 {{- $title := .title | default "" -}}
 {{- $content := .content | default "" -}}
-{{- $footer := .footer | default "" -}}
-{{- $size := .size | default "" -}}
-{{- $position := .position | default "" -}}
-{{- $overlay := .overlay | default false -}}
-{{- $closeButton := .closeButton | default true -}}
-{{- $closeOutside := .closeOutside | default true -}}
-{{- $escClose := .escClose | default true -}}
-{{- $bgClose := .bgClose | default true -}}
-{{- $stack := .stack | default false -}}
-{{- $fullscreen := .fullscreen | default false -}}
-{{- $animation := .animation | default "" -}}
-{{- $showHeader := .showHeader | default (ne $title "") -}}
-{{- $showFooter := .showFooter | default (ne $footer "") -}}
-{{- $class := .class | default "" -}}
-{{- $dialogClass := .dialogClass | default "" -}}
-{{- $bodyClass := .bodyClass | default "" -}}
+{{- $size := .size | default "md" -}}
+{{- $position := .position | default "center" -}}
+{{- $showClose := .showClose | default true -}}
+{{- $showHeader := .showHeader | default true -}}
+{{- $showFooter := .showFooter | default false -}}
+{{- $cancelText := .cancelText | default "Cancel" -}}
+{{- $confirmText := .confirmText | default "Confirm" -}}
+{{- $closeOnClickOutside := .closeOnClickOutside | default true -}}
+{{- $closeOnEsc := .closeOnEsc | default true -}}
+{{- $modalClass := .modalClass | default "" -}}
 {{- $headerClass := .headerClass | default "" -}}
+{{- $bodyClass := .bodyClass | default "" -}}
 {{- $footerClass := .footerClass | default "" -}}
+{{- $overlayClass := .overlayClass | default "" -}}
 
-{{- /* Build data attributes for the modal */ -}}
-{{- $dataAttributes := printf "id=\"%s\" data-uk-modal" $id -}}
+{{- /* Base classes */ -}}
+{{- $overlayBaseClass := "fixed inset-0 bg-black bg-opacity-50 flex z-50 transition-opacity duration-200 opacity-0 invisible" -}}
+{{- $modalBaseClass := "bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-auto relative transition-all duration-200 transform scale-95" -}}
+{{- $headerBaseClass := "px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between" -}}
+{{- $bodyBaseClass := "px-6 py-4" -}}
+{{- $footerBaseClass := "px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3" -}}
+{{- $closeButtonClass := "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none" -}}
+{{- $actionButtonClass := "px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2" -}}
+{{- $cancelButtonClass := "bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200" -}}
+{{- $confirmButtonClass := "bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-400" -}}
 
-{{- if not $bgClose -}}
-  {{- $dataAttributes = printf "%s bg-close=\"false\"" $dataAttributes -}}
+{{- /* Size classes */ -}}
+{{- if eq $size "sm" -}}
+  {{- $modalBaseClass = printf "%s max-w-sm w-full mx-auto" $modalBaseClass -}}
+{{- else if eq $size "md" -}}
+  {{- $modalBaseClass = printf "%s max-w-md w-full mx-auto" $modalBaseClass -}}
+{{- else if eq $size "lg" -}}
+  {{- $modalBaseClass = printf "%s max-w-lg w-full mx-auto" $modalBaseClass -}}
+{{- else if eq $size "xl" -}}
+  {{- $modalBaseClass = printf "%s max-w-xl w-full mx-auto" $modalBaseClass -}}
+{{- else if eq $size "full" -}}
+  {{- $modalBaseClass = printf "%s max-w-4xl w-full mx-4 sm:mx-auto" $modalBaseClass -}}
 {{- end -}}
 
-{{- if not $escClose -}}
-  {{- $dataAttributes = printf "%s esc-close=\"false\"" $dataAttributes -}}
+{{- /* Position classes */ -}}
+{{- if eq $position "center" -}}
+  {{- $overlayBaseClass = printf "%s items-center justify-center" $overlayBaseClass -}}
+{{- else if eq $position "top" -}}
+  {{- $overlayBaseClass = printf "%s items-start justify-center pt-10" $overlayBaseClass -}}
+{{- else if eq $position "bottom" -}}
+  {{- $overlayBaseClass = printf "%s items-end justify-center pb-10" $overlayBaseClass -}}
 {{- end -}}
 
-{{- if $stack -}}
-  {{- $dataAttributes = printf "%s stack=\"true\"" $dataAttributes -}}
+{{- /* Add custom classes */ -}}
+{{- if $overlayClass -}}
+  {{- $overlayBaseClass = printf "%s %s" $overlayBaseClass $overlayClass -}}
 {{- end -}}
 
-{{- if not $closeOutside -}}
-  {{- $dataAttributes = printf "%s close-outside=\"false\"" $dataAttributes -}}
+{{- if $modalClass -}}
+  {{- $modalBaseClass = printf "%s %s" $modalBaseClass $modalClass -}}
 {{- end -}}
 
-{{- /* Build dialog classes */ -}}
-{{- $dialogClasses := "uk-modal-dialog" -}}
-
-{{- if $fullscreen -}}
-  {{- $dialogClasses = printf "%s uk-modal-fullscreen" $dialogClasses -}}
-{{- else if $size -}}
-  {{- if eq $size "small" -}}
-    {{- $dialogClasses = printf "%s uk-modal-small" $dialogClasses -}}
-  {{- else if eq $size "medium" -}}
-    {{- $dialogClasses = printf "%s uk-modal-medium" $dialogClasses -}}
-  {{- else if eq $size "large" -}}
-    {{- $dialogClasses = printf "%s uk-modal-large" $dialogClasses -}}
-  {{- else if eq $size "xlarge" -}}
-    {{- $dialogClasses = printf "%s uk-modal-xlarge" $dialogClasses -}}
-  {{- else if eq $size "xxlarge" -}}
-    {{- $dialogClasses = printf "%s uk-modal-xxlarge" $dialogClasses -}}
-  {{- else if eq $size "container" -}}
-    {{- $dialogClasses = printf "%s uk-modal-container" $dialogClasses -}}
-  {{- else if eq $size "full" -}}
-    {{- $dialogClasses = printf "%s uk-width-1-1" $dialogClasses -}}
-  {{- end -}}
+{{- if $headerClass -}}
+  {{- $headerBaseClass = printf "%s %s" $headerBaseClass $headerClass -}}
 {{- end -}}
 
-{{- if $position -}}
-  {{- if eq $position "top" -}}
-    {{- $dialogClasses = printf "%s uk-margin-auto-vertical" $dialogClasses -}}
-  {{- else if eq $position "center" -}}
-    {{- $dialogClasses = printf "%s uk-margin-auto-vertical" $dialogClasses -}}
-  {{- else if eq $position "bottom" -}}
-    {{- $dialogClasses = printf "%s uk-margin-auto-top" $dialogClasses -}}
-  {{- end -}}
+{{- if $bodyClass -}}
+  {{- $bodyBaseClass = printf "%s %s" $bodyBaseClass $bodyClass -}}
 {{- end -}}
 
-{{- if $animation -}}
-  {{- if eq $animation "slide" -}}
-    {{- $dialogClasses = printf "%s uk-animation-slide-top" $dialogClasses -}}
-  {{- else if eq $animation "scale" -}}
-    {{- $dialogClasses = printf "%s uk-animation-scale-up" $dialogClasses -}}
-  {{- else if eq $animation "fade" -}}
-    {{- $dialogClasses = printf "%s uk-animation-fade" $dialogClasses -}}
-  {{- end -}}
+{{- if $footerClass -}}
+  {{- $footerBaseClass = printf "%s %s" $footerBaseClass $footerClass -}}
 {{- end -}}
 
-{{- if $dialogClass -}}
-  {{- $dialogClasses = printf "%s %s" $dialogClasses $dialogClass -}}
-{{- end -}}
-
-<div {{ $dataAttributes | safeHTMLAttr }} class="{{ $class }}">
-  <div class="{{ $dialogClasses }}">
-    {{- if $closeButton -}}
-      <button
-        class="uk-modal-close absolute right-4 top-4"
-        type="button"
-        data-uk-close
-      ></button>
-    {{- end -}}
-
+<div 
+  id="{{ $id }}" 
+  class="{{ $overlayBaseClass }}" 
+  aria-labelledby="{{ $id }}-title" 
+  role="dialog" 
+  aria-modal="true" 
+  tabindex="-1"
+  data-close-on-click-outside="{{ $closeOnClickOutside }}"
+  data-close-on-esc="{{ $closeOnEsc }}"
+>
+  <div class="{{ $modalBaseClass }}" role="document">
     {{- if $showHeader -}}
-      <div class="uk-modal-header {{ $headerClass }}">
-        <h2 class="uk-modal-title">{{ $title }}</h2>
-      </div>
+    <div class="{{ $headerBaseClass }}">
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white" id="{{ $id }}-title">
+        {{ $title }}
+      </h3>
+      {{- if $showClose -}}
+      <button type="button" class="{{ $closeButtonClass }}" aria-label="Close" data-modal-close="{{ $id }}">
+        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      {{- end -}}
+    </div>
     {{- end -}}
-
-    <div class="uk-modal-body {{ $bodyClass }}">
+    
+    <div class="{{ $bodyBaseClass }}">
       {{ $content | safeHTML }}
     </div>
-
+    
     {{- if $showFooter -}}
-      <div class="uk-modal-footer {{ $footerClass }}">
-        {{ $footer | safeHTML }}
-      </div>
+    <div class="{{ $footerBaseClass }}">
+      <button 
+        type="button" 
+        class="{{ $actionButtonClass }} {{ $cancelButtonClass }}" 
+        data-modal-close="{{ $id }}"
+      >
+        {{ $cancelText }}
+      </button>
+      <button 
+        type="button" 
+        class="{{ $actionButtonClass }} {{ $confirmButtonClass }}" 
+        data-modal-confirm="{{ $id }}"
+      >
+        {{ $confirmText }}
+      </button>
+    </div>
     {{- end -}}
   </div>
 </div>
+
+<script>
+  // Initialize modal functionality when DOM is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('{{ $id }}');
+    if (!modal) return;
+    
+    // Helper function to open the modal
+    function openModal() {
+      modal.classList.remove('opacity-0', 'invisible');
+      modal.classList.add('opacity-100', 'visible');
+      const modalContent = modal.querySelector('[role="document"]');
+      modalContent.classList.remove('scale-95');
+      modalContent.classList.add('scale-100');
+      
+      // Set focus to the modal
+      setTimeout(() => {
+        const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusableElements.length) focusableElements[0].focus();
+      }, 50);
+      
+      // Prevent body scrolling
+      document.body.style.overflow = 'hidden';
+    }
+    
+    // Helper function to close the modal
+    function closeModal() {
+      modal.classList.remove('opacity-100', 'visible');
+      modal.classList.add('opacity-0', 'invisible');
+      const modalContent = modal.querySelector('[role="document"]');
+      modalContent.classList.remove('scale-100');
+      modalContent.classList.add('scale-95');
+      
+      // Restore body scrolling
+      document.body.style.overflow = '';
+      
+      // Fire custom event when modal closes
+      modal.dispatchEvent(new Event('modal:close'));
+    }
+    
+    // Setup close on outside click if enabled
+    if (modal.dataset.closeOnClickOutside === 'true') {
+      modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+          closeModal();
+        }
+      });
+    }
+    
+    // Setup close on Escape key if enabled
+    if (modal.dataset.closeOnEsc === 'true') {
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !modal.classList.contains('invisible')) {
+          closeModal();
+        }
+      });
+    }
+    
+    // Setup click handlers for close buttons
+    const closeButtons = document.querySelectorAll(`[data-modal-close="${$id}"]`);
+    closeButtons.forEach(button => {
+      button.addEventListener('click', closeModal);
+    });
+    
+    // Setup click handlers for open buttons
+    const openButtons = document.querySelectorAll(`[data-modal-open="${$id}"]`);
+    openButtons.forEach(button => {
+      button.addEventListener('click', openModal);
+    });
+    
+    // Setup confirm button
+    const confirmButton = document.querySelector(`[data-modal-confirm="${$id}"]`);
+    if (confirmButton) {
+      confirmButton.addEventListener('click', function() {
+        // Fire custom event when confirm is clicked
+        modal.dispatchEvent(new Event('modal:confirm'));
+        closeModal();
+      });
+    }
+    
+    // Expose API for programmatic control
+    window.modals = window.modals || {};
+    window.modals['{{ $id }}'] = {
+      open: openModal,
+      close: closeModal
+    };
+  });
+</script>

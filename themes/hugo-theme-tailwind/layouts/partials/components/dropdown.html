@@ -1,0 +1,85 @@
+````html
+{{- /* filepath: /var/www/pimp-my-site/themes/hugo-theme-tailwind/layouts/partials/dropdown.html */ -}}
+{{- /* 
+  Dropdown component that combines UIkit's drop functionality with configurable options.
+  
+  Parameters:
+  - id: Unique ID for the dropdown (optional, will generate random one if not provided)
+  - buttonText: Text for the dropdown button
+  - buttonIcon: Icon name for button (optional)
+  - buttonClass: CSS classes for the button
+  - items: List of dropdown menu items 
+      [{ text: "Item text", href: "/link", icon: "icon-name", divider: true/false }]
+  - position: Dropdown position (top-left, bottom-right, etc.)
+  - mode: Trigger mode (click or hover)
+  - boundary: CSS selector for boundary element
+  - flip: Whether to flip the dropdown when it exceeds viewport
+  - shift: Whether to shift the dropdown when it exceeds viewport
+  - animation: Animation style
+  - class: Additional CSS classes for dropdown content
+*/ -}}
+
+{{- $id := .id | default (printf "dropdown-%s" (substr (md5 (printf "%s%d" .buttonText now.UnixNano)) 0 8)) -}}
+{{- $buttonText := .buttonText | default "Dropdown" -}}
+{{- $buttonIcon := .buttonIcon | default "" -}}
+{{- $buttonClass := .buttonClass | default "uk-button uk-button-default" -}}
+{{- $items := .items | default slice -}}
+{{- $position := .position | default "bottom-left" -}}
+{{- $mode := .mode | default "click" -}}
+{{- $class := .class | default "" -}}
+
+{{- /* Build dropdown options */ -}}
+{{- $dropOptions := slice -}}
+{{- $dropOptions = $dropOptions | append (printf "pos: %s" $position) -}}
+{{- $dropOptions = $dropOptions | append (printf "mode: %s" $mode) -}}
+
+{{- if .boundary -}}
+  {{- $dropOptions = $dropOptions | append (printf "boundary: %s" .boundary) -}}
+{{- end -}}
+
+{{- if isset . "flip" -}}
+  {{- $dropOptions = $dropOptions | append (printf "flip: %v" .flip) -}}
+{{- end -}}
+
+{{- if isset . "shift" -}}
+  {{- $dropOptions = $dropOptions | append (printf "shift: %v" .shift) -}}
+{{- end -}}
+
+{{- if .animation -}}
+  {{- $dropOptions = $dropOptions | append (printf "animation: %s" .animation) -}}
+{{- end -}}
+
+{{- $dropOptionsStr := delimit $dropOptions "; " -}}
+
+<div class="uk-inline">
+  <button class="{{ $buttonClass }}" type="button" aria-haspopup="true" aria-expanded="false" id="{{ $id }}-toggle">
+    {{- if $buttonIcon -}}
+      <i class="uk-margin-small-right">{{ partial "icon.html" $buttonIcon }}</i>
+    {{- end -}}
+    {{ $buttonText | safeHTML }}
+    <i class="uk-margin-small-left">{{ partial "icon.html" "chevron-down" }}</i>
+  </button>
+  <div class="uk-dropdown {{ $class }}" data-uk-drop="{{ $dropOptionsStr }}" aria-labelledby="{{ $id }}-toggle">
+    {{- if $items -}}
+      <ul class="uk-nav uk-dropdown-nav">
+        {{- range $index, $item := $items -}}
+          {{- if $item.divider -}}
+            <li class="uk-nav-divider"></li>
+          {{- end -}}
+          <li{{ if $item.active }} class="uk-active"{{ end }}>
+            <a href="{{ $item.href | default "#" }}">
+              {{- if $item.icon -}}
+                <i class="uk-margin-small-right">{{ partial "icon.html" $item.icon }}</i>
+              {{- end -}}
+              {{ $item.text | default "Menu item" }}
+            </a>
+          </li>
+        {{- end -}}
+      </ul>
+    {{- else -}}
+      <div class="uk-dropdown-body">
+        {{ .content | safeHTML }}
+      </div>
+    {{- end -}}
+  </div>
+</div>

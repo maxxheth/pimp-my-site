@@ -1,0 +1,101 @@
+{{- /* filepath: /var/www/pimp-my-site/themes/hugo-theme-tailwind/layouts/partials/drop.html */ -}}
+{{- /* 
+  Parameters:
+  - buttonText: Text for the button
+  - buttonClass: Optional additional classes for button
+  - dropContent: HTML content inside the drop
+  - dropClass: Optional additional classes for drop component
+  - position: Position (top-left, bottom-right, etc.)
+  - mode: Mode (click, hover)
+  - boundary: CSS selector for boundary element
+  - boundaryX: CSS selector for X-axis boundary
+  - boundaryY: CSS selector for Y-axis boundary
+  - flip: Whether to flip the drop when it exceeds the viewport (true/false)
+  - shift: Whether to shift the drop when it exceeds the viewport (true/false)
+  - autoUpdate: Whether to auto update (true/false)
+  - target: CSS selector for target element
+  - inset: Whether the drop should be positioned inside the target element (true/false)
+  - stretch: Whether to stretch the drop to the width of its target (true/false)
+  - animation: Animation style
+  - duration: Animation duration in milliseconds
+  - animateOut: Whether to animate out when hiding (true/false)
+  - parentIcon: Whether to show parent icon in the button (true/false)
+*/ -}}
+
+{{- $buttonText := .buttonText | default "Toggle" -}}
+{{- $buttonClass := .buttonClass | default "uk-btn uk-btn-default" -}}
+{{- $dropContent := .dropContent | default "Drop content here" -}}
+{{- $dropClass := .dropClass | default "uk-card uk-card-body" -}}
+
+{{- /* Build drop options */ -}}
+{{- $dropOptions := slice -}}
+
+{{- if .position -}}
+  {{- $dropOptions = $dropOptions | append (printf "pos: %s" .position) -}}
+{{- end -}}
+
+{{- if .mode -}}
+  {{- $dropOptions = $dropOptions | append (printf "mode: %s" .mode) -}}
+{{- end -}}
+
+{{- if .boundary -}}
+  {{- $dropOptions = $dropOptions | append (printf "boundary: %s" .boundary) -}}
+{{- end -}}
+
+{{- if .boundaryX -}}
+  {{- $dropOptions = $dropOptions | append (printf "boundary-x: %s" .boundaryX) -}}
+{{- end -}}
+
+{{- if .boundaryY -}}
+  {{- $dropOptions = $dropOptions | append (printf "boundary-y: %s" .boundaryY) -}}
+{{- end -}}
+
+{{- if isset . "flip" -}}
+  {{- $dropOptions = $dropOptions | append (printf "flip: %v" .flip) -}}
+{{- end -}}
+
+{{- if isset . "shift" -}}
+  {{- $dropOptions = $dropOptions | append (printf "shift: %v" .shift) -}}
+{{- end -}}
+
+{{- if isset . "autoUpdate" -}}
+  {{- $dropOptions = $dropOptions | append (printf "auto-update: %v" .autoUpdate) -}}
+{{- end -}}
+
+{{- if .target -}}
+  {{- $dropOptions = $dropOptions | append (printf "target: %s" .target) -}}
+{{- end -}}
+
+{{- if isset . "inset" -}}
+  {{- $dropOptions = $dropOptions | append (printf "inset: %v" .inset) -}}
+{{- end -}}
+
+{{- if isset . "stretch" -}}
+  {{- $dropOptions = $dropOptions | append (printf "stretch: %v" .stretch) -}}
+{{- end -}}
+
+{{- if .animation -}}
+  {{- $dropOptions = $dropOptions | append (printf "animation: %s" .animation) -}}
+{{- end -}}
+
+{{- if .duration -}}
+  {{- $dropOptions = $dropOptions | append (printf "duration: %s" .duration) -}}
+{{- end -}}
+
+{{- if isset . "animateOut" -}}
+  {{- $dropOptions = $dropOptions | append (printf "animate-out: %v" .animateOut) -}}
+{{- end -}}
+
+{{- $dropOptionsStr := delimit $dropOptions "; " -}}
+
+<div class="uk-inline">
+  <button class="{{ $buttonClass }}" type="button">
+    {{ $buttonText | safeHTML }}
+    {{- if .parentIcon -}}
+    <span class="ml-2" data-uk-drop-parent-icon></span>
+    {{- end -}}
+  </button>
+  <div class="{{ $dropClass }} uk-drop" {{ if $dropOptionsStr }}data-uk-drop="{{ $dropOptionsStr }}"{{ else }}data-uk-drop{{ end }}>
+    {{ $dropContent | safeHTML }}
+  </div>
+</div>

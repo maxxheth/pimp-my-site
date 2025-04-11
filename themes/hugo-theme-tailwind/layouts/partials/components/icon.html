@@ -1,0 +1,101 @@
+{{- /* filepath: /var/www/pimp-my-site/themes/hugo-theme-tailwind/layouts/partials/icon-enhanced.html */ -}}
+{{- /* 
+  Enhanced icon component that extends the existing icon system with additional features.
+  
+  Parameters:
+  - name: Icon name (required)
+  - size: Icon size (xs, sm, md, lg, xl, or specific pixel value)
+  - color: Icon color (text color utility class or specific color)
+  - class: Additional CSS classes
+  - viewBox: Custom viewBox for SVG (default: "0 0 24 24")
+  - stroke: Stroke width (default: 2)
+  - fill: Fill color (default: "none")
+  - transform: CSS transform
+  - spin: Whether to animate the icon with a spinning animation (true/false)
+  - pulse: Whether to animate the icon with a pulsing animation (true/false)
+  - flip: Flip the icon (horizontal, vertical, both)
+  - rotate: Rotate the icon (90, 180, 270)
+*/ -}}
+
+{{- $name := . -}}
+{{- $class := "" -}}
+{{- $size := "md" -}}
+{{- $color := "" -}}
+{{- $viewBox := "0 0 24 24" -}}
+{{- $stroke := 2 -}}
+{{- $fill := "none" -}}
+{{- $transform := "" -}}
+{{- $spin := false -}}
+{{- $pulse := false -}}
+{{- $flip := "" -}}
+{{- $rotate := "" -}}
+
+{{- /* Handle both string and dict inputs */ -}}
+{{- if reflect.IsMap . -}}
+  {{- $name = .name -}}
+  {{- $size = .size | default "md" -}}
+  {{- $color = .color | default "" -}}
+  {{- $class = .class | default "" -}}
+  {{- $viewBox = .viewBox | default "0 0 24 24" -}}
+  {{- $stroke = .stroke | default 2 -}}
+  {{- $fill = .fill | default "none" -}}
+  {{- $transform = .transform | default "" -}}
+  {{- $spin = .spin | default false -}}
+  {{- $pulse = .pulse | default false -}}
+  {{- $flip = .flip | default "" -}}
+  {{- $rotate = .rotate | default "" -}}
+{{- end -}}
+
+{{- /* Set size based on predefined options or custom value */ -}}
+{{- $sizeClass := "" -}}
+{{- if eq $size "xs" -}}
+  {{- $sizeClass = "w-3 h-3" -}}
+{{- else if eq $size "sm" -}}
+  {{- $sizeClass = "w-4 h-4" -}}
+{{- else if eq $size "md" -}}
+  {{- $sizeClass = "w-6 h-6" -}}
+{{- else if eq $size "lg" -}}
+  {{- $sizeClass = "w-8 h-8" -}}
+{{- else if eq $size "xl" -}}
+  {{- $sizeClass = "w-10 h-10" -}}
+{{- else -}}
+  {{- $sizeClass = printf "w-%s h-%s" $size $size -}}
+{{- end -}}
+
+{{- /* Set transform based on flip and rotate options */ -}}
+{{- $transformValue := $transform -}}
+{{- if eq $flip "horizontal" -}}
+  {{- $transformValue = printf "%s scale(-1, 1)" $transformValue -}}
+{{- else if eq $flip "vertical" -}}
+  {{- $transformValue = printf "%s scale(1, -1)" $transformValue -}}
+{{- else if eq $flip "both" -}}
+  {{- $transformValue = printf "%s scale(-1, -1)" $transformValue -}}
+{{- end -}}
+
+{{- if eq $rotate "90" -}}
+  {{- $transformValue = printf "%s rotate(90deg)" $transformValue -}}
+{{- else if eq $rotate "180" -}}
+  {{- $transformValue = printf "%s rotate(180deg)" $transformValue -}}
+{{- else if eq $rotate "270" -}}
+  {{- $transformValue = printf "%s rotate(270deg)" $transformValue -}}
+{{- end -}}
+
+{{- /* Build animation classes */ -}}
+{{- $animationClass := "" -}}
+{{- if $spin -}}
+  {{- $animationClass = "animate-spin" -}}
+{{- else if $pulse -}}
+  {{- $animationClass = "animate-pulse" -}}
+{{- end -}}
+
+{{- /* Combine all classes */ -}}
+{{- $combinedClass := printf "%s %s %s %s" $sizeClass $color $animationClass $class -}}
+
+<span class="inline-flex items-center justify-center {{ $combinedClass | strings.TrimSpace }}"
+  {{- if $transformValue }} style="transform: {{ $transformValue | strings.TrimSpace }};"{{ end -}}
+>
+  {{- /* Use the existing icon partial but modify the SVG attributes */ -}}
+  {{- $iconContent := partial "icon.html" $name -}}
+  {{- $iconContent = replace $iconContent "<svg " (printf "<svg viewBox=\"%s\" stroke-width=\"%d\" fill=\"%s\" " $viewBox $stroke $fill) -}}
+  {{- $iconContent | safeHTML -}}
+</span>

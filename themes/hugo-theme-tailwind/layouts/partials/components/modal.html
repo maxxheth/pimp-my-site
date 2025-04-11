@@ -1,0 +1,145 @@
+{{- /*
+  Modal Component
+  
+  Parameters:
+    - id: String - Modal ID for targeting (default: "modal")
+    - title: String - Modal title (default: "")
+    - content: String - Modal content (default: "")
+    - footer: String - Modal footer content (default: "")
+    - size: String - Modal size (default: "")
+      Options: container, small, medium, large, xlarge, xxlarge, full
+    - position: String - Modal position (default: "")
+      Options: top, center, bottom
+    - overlay: Boolean - Whether to show darker overlay (default: false)
+    - closeButton: Boolean - Whether to show close button (default: true)
+    - closeOutside: Boolean - Whether clicking outside closes modal (default: true)
+    - escClose: Boolean - Whether ESC key closes modal (default: true)
+    - bgClose: Boolean - Whether clicking background closes modal (default: true)
+    - stack: Boolean - Whether to stack modal on top of previous modal (default: false)
+    - fullscreen: Boolean - Whether modal should be fullscreen (default: false)
+    - animation: String - Animation for modal (default: "")
+      Options: slide, scale, fade
+    - showHeader: Boolean - Whether to show the header section (default: true)
+    - showFooter: Boolean - Whether to show the footer section (default: false)
+    - class: String - Additional classes for modal (default: "")
+    - dialogClass: String - Additional classes for modal dialog (default: "")
+    - bodyClass: String - Additional classes for modal body (default: "")
+    - headerClass: String - Additional classes for modal header (default: "")
+    - footerClass: String - Additional classes for modal footer (default: "")
+*/ -}}
+
+{{- $id := .id | default "modal" -}}
+{{- $title := .title | default "" -}}
+{{- $content := .content | default "" -}}
+{{- $footer := .footer | default "" -}}
+{{- $size := .size | default "" -}}
+{{- $position := .position | default "" -}}
+{{- $overlay := .overlay | default false -}}
+{{- $closeButton := .closeButton | default true -}}
+{{- $closeOutside := .closeOutside | default true -}}
+{{- $escClose := .escClose | default true -}}
+{{- $bgClose := .bgClose | default true -}}
+{{- $stack := .stack | default false -}}
+{{- $fullscreen := .fullscreen | default false -}}
+{{- $animation := .animation | default "" -}}
+{{- $showHeader := .showHeader | default (ne $title "") -}}
+{{- $showFooter := .showFooter | default (ne $footer "") -}}
+{{- $class := .class | default "" -}}
+{{- $dialogClass := .dialogClass | default "" -}}
+{{- $bodyClass := .bodyClass | default "" -}}
+{{- $headerClass := .headerClass | default "" -}}
+{{- $footerClass := .footerClass | default "" -}}
+
+{{- /* Build data attributes for the modal */ -}}
+{{- $dataAttributes := printf "id=\"%s\" data-uk-modal" $id -}}
+
+{{- if not $bgClose -}}
+  {{- $dataAttributes = printf "%s bg-close=\"false\"" $dataAttributes -}}
+{{- end -}}
+
+{{- if not $escClose -}}
+  {{- $dataAttributes = printf "%s esc-close=\"false\"" $dataAttributes -}}
+{{- end -}}
+
+{{- if $stack -}}
+  {{- $dataAttributes = printf "%s stack=\"true\"" $dataAttributes -}}
+{{- end -}}
+
+{{- if not $closeOutside -}}
+  {{- $dataAttributes = printf "%s close-outside=\"false\"" $dataAttributes -}}
+{{- end -}}
+
+{{- /* Build dialog classes */ -}}
+{{- $dialogClasses := "uk-modal-dialog" -}}
+
+{{- if $fullscreen -}}
+  {{- $dialogClasses = printf "%s uk-modal-fullscreen" $dialogClasses -}}
+{{- else if $size -}}
+  {{- if eq $size "small" -}}
+    {{- $dialogClasses = printf "%s uk-modal-small" $dialogClasses -}}
+  {{- else if eq $size "medium" -}}
+    {{- $dialogClasses = printf "%s uk-modal-medium" $dialogClasses -}}
+  {{- else if eq $size "large" -}}
+    {{- $dialogClasses = printf "%s uk-modal-large" $dialogClasses -}}
+  {{- else if eq $size "xlarge" -}}
+    {{- $dialogClasses = printf "%s uk-modal-xlarge" $dialogClasses -}}
+  {{- else if eq $size "xxlarge" -}}
+    {{- $dialogClasses = printf "%s uk-modal-xxlarge" $dialogClasses -}}
+  {{- else if eq $size "container" -}}
+    {{- $dialogClasses = printf "%s uk-modal-container" $dialogClasses -}}
+  {{- else if eq $size "full" -}}
+    {{- $dialogClasses = printf "%s uk-width-1-1" $dialogClasses -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $position -}}
+  {{- if eq $position "top" -}}
+    {{- $dialogClasses = printf "%s uk-margin-auto-vertical" $dialogClasses -}}
+  {{- else if eq $position "center" -}}
+    {{- $dialogClasses = printf "%s uk-margin-auto-vertical" $dialogClasses -}}
+  {{- else if eq $position "bottom" -}}
+    {{- $dialogClasses = printf "%s uk-margin-auto-top" $dialogClasses -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $animation -}}
+  {{- if eq $animation "slide" -}}
+    {{- $dialogClasses = printf "%s uk-animation-slide-top" $dialogClasses -}}
+  {{- else if eq $animation "scale" -}}
+    {{- $dialogClasses = printf "%s uk-animation-scale-up" $dialogClasses -}}
+  {{- else if eq $animation "fade" -}}
+    {{- $dialogClasses = printf "%s uk-animation-fade" $dialogClasses -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $dialogClass -}}
+  {{- $dialogClasses = printf "%s %s" $dialogClasses $dialogClass -}}
+{{- end -}}
+
+<div {{ $dataAttributes | safeHTMLAttr }} class="{{ $class }}">
+  <div class="{{ $dialogClasses }}">
+    {{- if $closeButton -}}
+      <button
+        class="uk-modal-close absolute right-4 top-4"
+        type="button"
+        data-uk-close
+      ></button>
+    {{- end -}}
+
+    {{- if $showHeader -}}
+      <div class="uk-modal-header {{ $headerClass }}">
+        <h2 class="uk-modal-title">{{ $title }}</h2>
+      </div>
+    {{- end -}}
+
+    <div class="uk-modal-body {{ $bodyClass }}">
+      {{ $content | safeHTML }}
+    </div>
+
+    {{- if $showFooter -}}
+      <div class="uk-modal-footer {{ $footerClass }}">
+        {{ $footer | safeHTML }}
+      </div>
+    {{- end -}}
+  </div>
+</div>

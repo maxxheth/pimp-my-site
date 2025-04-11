@@ -1,0 +1,106 @@
+{{- /* filepath: /var/www/pimp-my-site/themes/hugo-theme-tailwind/layouts/partials/filter.html */ -}}
+{{- /* 
+  Filter component that allows filtering content by categories, tags, or custom criteria.
+  
+  Parameters:
+  - id: Unique ID for the filter component (optional, will generate random one if not provided)
+  - title: Title for the filter section (optional)
+  - description: Description for the filter section (optional)
+  - items: List of items to filter [{ label: "Item label", value: "item-value", count: 5, active: false }]
+  - type: Type of filter (checkbox, radio, button, dropdown)
+  - name: Form name for filter inputs
+  - showCount: Whether to show count badges (true/false)
+  - class: Additional CSS classes for the filter container
+  - onChange: JavaScript function to call on change (optional)
+  - multiple: Allow multiple selections (true for checkbox, false for radio/dropdown)
+*/ -}}
+
+{{- $id := .id | default (printf "filter-%s" (substr (md5 (printf "%s%d" .name now.UnixNano)) 0 8)) -}}
+{{- $title := .title | default "" -}}
+{{- $description := .description | default "" -}}
+{{- $items := .items | default slice -}}
+{{- $type := .type | default "checkbox" -}}
+{{- $name := .name | default "filter" -}}
+{{- $showCount := .showCount | default true -}}
+{{- $class := .class | default "" -}}
+{{- $onChange := .onChange | default "" -}}
+{{- $multiple := .multiple | default ($type | eq "checkbox") -}}
+
+<div id="{{ $id }}" class="uk-filter-container {{ $class }}">
+  {{- if $title -}}
+    <h3 class="uk-filter-title">{{ $title }}</h3>
+  {{- end -}}
+  
+  {{- if $description -}}
+    <p class="uk-filter-description uk-text-muted">{{ $description }}</p>
+  {{- end -}}
+
+  {{- if eq $type "dropdown" -}}
+    <div class="uk-inline uk-width-1-1">
+      <button class="uk-button uk-button-default uk-width-1-1" type="button">
+        {{ .dropdownLabel | default "Filter" }}
+        <i class="uk-margin-small-left">{{ partial "icon.html" "chevron-down" }}</i>
+      </button>
+      <div uk-dropdown="mode: click" class="uk-width-1-1">
+        <ul class="uk-list uk-dropdown-nav">
+          {{- range $index, $item := $items -}}
+            <li class="uk-margin-small-bottom">
+              <label class="uk-flex uk-flex-middle">
+                <input 
+                  type="{{if $multiple}}checkbox{{else}}radio{{end}}" 
+                  name="{{ $name }}" 
+                  value="{{ $item.value }}" 
+                  class="uk-{{ if $multiple }}checkbox{{ else }}radio{{ end }} uk-margin-small-right" 
+                  {{- if $item.active }} checked{{- end -}}
+                  {{- if $onChange }} onchange="{{ $onChange }}"{{- end -}}
+                />
+                <span>{{ $item.label }}</span>
+                {{- if and $showCount $item.count -}}
+                  <span class="uk-badge uk-margin-small-left">{{ $item.count }}</span>
+                {{- end -}}
+              </label>
+            </li>
+          {{- end -}}
+        </ul>
+      </div>
+    </div>
+  {{- else if eq $type "button" -}}
+    <div class="uk-button-group uk-width-1-1 uk-grid uk-grid-small" uk-grid>
+      {{- range $index, $item := $items -}}
+        <div class="uk-width-auto">
+          <button 
+            class="uk-button {{- if $item.active }} uk-button-primary{{- else }} uk-button-default{{- end -}}" 
+            data-filter-value="{{ $item.value }}"
+            {{- if $onChange }} onclick="{{ $onChange }}"{{- end -}}
+          >
+            {{ $item.label }}
+            {{- if and $showCount $item.count -}}
+              <span class="uk-badge uk-margin-small-left">{{ $item.count }}</span>
+            {{- end -}}
+          </button>
+        </div>
+      {{- end -}}
+    </div>
+  {{- else -}}
+    <div class="uk-filter-options">
+      {{- range $index, $item := $items -}}
+        <div class="uk-margin-small-bottom">
+          <label class="uk-flex uk-flex-middle">
+            <input 
+              type="{{ $type }}" 
+              name="{{ $name }}" 
+              value="{{ $item.value }}" 
+              class="uk-{{ $type }} uk-margin-small-right" 
+              {{- if $item.active }} checked{{- end -}}
+              {{- if $onChange }} onchange="{{ $onChange }}"{{- end -}}
+            />
+            <span>{{ $item.label }}</span>
+            {{- if and $showCount $item.count -}}
+              <span class="uk-badge uk-margin-small-left">{{ $item.count }}</span>
+            {{- end -}}
+          </label>
+        </div>
+      {{- end -}}
+    </div>
+  {{- end -}}
+</div>

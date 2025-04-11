@@ -1,0 +1,184 @@
+{{- /* filepath: /var/www/pimp-my-site/themes/hugo-theme-tailwind/layouts/partials/image-enhanced.html */ -}}
+{{- /* 
+  Enhanced image component with advanced features
+  
+  Parameters:
+  - src: Image source URL or path (required)
+  - alt: Alt text for the image (required for accessibility)
+  - class: Additional CSS classes for the image container
+  - imgClass: Additional CSS classes for the img element
+  - width: Image width
+  - height: Image height
+  - lazy: Enable lazy loading (default: true)
+  - objectFit: CSS object-fit property (cover, contain, fill, etc.)
+  - rounded: Add rounded corners (true/false or specific value like "lg", "full")
+  - caption: Optional caption text
+  - ratio: Aspect ratio (16/9, 4/3, 1/1, etc.)
+  - loading: Loading behavior (lazy, eager, auto)
+  - sizes: Responsive sizes attribute
+  - srcset: Custom srcset attribute
+  - shadow: Add shadow effect (true/false or specific value like "sm", "md", "lg")
+  - zoom: Enable zoom effect on hover (true/false)
+  - blur: Apply blur effect on load (true/false)
+  - grayscale: Apply grayscale filter (true/false)
+  - link: Wrap image in a link
+  - gallery: Assign to a gallery group (for lightbox functionality)
+  - priority: Mark as high priority image (for LCP optimization)
+*/ -}}
+
+{{- $src := .src -}}
+{{- $alt := .alt | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $imgClass := .imgClass | default "" -}}
+{{- $width := .width | default "" -}}
+{{- $height := .height | default "" -}}
+{{- $lazy := .lazy | default true -}}
+{{- $objectFit := .objectFit | default "" -}}
+{{- $rounded := .rounded | default false -}}
+{{- $caption := .caption | default "" -}}
+{{- $ratio := .ratio | default "" -}}
+{{- $loading := .loading | default (cond $lazy "lazy" "eager") -}}
+{{- $sizes := .sizes | default "" -}}
+{{- $srcset := .srcset | default "" -}}
+{{- $shadow := .shadow | default false -}}
+{{- $zoom := .zoom | default false -}}
+{{- $blur := .blur | default false -}}
+{{- $grayscale := .grayscale | default false -}}
+{{- $link := .link | default "" -}}
+{{- $gallery := .gallery | default "" -}}
+{{- $priority := .priority | default false -}}
+
+{{- /* Process image using Hugo's image processing if it's a local resource */ -}}
+{{- $image := false -}}
+{{- $resource := false -}}
+{{- $isRemote := hasPrefix $src "http" -}}
+
+{{- if not $isRemote -}}
+  {{- with $.Page.Resources.GetMatch $src -}}
+    {{- $resource = . -}}
+    {{- $image = . -}}
+  {{- else -}}
+    {{- with resources.Get $src -}}
+      {{- $resource = . -}}
+      {{- $image = . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Build srcset if resource is available and custom srcset not provided */ -}}
+{{- if and $resource (not $srcset) -}}
+  {{- $srcset = slice -}}
+  {{- $widths := slice 480 768 1024 1280 1536 -}}
+  {{- range $widths -}}
+    {{- $resized := $resource.Resize (printf "%dx" .) -}}
+    {{- $srcset = $srcset | append (printf "%s %dw" $resized.RelPermalink .) -}}
+  {{- end -}}
+  {{- $srcset = delimit $srcset ", " -}}
+{{- end -}}
+
+{{- /* Get image dimensions if possible and not provided */ -}}
+{{- if and $resource (not $width) (not $height) -}}
+  {{- $width = $resource.Width -}}
+  {{- $height = $resource.Height -}}
+{{- end -}}
+
+{{- /* Building classes */ -}}
+{{- $containerClasses := slice "image-container" -}}
+{{- $imageClasses := slice -}}
+
+{{- /* Handle ratio */ -}}
+{{- if $ratio -}}
+  {{- $containerClasses = $containerClasses | append "relative" -}}
+  {{- $imageClasses = $imageClasses | append "absolute inset-0 h-full w-full" -}}
+{{- end -}}
+
+{{- /* Handle object-fit */ -}}
+{{- if $objectFit -}}
+  {{- $imageClasses = $imageClasses | append (printf "object-%s" $objectFit) -}}
+{{- end -}}
+
+{{- /* Handle rounded corners */ -}}
+{{- if $rounded -}}
+  {{- if eq $rounded true -}}
+    {{- $imageClasses = $imageClasses | append "rounded" -}}
+  {{- else -}}
+    {{- $imageClasses = $imageClasses | append (printf "rounded-%s" $rounded) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Handle shadow */ -}}
+{{- if $shadow -}}
+  {{- if eq $shadow true -}}
+    {{- $containerClasses = $containerClasses | append "shadow" -}}
+  {{- else -}}
+    {{- $containerClasses = $containerClasses | append (printf "shadow-%s" $shadow) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Handle zoom effect */ -}}
+{{- if $zoom -}}
+  {{- $containerClasses = $containerClasses | append "overflow-hidden" -}}
+  {{- $imageClasses = $imageClasses | append "transition-transform duration-300 hover:scale-110" -}}
+{{- end -}}
+
+{{- /* Handle blur while loading */ -}}
+{{- if $blur -}}
+  {{- $imageClasses = $imageClasses | append "blur-sm transition-all duration-300 loaded:blur-0" -}}
+{{- end -}}
+
+{{- /* Handle grayscale */ -}}
+{{- if $grayscale -}}
+  {{- $imageClasses = $imageClasses | append "grayscale" -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClasses = $containerClasses | append $class -}}
+{{- end -}}
+
+{{- if $imgClass -}}
+  {{- $imageClasses = $imageClasses | append $imgClass -}}
+{{- end -}}
+
+{{- $containerClassStr := delimit $containerClasses " " -}}
+{{- $imageClassStr := delimit $imageClasses " " -}}
+
+{{- $imageSrc := $src -}}
+{{- if $resource -}}
+  {{- $imageSrc = $resource.RelPermalink -}}
+{{- end -}}
+
+<figure class="{{ $containerClassStr }}">
+  {{- if $ratio -}}
+    <div class="relative overflow-hidden" style="padding-bottom: calc({{ $ratio }} * 100%);">
+  {{- end -}}
+  
+  {{- if $link -}}
+    <a href="{{ $link }}"{{ if $gallery }} data-gallery="{{ $gallery }}"{{ end }} class="block">
+  {{- end -}}
+  
+  <img 
+    src="{{ $imageSrc }}" 
+    alt="{{ $alt }}" 
+    class="{{ $imageClassStr }}"
+    {{- if $width }} width="{{ $width }}"{{ end }}
+    {{- if $height }} height="{{ $height }}"{{ end }}
+    {{- if $loading }} loading="{{ $loading }}"{{ end }}
+    {{- if $srcset }} srcset="{{ $srcset }}"{{ end }}
+    {{- if $sizes }} sizes="{{ $sizes }}"{{ end }}
+    {{- if $priority }} fetchpriority="high"{{ end }}
+    {{- if $blur }} onload="this.classList.add('loaded')"{{ end }}
+  />
+  
+  {{- if $link -}}
+    </a>
+  {{- end -}}
+  
+  {{- if $ratio -}}
+    </div>
+  {{- end -}}
+  
+  {{- if $caption -}}
+    <figcaption class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">{{ $caption | markdownify }}</figcaption>
+  {{- end -}}
+</figure>

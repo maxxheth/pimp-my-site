@@ -1,0 +1,36 @@
+{{ $avatar := .avatar | default (printf "https://api.dicebear.com/9.x/lorelei/svg?seed=%s" .author) }}
+{{ $author := .author | default "Anonymous" }}
+{{ $time := .time | default "some time ago" }}
+{{ $content := .content | default "" }}
+{{ $link := .link | default "#" }}
+{{ $replies := .replies | default slice }}
+
+<article class="uk-comment {{ if .isPrimary }}uk-comment-primary{{ end }}" tabindex="-1" role="comment">
+  <header class="uk-comment-header">
+    <div class="flex items-center">
+      <div class="uk-comment-avatar mr-2">
+        <img
+          src="{{ $avatar }}"
+          alt="{{ $author }}"
+        />
+      </div>
+      <div class="flex-1">
+        <div class="uk-comment-title"><a href="{{ $link }}">{{ $author }}</a></div>
+        <p class="uk-comment-meta"><a href="{{ $link }}">{{ $time }}</a></p>
+      </div>
+    </div>
+  </header>
+  <div class="uk-comment-body">
+    <p>{{ $content }}</p>
+  </div>
+</article>
+
+{{ if $replies }}
+<ul>
+  {{ range $replies }}
+    <li>
+      {{ partial "comment.html" . }}
+    </li>
+  {{ end }}
+</ul>
+{{ end }}

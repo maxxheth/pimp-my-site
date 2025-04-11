@@ -1,0 +1,21 @@
+{{ $src := .Get "src" }}
+{{ $alt := .Get "alt" | default "" }}
+{{ $caption := .Get "caption" | default "" }}
+{{ $group := .Get "group" | default "default" }}
+{{ $width := .Get "width" | default "auto" }}
+{{ $height := .Get "height" | default "auto" }}
+
+<figure class="lightbox-figure" style="width: {{ $width }}; height: {{ $height }};">
+  <img 
+    src="{{ $src }}" 
+    alt="{{ $alt }}" 
+    class="lightbox-image cursor-pointer hover:opacity-90 transition-opacity rounded-md" 
+    data-lightbox="true" 
+    data-group="{{ $group }}"
+    data-caption="{{ $caption }}"
+    loading="lazy"
+  />
+  {{ if $caption }}
+    <figcaption class="text-sm text-center text-gray-600 dark:text-gray-400 mt-2">{{ $caption }}</figcaption>
+  {{ end }}
+</figure>

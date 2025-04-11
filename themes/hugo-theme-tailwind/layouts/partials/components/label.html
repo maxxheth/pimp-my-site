@@ -1,0 +1,162 @@
+{{- /* filepath: /var/www/pimp-my-site/themes/hugo-theme-tailwind/layouts/partials/label.html */ -}}
+{{- /* 
+  Label component for displaying tags, badges, and status indicators
+  
+  Parameters:
+  - text: Text content for the label (required)
+  - variant: Style variant (default, primary, secondary, success, warning, danger, info)
+  - size: Size of the label (xs, sm, md, lg)
+  - icon: Icon name (uses the theme's existing icon system)
+  - iconPosition: Position of icon (left or right)
+  - rounded: Rounded corners (sm, md, lg, full)
+  - href: URL to make the label a link
+  - class: Additional CSS classes
+  - title: Title attribute (tooltip text)
+  - pill: Whether to display as a pill shape (true/false)
+  - outline: Whether to display as an outline style (true/false)
+  - removable: Whether to show a remove button (true/false)
+  - removeAction: JavaScript function to call when remove button is clicked
+  - count: Optional numeric count/value to display
+*/ -}}
+
+{{- $text := .text | default "" -}}
+{{- $variant := .variant | default "default" -}}
+{{- $size := .size | default "md" -}}
+{{- $icon := .icon | default "" -}}
+{{- $iconPosition := .iconPosition | default "left" -}}
+{{- $rounded := .rounded | default "md" -}}
+{{- $href := .href | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $title := .title | default "" -}}
+{{- $pill := .pill | default false -}}
+{{- $outline := .outline | default false -}}
+{{- $removable := .removable | default false -}}
+{{- $removeAction := .removeAction | default "this.parentNode.remove()" -}}
+{{- $count := .count | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $baseClasses := "inline-flex items-center font-medium whitespace-nowrap" -}}
+
+{{- /* Size classes */ -}}
+{{- $sizeClasses := "" -}}
+{{- if eq $size "xs" -}}
+  {{- $sizeClasses = "text-xs py-0.5 px-1.5" -}}
+{{- else if eq $size "sm" -}}
+  {{- $sizeClasses = "text-xs py-0.5 px-2" -}}
+{{- else if eq $size "md" -}}
+  {{- $sizeClasses = "text-sm py-1 px-2.5" -}}
+{{- else if eq $size "lg" -}}
+  {{- $sizeClasses = "text-base py-1.5 px-3" -}}
+{{- end -}}
+
+{{- /* Rounded corner classes */ -}}
+{{- $roundedClasses := "" -}}
+{{- if $pill -}}
+  {{- $roundedClasses = "rounded-full" -}}
+{{- else if eq $rounded "sm" -}}
+  {{- $roundedClasses = "rounded-sm" -}}
+{{- else if eq $rounded "md" -}}
+  {{- $roundedClasses = "rounded" -}}
+{{- else if eq $rounded "lg" -}}
+  {{- $roundedClasses = "rounded-lg" -}}
+{{- else if eq $rounded "full" -}}
+  {{- $roundedClasses = "rounded-full" -}}
+{{- end -}}
+
+{{- /* Variant classes */ -}}
+{{- $variantClasses := "" -}}
+{{- if eq $variant "default" -}}
+  {{- if $outline -}}
+    {{- $variantClasses = "text-gray-700 bg-transparent border border-gray-300 dark:text-gray-300 dark:border-gray-600" -}}
+  {{- else -}}
+    {{- $variantClasses = "text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-700" -}}
+  {{- end -}}
+{{- else if eq $variant "primary" -}}
+  {{- if $outline -}}
+    {{- $variantClasses = "text-blue-600 bg-transparent border border-blue-600 dark:text-blue-400 dark:border-blue-400" -}}
+  {{- else -}}
+    {{- $variantClasses = "text-white bg-blue-600 dark:bg-blue-500" -}}
+  {{- end -}}
+{{- else if eq $variant "secondary" -}}
+  {{- if $outline -}}
+    {{- $variantClasses = "text-gray-500 bg-transparent border border-gray-500 dark:text-gray-400 dark:border-gray-400" -}}
+  {{- else -}}
+    {{- $variantClasses = "text-white bg-gray-500 dark:bg-gray-600" -}}
+  {{- end -}}
+{{- else if eq $variant "success" -}}
+  {{- if $outline -}}
+    {{- $variantClasses = "text-green-600 bg-transparent border border-green-600 dark:text-green-400 dark:border-green-400" -}}
+  {{- else -}}
+    {{- $variantClasses = "text-white bg-green-600 dark:bg-green-500" -}}
+  {{- end -}}
+{{- else if eq $variant "warning" -}}
+  {{- if $outline -}}
+    {{- $variantClasses = "text-amber-600 bg-transparent border border-amber-600 dark:text-amber-400 dark:border-amber-400" -}}
+  {{- else -}}
+    {{- $variantClasses = "text-white bg-amber-500 dark:bg-amber-600" -}}
+  {{- end -}}
+{{- else if eq $variant "danger" -}}
+  {{- if $outline -}}
+    {{- $variantClasses = "text-red-600 bg-transparent border border-red-600 dark:text-red-400 dark:border-red-400" -}}
+  {{- else -}}
+    {{- $variantClasses = "text-white bg-red-600 dark:bg-red-500" -}}
+  {{- end -}}
+{{- else if eq $variant "info" -}}
+  {{- if $outline -}}
+    {{- $variantClasses = "text-sky-600 bg-transparent border border-sky-600 dark:text-sky-400 dark:border-sky-400" -}}
+  {{- else -}}
+    {{- $variantClasses = "text-white bg-sky-500 dark:bg-sky-600" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Combine all classes */ -}}
+{{- $combinedClasses := printf "%s %s %s %s %s" $baseClasses $sizeClasses $roundedClasses $variantClasses $class -}}
+
+{{- /* Determine tag type - span or anchor */ -}}
+{{- $tagStart := "<span" -}}
+{{- $tagEnd := "</span>" -}}
+{{- if $href -}}
+  {{- $tagStart = "<a href=\"" | safeHTML -}}
+  {{- $tagStart = printf "%s%s\"" $tagStart $href -}}
+  {{- $tagEnd = "</a>" -}}
+{{- end -}}
+
+{{- /* Prepare icon element */ -}}
+{{- $iconElement := "" -}}
+{{- if $icon -}}
+  {{- $iconSize := "xs" -}}
+  {{- if eq $size "lg" -}}
+    {{- $iconSize = "sm" -}}
+  {{- end -}}
+  
+  {{- $iconMarkup := partial "icon-enhanced.html" (dict "name" $icon "size" $iconSize) -}}
+  {{- if eq $iconPosition "left" -}}
+    {{- $iconElement = printf "<span class=\"mr-1\">%s</span>" $iconMarkup -}}
+  {{- else -}}
+    {{- $iconElement = printf "<span class=\"ml-1\">%s</span>" $iconMarkup -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Prepare count element */ -}}
+{{- $countElement := "" -}}
+{{- if $count -}}
+  {{- $countElement = printf "<span class=\"ml-1.5 bg-white bg-opacity-25 px-1.5 py-0.5 rounded text-xs\">%s</span>" $count -}}
+{{- end -}}
+
+{{- /* Prepare remove button */ -}}
+{{- $removeButton := "" -}}
+{{- if $removable -}}
+  {{- $removeIconSize := "xs" -}}
+  {{- $removeButtonClasses := "ml-1 hover:opacity-80 focus:outline-none" -}}
+  {{- $removeIcon := partial "icon-enhanced.html" (dict "name" "x" "size" $removeIconSize) -}}
+  {{- $removeButton = printf "<button type=\"button\" class=\"%s\" onclick=\"%s\" aria-label=\"Remove\">%s</button>" $removeButtonClasses $removeAction $removeIcon -}}
+{{- end -}}
+
+{{- /* Render the label */ -}}
+<{{ $tagStart }} class="{{ $combinedClasses | strings.TrimSpace }}"{{ if $title }} title="{{ $title }}"{{ end }}>
+  {{- if eq $iconPosition "left" -}}{{ $iconElement | safeHTML }}{{- end -}}
+  {{ $text }}
+  {{- if eq $iconPosition "right" -}}{{ $iconElement | safeHTML }}{{- end -}}
+  {{- $countElement | safeHTML -}}
+  {{- $removeButton | safeHTML -}}
+</{{ $tagEnd | safeHTML }}>

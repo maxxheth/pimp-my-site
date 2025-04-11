@@ -1,0 +1,242 @@
+{{- /*
+  Pagination Component
+  
+  Parameters:
+    - currentPage: Number - Current page number (default: 1)
+    - totalPages: Number - Total number of pages (required)
+    - baseUrl: String - Base URL for pagination links (default: "#")
+    - urlParams: String - Additional URL parameters to append (default: "")
+    - pageParamName: String - URL parameter name for page (default: "page")
+    - size: String - Size of pagination items (default: "md")
+      Options: sm, md, lg
+    - variant: String - Visual style (default: "default")
+      Options: default, rounded, outline, minimal
+    - showFirstLast: Boolean - Show first and last page buttons (default: true)
+    - showPrevNext: Boolean - Show previous and next buttons (default: true)
+    - showNumbers: Boolean - Show page numbers (default: true)
+    - siblingsCount: Number - Number of siblings to show on each side (default: 1)
+    - boundaryCount: Number - Number of boundary pages to show (default: 1)
+    - ellipsisText: String - Text to show for ellipsis (default: "...")
+    - firstText: String - Text for first page button (default: "First")
+    - lastText: String - Text for last page button (default: "Last")
+    - prevText: String - Text for previous button (default: "Prev")
+    - nextText: String - Text for next button (default: "Next")
+    - showIcons: Boolean - Show icons on navigation buttons (default: true)
+    - class: String - Additional custom classes (default: "")
+    - itemClass: String - Additional classes for pagination items (default: "")
+*/ -}}
+
+{{- $currentPage := .currentPage | default 1 -}}
+{{- $totalPages := .totalPages | default 1 -}}
+{{- $baseUrl := .baseUrl | default "#" -}}
+{{- $urlParams := .urlParams | default "" -}}
+{{- $pageParamName := .pageParamName | default "page" -}}
+{{- $size := .size | default "md" -}}
+{{- $variant := .variant | default "default" -}}
+{{- $showFirstLast := .showFirstLast | default true -}}
+{{- $showPrevNext := .showPrevNext | default true -}}
+{{- $showNumbers := .showNumbers | default true -}}
+{{- $siblingsCount := .siblingsCount | default 1 -}}
+{{- $boundaryCount := .boundaryCount | default 1 -}}
+{{- $ellipsisText := .ellipsisText | default "..." -}}
+{{- $firstText := .firstText | default "First" -}}
+{{- $lastText := .lastText | default "Last" -}}
+{{- $prevText := .prevText | default "Prev" -}}
+{{- $nextText := .nextText | default "Next" -}}
+{{- $showIcons := .showIcons | default true -}}
+{{- $class := .class | default "" -}}
+{{- $itemClass := .itemClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $paginationClass := "flex flex-wrap items-center justify-center" -}}
+{{- $itemBaseClass := "flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" -}}
+{{- $activeClass := "" -}}
+{{- $inactiveClass := "" -}}
+{{- $disabledClass := "opacity-50 cursor-not-allowed pointer-events-none" -}}
+{{- $ellipsisClass := "px-2 text-gray-500 dark:text-gray-400" -}}
+
+{{- /* Size classes */ -}}
+{{- if eq $size "sm" -}}
+  {{- $itemBaseClass = printf "%s h-8 min-w-8 text-sm" $itemBaseClass -}}
+{{- else if eq $size "md" -}}
+  {{- $itemBaseClass = printf "%s h-10 min-w-10" $itemBaseClass -}}
+{{- else if eq $size "lg" -}}
+  {{- $itemBaseClass = printf "%s h-12 min-w-12 text-lg" $itemBaseClass -}}
+{{- end -}}
+
+{{- /* Variant classes */ -}}
+{{- if eq $variant "default" -}}
+  {{- $itemBaseClass = printf "%s mx-1 px-3 rounded" $itemBaseClass -}}
+  {{- $activeClass = "bg-blue-600 text-white dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600" -}}
+  {{- $inactiveClass = "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700" -}}
+{{- else if eq $variant "rounded" -}}
+  {{- $itemBaseClass = printf "%s mx-1 px-3 rounded-full" $itemBaseClass -}}
+  {{- $activeClass = "bg-blue-600 text-white dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600" -}}
+  {{- $inactiveClass = "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700" -}}
+{{- else if eq $variant "outline" -}}
+  {{- $itemBaseClass = printf "%s mx-1 px-3 rounded border" $itemBaseClass -}}
+  {{- $activeClass = "border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600" -}}
+  {{- $inactiveClass = "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700" -}}
+{{- else if eq $variant "minimal" -}}
+  {{- $itemBaseClass = printf "%s mx-0.5 px-2 rounded" $itemBaseClass -}}
+  {{- $activeClass = "text-blue-600 font-medium dark:text-blue-400" -}}
+  {{- $inactiveClass = "text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200" -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $paginationClass = printf "%s %s" $paginationClass $class -}}
+{{- end -}}
+
+{{- if $itemClass -}}
+  {{- $itemBaseClass = printf "%s %s" $itemBaseClass $itemClass -}}
+{{- end -}}
+
+{{- /* Helper function to build page URL */ -}}
+{{- $buildPageUrl := (printf "%s?%s=%d%s" $baseUrl $pageParamName "%d" $urlParams) -}}
+
+<nav aria-label="Pagination" class="{{ $paginationClass }}">
+  <ul class="flex space-x-1 items-center">
+    {{- /* First page button */ -}}
+    {{- if $showFirstLast -}}
+      <li>
+        <a 
+          href="{{ printf $buildPageUrl 1 }}" 
+          class="{{ $itemBaseClass }} {{ if eq $currentPage 1 }}{{ $disabledClass }}{{ else }}{{ $inactiveClass }}{{ end }}"
+          aria-label="Go to first page"
+          {{- if eq $currentPage 1 }} aria-disabled="true" tabindex="-1"{{ end -}}
+        >
+          {{- if $showIcons -}}
+            <span class="inline-flex items-center mr-1">
+              {{ partial "icon.html" (dict "name" "chevrons-left" "size" "sm") }}
+            </span>
+          {{- end -}}
+          <span class="hidden sm:inline">{{ $firstText }}</span>
+        </a>
+      </li>
+    {{- end -}}
+    
+    {{- /* Previous button */ -}}
+    {{- if $showPrevNext -}}
+      <li>
+        <a 
+          href="{{ if gt $currentPage 1 }}{{ printf $buildPageUrl (sub $currentPage 1) }}{{ else }}#{{ end }}" 
+          class="{{ $itemBaseClass }} {{ if eq $currentPage 1 }}{{ $disabledClass }}{{ else }}{{ $inactiveClass }}{{ end }}"
+          aria-label="Go to previous page"
+          {{- if eq $currentPage 1 }} aria-disabled="true" tabindex="-1"{{ end -}}
+        >
+          {{- if $showIcons -}}
+            <span class="inline-flex items-center mr-1">
+              {{ partial "icon.html" (dict "name" "chevron-left" "size" "sm") }}
+            </span>
+          {{- end -}}
+          <span class="hidden sm:inline">{{ $prevText }}</span>
+        </a>
+      </li>
+    {{- end -}}
+    
+    {{- if $showNumbers -}}
+      {{- /* Calculate page range to display */ -}}
+      {{- $startPage := max 1 (sub $currentPage $siblingsCount) -}}
+      {{- $endPage := min $totalPages (add $currentPage $siblingsCount) -}}
+      
+      {{- /* Adjust start and end if they're close to boundaries */ -}}
+      {{- if lt (sub $endPage $startPage) (add (mul 2 $siblingsCount) 1) -}}
+        {{- if le $startPage 1 -}}
+          {{- $endPage = min $totalPages (add $startPage (add (mul 2 $siblingsCount) 0)) -}}
+        {{- else if ge $endPage $totalPages -}}
+          {{- $startPage = max 1 (sub $endPage (add (mul 2 $siblingsCount) 0)) -}}
+        {{- end -}}
+      {{- end -}}
+      
+      {{- /* Left boundary pages */ -}}
+      {{- range $i := seq 1 (min $boundaryCount (sub $startPage 1)) -}}
+        <li>
+          <a 
+            href="{{ printf $buildPageUrl $i }}" 
+            class="{{ $itemBaseClass }} {{ $inactiveClass }}"
+            aria-label="Go to page {{ $i }}"
+          >
+            {{ $i }}
+          </a>
+        </li>
+      {{- end -}}
+      
+      {{- /* Left ellipsis */ -}}
+      {{- if gt $startPage (add $boundaryCount 1) -}}
+        <li class="{{ $ellipsisClass }}">{{ $ellipsisText }}</li>
+      {{- end -}}
+      
+      {{- /* Current page and siblings */ -}}
+      {{- range $i := seq $startPage $endPage -}}
+        <li>
+          <a 
+            href="{{ printf $buildPageUrl $i }}" 
+            class="{{ $itemBaseClass }} {{ if eq $i $currentPage }}{{ $activeClass }}{{ else }}{{ $inactiveClass }}{{ end }}"
+            aria-label="Go to page {{ $i }}"
+            {{- if eq $i $currentPage }} aria-current="page"{{ end -}}
+          >
+            {{ $i }}
+          </a>
+        </li>
+      {{- end -}}
+      
+      {{- /* Right ellipsis */ -}}
+      {{- if lt $endPage (sub $totalPages $boundaryCount) -}}
+        <li class="{{ $ellipsisClass }}">{{ $ellipsisText }}</li>
+      {{- end -}}
+      
+      {{- /* Right boundary pages */ -}}
+      {{- $rightBoundaryStart := max (add $endPage 1) (sub $totalPages (sub $boundaryCount 1)) -}}
+      {{- range $i := seq $rightBoundaryStart $totalPages -}}
+        <li>
+          <a 
+            href="{{ printf $buildPageUrl $i }}" 
+            class="{{ $itemBaseClass }} {{ $inactiveClass }}"
+            aria-label="Go to page {{ $i }}"
+          >
+            {{ $i }}
+          </a>
+        </li>
+      {{- end -}}
+    {{- end -}}
+    
+    {{- /* Next button */ -}}
+    {{- if $showPrevNext -}}
+      <li>
+        <a 
+          href="{{ if lt $currentPage $totalPages }}{{ printf $buildPageUrl (add $currentPage 1) }}{{ else }}#{{ end }}" 
+          class="{{ $itemBaseClass }} {{ if eq $currentPage $totalPages }}{{ $disabledClass }}{{ else }}{{ $inactiveClass }}{{ end }}"
+          aria-label="Go to next page"
+          {{- if eq $currentPage $totalPages }} aria-disabled="true" tabindex="-1"{{ end -}}
+        >
+          <span class="hidden sm:inline">{{ $nextText }}</span>
+          {{- if $showIcons -}}
+            <span class="inline-flex items-center ml-1">
+              {{ partial "icon.html" (dict "name" "chevron-right" "size" "sm") }}
+            </span>
+          {{- end -}}
+        </a>
+      </li>
+    {{- end -}}
+    
+    {{- /* Last page button */ -}}
+    {{- if $showFirstLast -}}
+      <li>
+        <a 
+          href="{{ printf $buildPageUrl $totalPages }}" 
+          class="{{ $itemBaseClass }} {{ if eq $currentPage $totalPages }}{{ $disabledClass }}{{ else }}{{ $inactiveClass }}{{ end }}"
+          aria-label="Go to last page"
+          {{- if eq $currentPage $totalPages }} aria-disabled="true" tabindex="-1"{{ end -}}
+        >
+          <span class="hidden sm:inline">{{ $lastText }}</span>
+          {{- if $showIcons -}}
+            <span class="inline-flex items-center ml-1">
+              {{ partial "icon.html" (dict "name" "chevrons-right" "size" "sm") }}
+            </span>
+          {{- end -}}
+        </a>
+      </li>
+    {{- end -}}
+  </ul>
+</nav>

@@ -1,0 +1,295 @@
+{{- /*
+  Scroll Component
+  
+  Parameters:
+    - content: String - Content to be scrollable (required)
+    - height: String - Height of the scroll container (default: "300px")
+    - width: String - Width of the scroll container (default: "100%")
+    - direction: String - Scroll direction (default: "vertical")
+      Options: vertical, horizontal, both
+    - showScrollbar: Boolean - Show the scrollbar (default: true)
+    - scrollbarStyle: String - Scrollbar style (default: "auto")
+      Options: auto, thin, rounded, custom
+    - smoothScroll: Boolean - Enable smooth scrolling (default: true)
+    - scrollbarsOverlay: Boolean - Overlay scrollbars on content (default: false)
+    - shadow: Boolean - Show shadow to indicate scrollable content (default: false)
+    - scrollPadding: String - Padding inside scroll container (default: "")
+    - scrollColor: String - Color for custom scrollbar (default: "gray")
+      Options: gray, blue, green, red, or any tailwind color
+    - class: String - Additional custom classes (default: "")
+    - contentClass: String - Additional classes for content container (default: "")
+*/ -}}
+
+{{- $content := .content -}}
+{{- $height := .height | default "300px" -}}
+{{- $width := .width | default "100%" -}}
+{{- $direction := .direction | default "vertical" -}}
+{{- $showScrollbar := .showScrollbar | default true -}}
+{{- $scrollbarStyle := .scrollbarStyle | default "auto" -}}
+{{- $smoothScroll := .smoothScroll | default true -}}
+{{- $scrollbarsOverlay := .scrollbarsOverlay | default false -}}
+{{- $shadow := .shadow | default false -}}
+{{- $scrollPadding := .scrollPadding | default "" -}}
+{{- $scrollColor := .scrollColor | default "gray" -}}
+{{- $class := .class | default "" -}}
+{{- $contentClass := .contentClass | default "" -}}
+
+{{- /* Generate unique ID for this instance */ -}}
+{{- $uniqueId := printf "scroll-%s" (now.Unix) -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "relative overflow-hidden" -}}
+{{- $scrollContentClass := "" -}}
+
+{{- /* Scrollbar direction classes */ -}}
+{{- if eq $direction "vertical" -}}
+  {{- $scrollContentClass = "overflow-y-auto overflow-x-hidden" -}}
+{{- else if eq $direction "horizontal" -}}
+  {{- $scrollContentClass = "overflow-x-auto overflow-y-hidden" -}}
+{{- else if eq $direction "both" -}}
+  {{- $scrollContentClass = "overflow-auto" -}}
+{{- end -}}
+
+{{- /* Smooth scrolling */ -}}
+{{- if $smoothScroll -}}
+  {{- $scrollContentClass = printf "%s scroll-smooth" $scrollContentClass -}}
+{{- end -}}
+
+{{- /* Hide scrollbar if specified */ -}}
+{{- if not $showScrollbar -}}
+  {{- $scrollContentClass = printf "%s scrollbar-hide" $scrollContentClass -}}
+{{- end -}}
+
+{{- /* Shadow to indicate scrollable content */ -}}
+{{- $shadowClass := "" -}}
+{{- if $shadow -}}
+  {{- if eq $direction "vertical" or eq $direction "both" -}}
+    {{- $shadowClass = "scroll-shadow-vertical" -}}
+  {{- else if eq $direction "horizontal" -}}
+    {{- $shadowClass = "scroll-shadow-horizontal" -}}
+  {{- end -}}
+  {{- $containerClass = printf "%s %s" $containerClass $shadowClass -}}
+{{- end -}}
+
+{{- /* Scrollbar overlay */ -}}
+{{- if $scrollbarsOverlay -}}
+  {{- $scrollContentClass = printf "%s scrollbar-overlay" $scrollContentClass -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $contentClass -}}
+  {{- $scrollContentClass = printf "%s %s" $scrollContentClass $contentClass -}}
+{{- end -}}
+
+{{- /* Determine padding for scroll container */ -}}
+{{- $paddingStyle := "" -}}
+{{- if $scrollPadding -}}
+  {{- $paddingStyle = printf "padding: %s;" $scrollPadding -}}
+{{- end -}}
+
+<div 
+  id="{{ $uniqueId }}" 
+  class="{{ $containerClass }}"
+  style="width: {{ $width }}; height: {{ $height }};"
+>
+  <div 
+    class="{{ $scrollContentClass }}" 
+    style="width: 100%; height: 100%; {{ $paddingStyle }}"
+    tabindex="0"
+  >
+    {{ $content | safeHTML }}
+  </div>
+</div>
+
+<style>
+  /* Hide scrollbar utility class */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+  
+  /* Overlay scrollbars */
+  .scrollbar-overlay {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
+  
+  .scrollbar-overlay::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background-color: transparent;
+  }
+  
+  .scrollbar-overlay::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  .dark .scrollbar-overlay::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  /* Shadow indicators for scrollable content */
+  .scroll-shadow-vertical {
+    background: 
+      /* Top shadow */
+      linear-gradient(white 30%, rgba(255, 255, 255, 0)) 0 0,
+      /* Bottom shadow */
+      linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
+      /* Left shadow */
+      radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) 0 50%,
+      /* Right shadow */
+      radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) 100% 50%;
+    background-repeat: no-repeat;
+    background-size: 100% 40px, 100% 40px, 10px 100%, 10px 100%;
+    background-attachment: local, local, scroll, scroll;
+  }
+  
+  .dark .scroll-shadow-vertical {
+    background: 
+      /* Top shadow */
+      linear-gradient(#1f2937 30%, rgba(31, 41, 55, 0)) 0 0,
+      /* Bottom shadow */
+      linear-gradient(rgba(31, 41, 55, 0), #1f2937 70%) 0 100%,
+      /* Left shadow */
+      radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) 0 50%,
+      /* Right shadow */
+      radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) 100% 50%;
+    background-repeat: no-repeat;
+    background-size: 100% 40px, 100% 40px, 10px 100%, 10px 100%;
+    background-attachment: local, local, scroll, scroll;
+  }
+  
+  .scroll-shadow-horizontal {
+    background: 
+      /* Left shadow */
+      linear-gradient(to right, white 30%, rgba(255, 255, 255, 0)) 0 0,
+      /* Right shadow */
+      linear-gradient(to left, white 30%, rgba(255, 255, 255, 0)) right 0,
+      /* Top shadow */
+      radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) 50% 0,
+      /* Bottom shadow */
+      radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0)) 50% 100%;
+    background-repeat: no-repeat;
+    background-size: 40px 100%, 40px 100%, 100% 10px, 100% 10px;
+    background-attachment: local, local, scroll, scroll;
+  }
+  
+  .dark .scroll-shadow-horizontal {
+    background: 
+      /* Left shadow */
+      linear-gradient(to right, #1f2937 30%, rgba(31, 41, 55, 0)) 0 0,
+      /* Right shadow */
+      linear-gradient(to left, #1f2937 30%, rgba(31, 41, 55, 0)) right 0,
+      /* Top shadow */
+      radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) 50% 0,
+      /* Bottom shadow */
+      radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0)) 50% 100%;
+    background-repeat: no-repeat;
+    background-size: 40px 100%, 40px 100%, 100% 10px, 100% 10px;
+    background-attachment: local, local, scroll, scroll;
+  }
+  
+  {{- if eq $scrollbarStyle "thin" -}}
+  #{{ $uniqueId }} > div {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.1);
+  }
+  
+  #{{ $uniqueId }} > div::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  #{{ $uniqueId }} > div::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  
+  #{{ $uniqueId }} > div::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+  
+  .dark #{{ $uniqueId }} > div {
+    scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+  }
+  
+  .dark #{{ $uniqueId }} > div::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .dark #{{ $uniqueId }} > div::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+  {{- else if eq $scrollbarStyle "rounded" -}}
+  #{{ $uniqueId }} > div {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.1);
+  }
+  
+  #{{ $uniqueId }} > div::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  #{{ $uniqueId }} > div::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  
+  #{{ $uniqueId }} > div::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  .dark #{{ $uniqueId }} > div {
+    scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+  }
+  
+  .dark #{{ $uniqueId }} > div::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .dark #{{ $uniqueId }} > div::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+  {{- else if eq $scrollbarStyle "custom" -}}
+  #{{ $uniqueId }} > div {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb-color) var(--scroll-track-color);
+  }
+  
+  #{{ $uniqueId }} > div::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  #{{ $uniqueId }} > div::-webkit-scrollbar-track {
+    background: var(--scroll-track-color);
+    border-radius: 5px;
+  }
+  
+  #{{ $uniqueId }} > div::-webkit-scrollbar-thumb {
+    background-color: var(--scroll-thumb-color);
+    border-radius: 5px;
+    border: 2px solid var(--scroll-track-color);
+  }
+  
+  #{{ $uniqueId }} {
+    --scroll-thumb-color: rgb(var(--color-{{ $scrollColor }}-500));
+    --scroll-track-color: rgb(var(--color-{{ $scrollColor }}-100));
+  }
+  
+  .dark #{{ $uniqueId }} {
+    --scroll-thumb-color: rgb(var(--color-{{ $scrollColor }}-600));
+    --scroll-track-color: rgb(var(--color-{{ $scrollColor }}-900));
+  }
+  {{- end -}}
+</style>

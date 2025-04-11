@@ -1,0 +1,223 @@
+{{- /*
+  Parallax Component
+  
+  Parameters:
+    - image: String - Background image URL (required)
+    - height: String - Height of the parallax container (default: "md")
+      Options: sm, md, lg, xl, screen, custom value (e.g., "400px")
+    - speed: Number - Parallax effect speed (default: 0.5)
+      Range: 0 (no movement) to 1 (moves with scroll)
+    - direction: String - Direction of parallax effect (default: "up")
+      Options: up, down, left, right
+    - overlay: Boolean - Add a dark overlay on the image (default: false)
+    - overlayOpacity: Number - Opacity level of the overlay (default: 0.4)
+      Range: 0 to 1
+    - overlayColor: String - Color of the overlay (default: "black")
+    - position: String - Background image position (default: "center")
+      Options: top, center, bottom, or any valid CSS background-position value
+    - contentPosition: String - Position of the content (default: "center")
+      Options: top, center, bottom, custom
+    - class: String - Additional custom classes for container (default: "")
+    - imageClass: String - Additional classes for the image (default: "")
+    - contentClass: String - Additional classes for the content (default: "")
+*/ -}}
+
+{{- $image := .image -}}
+{{- $height := .height | default "md" -}}
+{{- $speed := .speed | default 0.5 -}}
+{{- $direction := .direction | default "up" -}}
+{{- $overlay := .overlay | default false -}}
+{{- $overlayOpacity := .overlayOpacity | default 0.4 -}}
+{{- $overlayColor := .overlayColor | default "black" -}}
+{{- $position := .position | default "center" -}}
+{{- $contentPosition := .contentPosition | default "center" -}}
+{{- $class := .class | default "" -}}
+{{- $imageClass := .imageClass | default "" -}}
+{{- $contentClass := .contentClass | default "" -}}
+
+{{- /* Generate unique ID for this instance */ -}}
+{{- $uniqueId := printf "parallax-%s" (now.Unix) -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "relative overflow-hidden" -}}
+{{- $bgClass := "absolute inset-0 bg-cover bg-no-repeat" -}}
+{{- $contentWrapperClass := "relative z-10" -}}
+
+{{- /* Height classes */ -}}
+{{- if eq $height "sm" -}}
+  {{- $containerClass = printf "%s h-48" $containerClass -}}
+{{- else if eq $height "md" -}}
+  {{- $containerClass = printf "%s h-64" $containerClass -}}
+{{- else if eq $height "lg" -}}
+  {{- $containerClass = printf "%s h-96" $containerClass -}}
+{{- else if eq $height "xl" -}}
+  {{- $containerClass = printf "%s h-[32rem]" $containerClass -}}
+{{- else if eq $height "screen" -}}
+  {{- $containerClass = printf "%s h-screen" $containerClass -}}
+{{- else -}}
+  {{- /* Custom height value */ -}}
+  {{- $containerClass = printf "%s h-[%s]" $containerClass $height -}}
+{{- end -}}
+
+{{- /* Content positioning classes */ -}}
+{{- if eq $contentPosition "top" -}}
+  {{- $contentWrapperClass = printf "%s flex items-start justify-center pt-8" $contentWrapperClass -}}
+{{- else if eq $contentPosition "center" -}}
+  {{- $contentWrapperClass = printf "%s flex items-center justify-center" $contentWrapperClass -}}
+{{- else if eq $contentPosition "bottom" -}}
+  {{- $contentWrapperClass = printf "%s flex items-end justify-center pb-8" $contentWrapperClass -}}
+{{- else -}}
+  {{- /* Custom position */ -}}
+  {{- $contentWrapperClass = printf "%s %s" $contentWrapperClass $contentPosition -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $imageClass -}}
+  {{- $bgClass = printf "%s %s" $bgClass $imageClass -}}
+{{- end -}}
+
+{{- if $contentClass -}}
+  {{- $contentWrapperClass = printf "%s %s" $contentWrapperClass $contentClass -}}
+{{- end -}}
+
+<div 
+  id="{{ $uniqueId }}" 
+  class="{{ $containerClass }}" 
+  data-parallax
+  data-speed="{{ $speed }}"
+  data-direction="{{ $direction }}"
+  data-position="{{ $position }}"
+>
+  <div 
+    class="{{ $bgClass }}" 
+    style="background-image: url('{{ $image }}'); background-position: {{ $position }};"
+    data-parallax-bg
+  ></div>
+  
+  {{- if $overlay -}}
+  <div 
+    class="absolute inset-0 z-0" 
+    style="background-color: {{ $overlayColor }}; opacity: {{ $overlayOpacity }};"
+  ></div>
+  {{- end -}}
+  
+  <div class="{{ $contentWrapperClass }} h-full w-full">
+    {{ .content | safeHTML }}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Find all parallax elements
+    const parallaxElements = document.querySelectorAll('[data-parallax]');
+    
+    // Skip if no elements or if IntersectionObserver is not supported
+    if (!parallaxElements.length || !('IntersectionObserver' in window)) return;
+    
+    // Check if user prefers reduced motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    // Function to calculate parallax effect
+    function updateParallax(element) {
+      // Skip if user prefers reduced motion
+      if (prefersReducedMotion) return;
+      
+      const speed = parseFloat(element.dataset.speed) || 0.5;
+      const direction = element.dataset.direction || 'up';
+      const bgElement = element.querySelector('[data-parallax-bg]');
+      
+      if (!bgElement) return;
+      
+      // Get element position relative to viewport
+      const rect = element.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      
+      // Calculate how far the element is from the center of the viewport
+      // Normalized to a value between -1 and 1
+      let scrollPosition;
+      
+      if (direction === 'up' || direction === 'down') {
+        // Vertical parallax
+        scrollPosition = (rect.top + rect.height / 2 - viewportHeight / 2) / viewportHeight;
+      } else {
+        // Horizontal parallax
+        scrollPosition = (rect.left + rect.width / 2 - viewportWidth / 2) / viewportWidth;
+      }
+      
+      // Apply transform based on direction
+      let transform;
+      
+      if (direction === 'up') {
+        transform = `translateY(${scrollPosition * speed * 100}px)`;
+      } else if (direction === 'down') {
+        transform = `translateY(${-scrollPosition * speed * 100}px)`;
+      } else if (direction === 'left') {
+        transform = `translateX(${scrollPosition * speed * 100}px)`;
+      } else if (direction === 'right') {
+        transform = `translateX(${-scrollPosition * speed * 100}px)`;
+      }
+      
+      // Apply the transform
+      bgElement.style.transform = transform;
+      
+      // Scale slightly to prevent gaps at edges
+      bgElement.style.scale = '1.1';
+    }
+    
+    // Set up IntersectionObserver to only update visible elements
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        // Store the element's visibility state
+        entry.target.dataset.visible = entry.isIntersecting;
+        
+        // Update immediately if visible
+        if (entry.isIntersecting) {
+          updateParallax(entry.target);
+        }
+      });
+    }, {
+      rootMargin: '50px 0px', // Start observing slightly before the element enters the viewport
+      threshold: 0
+    });
+    
+    // Observe all parallax elements
+    parallaxElements.forEach(element => {
+      observer.observe(element);
+      
+      // Initial setup for background sizing
+      const bgElement = element.querySelector('[data-parallax-bg]');
+      if (bgElement) {
+        bgElement.style.transform = 'translateY(0)';
+        bgElement.style.scale = '1.1'; // Slight scale to prevent gaps at edges
+      }
+    });
+    
+    // Update parallax on scroll for visible elements
+    window.addEventListener('scroll', () => {
+      parallaxElements.forEach(element => {
+        if (element.dataset.visible === 'true') {
+          updateParallax(element);
+        }
+      });
+    }, { passive: true });
+    
+    // Also update on resize
+    window.addEventListener('resize', () => {
+      parallaxElements.forEach(element => {
+        if (element.dataset.visible === 'true') {
+          updateParallax(element);
+        }
+      });
+    }, { passive: true });
+    
+    // Initial update
+    parallaxElements.forEach(element => {
+      updateParallax(element);
+    });
+  });
+</script>

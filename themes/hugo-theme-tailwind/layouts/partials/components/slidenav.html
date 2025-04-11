@@ -1,0 +1,400 @@
+{{- /*
+  SlideNav Component
+  
+  Parameters:
+    - items: Array - Navigation items (required)
+      Format: Each item can have:
+        - text: Text to display
+        - href: Link URL
+        - active: Boolean indicating active state
+        - icon: Icon name (optional)
+        - items: Array of sub-items (optional)
+    - title: String - Navigation title (default: "Menu")
+    - position: String - Navigation position (default: "left")
+      Options: left, right
+    - width: String - Width of the open navigation (default: "280px")
+    - breakpoint: String - Breakpoint for responsive behavior (default: "md")
+      Options: sm, md, lg, xl, 2xl
+    - mode: String - Display mode (default: "side")
+      Options: side, overlay, responsive
+    - backdrop: Boolean - Show backdrop in overlay mode (default: true)
+    - persistent: Boolean - Keep menu open (default: false)
+    - expandActive: Boolean - Auto-expand active sections (default: true)
+    - colorScheme: String - Color scheme (default: "default")
+      Options: default, light, dark, primary
+    - class: String - Additional custom classes (default: "")
+    - toggleButtonClass: String - Additional classes for toggle button (default: "")
+    - menuClass: String - Additional classes for menu container (default: "")
+*/ -}}
+
+{{- $items := .items | default slice -}}
+{{- $title := .title | default "Menu" -}}
+{{- $position := .position | default "left" -}}
+{{- $width := .width | default "280px" -}}
+{{- $breakpoint := .breakpoint | default "md" -}}
+{{- $mode := .mode | default "side" -}}
+{{- $backdrop := .backdrop | default true -}}
+{{- $persistent := .persistent | default false -}}
+{{- $expandActive := .expandActive | default true -}}
+{{- $colorScheme := .colorScheme | default "default" -}}
+{{- $class := .class | default "" -}}
+{{- $toggleButtonClass := .toggleButtonClass | default "" -}}
+{{- $menuClass := .menuClass | default "" -}}
+
+{{- /* Generate unique ID for this instance */ -}}
+{{- $uniqueId := printf "slidenav-%s" (now.Unix) -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "slidenav-container relative" -}}
+{{- $navBaseClass := printf "slidenav transition-all duration-300 ease-in-out h-full z-30 overflow-y-auto" -}}
+{{- $backdropClass := "fixed inset-0 bg-black bg-opacity-50 z-20 transition-opacity duration-300" -}}
+{{- $toggleButtonClass := "flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700" -}}
+{{- $menuItemClass := "flex items-center w-full px-4 py-2 text-left rounded-md transition-colors duration-200" -}}
+{{- $submenuClass := "pl-4 mt-1 space-y-1 border-l-2 border-gray-200 dark:border-gray-700" -}}
+
+{{- /* Color scheme classes */ -}}
+{{- if eq $colorScheme "default" -}}
+  {{- $navBaseClass = printf "%s bg-white dark:bg-gray-800 shadow-lg" $navBaseClass -}}
+  {{- $menuItemClass = printf "%s text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100" $menuItemClass -}}
+{{- else if eq $colorScheme "light" -}}
+  {{- $navBaseClass = printf "%s bg-gray-100 shadow-lg" $navBaseClass -}}
+  {{- $menuItemClass = printf "%s text-gray-700 hover:bg-gray-200 hover:text-gray-900" $menuItemClass -}}
+{{- else if eq $colorScheme "dark" -}}
+  {{- $navBaseClass = printf "%s bg-gray-800 shadow-lg" $navBaseClass -}}
+  {{- $menuItemClass = printf "%s text-gray-300 hover:bg-gray-700 hover:text-gray-100" $menuItemClass -}}
+{{- else if eq $colorScheme "primary" -}}
+  {{- $navBaseClass = printf "%s bg-blue-600 shadow-lg" $navBaseClass -}}
+  {{- $menuItemClass = printf "%s text-white hover:bg-blue-700" $menuItemClass -}}
+  {{- $submenuClass = printf "%s border-blue-500" $submenuClass -}}
+{{- end -}}
+
+{{- /* Position classes */ -}}
+{{- if eq $position "left" -}}
+  {{- $navBaseClass = printf "%s left-0 top-0 bottom-0" $navBaseClass -}}
+{{- else if eq $position "right" -}}
+  {{- $navBaseClass = printf "%s right-0 top-0 bottom-0" $navBaseClass -}}
+{{- end -}}
+
+{{- /* Mode classes */ -}}
+{{- if eq $mode "side" -}}
+  {{- $containerClass = printf "%s pl-[%s]" $containerClass $width -}}
+  {{- $navBaseClass = printf "%s fixed w-[%s]" $navBaseClass $width -}}
+{{- else if eq $mode "overlay" -}}
+  {{- $navBaseClass = printf "%s fixed w-[%s] transform %s-translate-x-full" $navBaseClass $width (if (eq $position "left") "-" "") -}}
+{{- else if eq $mode "responsive" -}}
+  {{- $containerClass = printf "%s %s:pl-[%s]" $containerClass $breakpoint $width -}}
+  {{- $navBaseClass = printf "%s fixed w-[%s] %s:relative %s:transform-none transform %s-translate-x-full %s:translate-x-0" $navBaseClass $width $breakpoint $breakpoint (if (eq $position "left") "-" "") $breakpoint -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $toggleButtonClass -}}
+  {{- $toggleButtonClass = printf "%s %s" $toggleButtonClass $toggleButtonClass -}}
+{{- end -}}
+
+{{- if $menuClass -}}
+  {{- $navBaseClass = printf "%s %s" $navBaseClass $menuClass -}}
+{{- end -}}
+
+<!-- SlideNav Container -->
+<div 
+  id="{{ $uniqueId }}" 
+  class="{{ $containerClass }}"
+  data-slidenav-container
+  data-position="{{ $position }}"
+  data-mode="{{ $mode }}"
+  data-breakpoint="{{ $breakpoint }}"
+  data-persistent="{{ $persistent }}"
+>
+  <!-- Backdrop overlay -->
+  {{- if and (eq $mode "overlay" "responsive") $backdrop -}}
+    <div 
+      class="{{ $backdropClass }} opacity-0 invisible" 
+      aria-hidden="true" 
+      data-slidenav-backdrop
+    ></div>
+  {{- end -}}
+  
+  <!-- Toggle button -->
+  {{- if ne $mode "side" -}}
+    <button 
+      type="button" 
+      class="{{ $toggleButtonClass }}" 
+      aria-label="Toggle navigation"
+      data-slidenav-toggle
+    >
+      <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+  {{- end -}}
+  
+  <!-- Navigation panel -->
+  <nav 
+    class="{{ $navBaseClass }}" 
+    aria-label="{{ $title }}" 
+    data-slidenav
+  >
+    <!-- Navigation header -->
+    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+      <h2 class="text-lg font-medium {{ if eq $colorScheme "primary" }}text-white{{ else }}text-gray-900 dark:text-white{{ end }}">
+        {{ $title }}
+      </h2>
+      
+      {{- if ne $mode "side" -}}
+        <button 
+          type="button" 
+          class="rounded-md {{ if eq $colorScheme "primary" }}text-blue-100 hover:text-white hover:bg-blue-700{{ else }}text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700{{ end }} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" 
+          aria-label="Close menu"
+          data-slidenav-close
+        >
+          <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      {{- end -}}
+    </div>
+    
+    <!-- Navigation content -->
+    <div class="p-4 space-y-1">
+      {{- range $items -}}
+        {{- $itemActive := .active | default false -}}
+        {{- $hasSubItems := gt (len (.items | default slice)) 0 -}}
+        
+        <div class="group" {{ if $hasSubItems }}data-slidenav-submenu-container{{end}}>
+          <a 
+            href="{{ .href | default "#" }}" 
+            class="{{ $menuItemClass }} {{ if $itemActive }}bg-gray-100 font-medium dark:bg-gray-700{{ end }}"
+            {{ if $itemActive }}aria-current="page"{{ end }}
+            {{ if $hasSubItems }}aria-expanded="{{ $expandActive }}" data-slidenav-submenu-toggle{{ end }}
+          >
+            {{- if .icon -}}
+              <span class="mr-3">
+                {{ partial "icon.html" (dict "name" .icon "size" "sm") }}
+              </span>
+            {{- end -}}
+            
+            <span class="flex-1">{{ .text }}</span>
+            
+            {{- if $hasSubItems -}}
+              <span class="transform transition-transform duration-200 {{ if and $expandActive $itemActive }}rotate-90{{ end }}">
+                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            {{- end -}}
+          </a>
+          
+          {{- if $hasSubItems -}}
+            <div 
+              class="{{ $submenuClass }} overflow-hidden transition-all duration-200 max-h-0 {{ if and $expandActive $itemActive }}max-h-96{{ end }}"
+              data-slidenav-submenu
+            >
+              {{- range .items -}}
+                {{- $subItemActive := .active | default false -}}
+                
+                <a 
+                  href="{{ .href | default "#" }}" 
+                  class="{{ $menuItemClass }} {{ if $subItemActive }}bg-gray-100 font-medium dark:bg-gray-700{{ end }}"
+                  {{ if $subItemActive }}aria-current="page"{{ end }}
+                >
+                  {{- if .icon -}}
+                    <span class="mr-3">
+                      {{ partial "icon.html" (dict "name" .icon "size" "sm") }}
+                    </span>
+                  {{- end -}}
+                  
+                  <span>{{ .text }}</span>
+                </a>
+              {{- end -}}
+            </div>
+          {{- end -}}
+        </div>
+      {{- end -}}
+    </div>
+  </nav>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Check if the SlideNav container exists
+    const container = document.getElementById('{{ $uniqueId }}');
+    if (!container) return;
+    
+    // Get SlideNav elements
+    const nav = container.querySelector('[data-slidenav]');
+    const backdrop = container.querySelector('[data-slidenav-backdrop]');
+    const toggleButton = container.querySelector('[data-slidenav-toggle]');
+    const closeButton = container.querySelector('[data-slidenav-close]');
+    const submenuToggles = container.querySelectorAll('[data-slidenav-submenu-toggle]');
+    const submenus = container.querySelectorAll('[data-slidenav-submenu]');
+    
+    // Get configuration options
+    const position = container.dataset.position;
+    const mode = container.dataset.mode;
+    const breakpoint = container.dataset.breakpoint;
+    const persistent = container.dataset.persistent === 'true';
+    
+    // Helper function to check if we're at or above the responsive breakpoint
+    function isAboveBreakpoint() {
+      if (mode !== 'responsive') return false;
+      
+      const breakpoints = {
+        sm: 640,
+        md: 768,
+        lg: 1024,
+        xl: 1280,
+        '2xl': 1536
+      };
+      
+      return window.innerWidth >= breakpoints[breakpoint];
+    }
+    
+    // Helper function to open the SlideNav
+    function openNav() {
+      if (nav) {
+        nav.classList.remove(`${position === 'left' ? '-' : ''}translate-x-full`);
+      }
+      
+      if (backdrop) {
+        backdrop.classList.remove('opacity-0', 'invisible');
+        backdrop.classList.add('opacity-100', 'visible');
+      }
+      
+      // Set aria-expanded state
+      if (toggleButton) {
+        toggleButton.setAttribute('aria-expanded', 'true');
+      }
+    }
+    
+    // Helper function to close the SlideNav
+    function closeNav() {
+      if (mode === 'responsive' && isAboveBreakpoint()) return;
+      if (persistent) return;
+      
+      if (nav) {
+        nav.classList.add(`${position === 'left' ? '-' : ''}translate-x-full`);
+      }
+      
+      if (backdrop) {
+        backdrop.classList.add('opacity-0', 'invisible');
+        backdrop.classList.remove('opacity-100', 'visible');
+      }
+      
+      // Set aria-expanded state
+      if (toggleButton) {
+        toggleButton.setAttribute('aria-expanded', 'false');
+      }
+    }
+    
+    // Handle toggle button click
+    if (toggleButton) {
+      toggleButton.setAttribute('aria-expanded', 'false');
+      
+      toggleButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        
+        // Check current state
+        const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
+        
+        if (isExpanded) {
+          closeNav();
+        } else {
+          openNav();
+        }
+      });
+    }
+    
+    // Handle close button click
+    if (closeButton) {
+      closeButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        closeNav();
+      });
+    }
+    
+    // Handle backdrop click
+    if (backdrop) {
+      backdrop.addEventListener('click', function(event) {
+        closeNav();
+      });
+    }
+    
+    // Handle submenu toggles
+    submenuToggles.forEach((toggle, index) => {
+      toggle.addEventListener('click', function(event) {
+        if (this.getAttribute('href') === '#') {
+          event.preventDefault();
+        }
+        
+        const submenuContainer = this.closest('[data-slidenav-submenu-container]');
+        const submenu = submenuContainer.querySelector('[data-slidenav-submenu]');
+        
+        // Check current state
+        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+        
+        // Toggle state
+        if (isExpanded) {
+          this.setAttribute('aria-expanded', 'false');
+          this.querySelector('span:last-child').classList.remove('rotate-90');
+          submenu.style.maxHeight = '0';
+        } else {
+          this.setAttribute('aria-expanded', 'true');
+          this.querySelector('span:last-child').classList.add('rotate-90');
+          submenu.style.maxHeight = submenu.scrollHeight + 'px';
+        }
+      });
+    });
+    
+    // Initialize submenu heights
+    submenus.forEach(submenu => {
+      const toggle = submenu.parentElement.querySelector('[data-slidenav-submenu-toggle]');
+      if (toggle.getAttribute('aria-expanded') === 'true') {
+        submenu.style.maxHeight = submenu.scrollHeight + 'px';
+      }
+    });
+    
+    // Handle responsive behavior
+    function handleResponsive() {
+      if (mode === 'responsive') {
+        if (isAboveBreakpoint()) {
+          // Above breakpoint - ensure visible in sidebar mode
+          if (nav) {
+            nav.classList.remove(`${position === 'left' ? '-' : ''}translate-x-full`);
+          }
+          if (backdrop) {
+            backdrop.classList.add('opacity-0', 'invisible');
+            backdrop.classList.remove('opacity-100', 'visible');
+          }
+        } else {
+          // Below breakpoint - ensure hidden unless persistent
+          if (!persistent) {
+            if (nav) {
+              nav.classList.add(`${position === 'left' ? '-' : ''}translate-x-full`);
+            }
+            if (backdrop) {
+              backdrop.classList.add('opacity-0', 'invisible');
+              backdrop.classList.remove('opacity-100', 'visible');
+            }
+          }
+        }
+      }
+    }
+    
+    // Handle initial state
+    handleResponsive();
+    
+    // Handle window resize
+    window.addEventListener('resize', handleResponsive);
+    
+    // Handle keyboard navigation
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeNav();
+      }
+    });
+  });
+</script>

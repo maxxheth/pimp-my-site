@@ -1,0 +1,276 @@
+{{- /*
+  Offcanvas Component
+  
+  Parameters:
+    - id: String - Unique ID for the offcanvas (required)
+    - title: String - Offcanvas title (default: "")
+    - content: String - Offcanvas content (default: "")
+    - placement: String - Placement of the offcanvas (default: "left")
+      Options: left, right, top, bottom
+    - size: String - Size of the offcanvas (default: "md")
+      Options: sm, md, lg, full
+    - backdrop: Boolean - Show backdrop overlay (default: true)
+    - showClose: Boolean - Show close button in header (default: true)
+    - closeOnEsc: Boolean - Close when pressing ESC key (default: true)
+    - closeOnBackdrop: Boolean - Close when clicking on backdrop (default: true)
+    - showHeader: Boolean - Show offcanvas header (default: true)
+    - showFooter: Boolean - Show offcanvas footer (default: false)
+    - footerContent: String - Content for the footer (default: "")
+    - class: String - Additional custom classes (default: "")
+    - headerClass: String - Additional classes for header (default: "")
+    - bodyClass: String - Additional classes for body (default: "")
+    - footerClass: String - Additional classes for footer (default: "")
+*/ -}}
+
+{{- $id := .id -}}
+{{- $title := .title | default "" -}}
+{{- $content := .content | default "" -}}
+{{- $placement := .placement | default "left" -}}
+{{- $size := .size | default "md" -}}
+{{- $backdrop := .backdrop | default true -}}
+{{- $showClose := .showClose | default true -}}
+{{- $closeOnEsc := .closeOnEsc | default true -}}
+{{- $closeOnBackdrop := .closeOnBackdrop | default true -}}
+{{- $showHeader := .showHeader | default true -}}
+{{- $showFooter := .showFooter | default false -}}
+{{- $footerContent := .footerContent | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $headerClass := .headerClass | default "" -}}
+{{- $bodyClass := .bodyClass | default "" -}}
+{{- $footerClass := .footerClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $backdropClass := "fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 opacity-0 invisible" -}}
+{{- $offcanvasBaseClass := "fixed bg-white dark:bg-gray-800 shadow-xl z-50 transition-transform duration-300 ease-in-out overflow-hidden flex flex-col" -}}
+{{- $headerBaseClass := "p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between" -}}
+{{- $bodyBaseClass := "p-4 overflow-y-auto flex-grow" -}}
+{{- $footerBaseClass := "p-4 border-t border-gray-200 dark:border-gray-700" -}}
+{{- $closeButtonClass := "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none" -}}
+
+{{- /* Placement classes and transform */ -}}
+{{- $placementClass := "" -}}
+{{- $transformInitial := "" -}}
+{{- $transformFinal := "transform-none" -}}
+
+{{- if eq $placement "left" -}}
+  {{- $placementClass = "top-0 left-0 h-full" -}}
+  {{- $transformInitial = "-translate-x-full" -}}
+{{- else if eq $placement "right" -}}
+  {{- $placementClass = "top-0 right-0 h-full" -}}
+  {{- $transformInitial = "translate-x-full" -}}
+{{- else if eq $placement "top" -}}
+  {{- $placementClass = "top-0 left-0 w-full" -}}
+  {{- $transformInitial = "-translate-y-full" -}}
+{{- else if eq $placement "bottom" -}}
+  {{- $placementClass = "bottom-0 left-0 w-full" -}}
+  {{- $transformInitial = "translate-y-full" -}}
+{{- end -}}
+
+{{- $offcanvasBaseClass = printf "%s %s %s" $offcanvasBaseClass $placementClass $transformInitial -}}
+
+{{- /* Size classes */ -}}
+{{- if eq $placement "left" or eq $placement "right" -}}
+  {{- if eq $size "sm" -}}
+    {{- $offcanvasBaseClass = printf "%s w-64" $offcanvasBaseClass -}}
+  {{- else if eq $size "md" -}}
+    {{- $offcanvasBaseClass = printf "%s w-80" $offcanvasBaseClass -}}
+  {{- else if eq $size "lg" -}}
+    {{- $offcanvasBaseClass = printf "%s w-96" $offcanvasBaseClass -}}
+  {{- else if eq $size "full" -}}
+    {{- $offcanvasBaseClass = printf "%s w-full max-w-screen-md" $offcanvasBaseClass -}}
+  {{- end -}}
+{{- else if eq $placement "top" or eq $placement "bottom" -}}
+  {{- if eq $size "sm" -}}
+    {{- $offcanvasBaseClass = printf "%s h-32" $offcanvasBaseClass -}}
+  {{- else if eq $size "md" -}}
+    {{- $offcanvasBaseClass = printf "%s h-48" $offcanvasBaseClass -}}
+  {{- else if eq $size "lg" -}}
+    {{- $offcanvasBaseClass = printf "%s h-64" $offcanvasBaseClass -}}
+  {{- else if eq $size "full" -}}
+    {{- $offcanvasBaseClass = printf "%s h-1/2" $offcanvasBaseClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $offcanvasBaseClass = printf "%s %s" $offcanvasBaseClass $class -}}
+{{- end -}}
+
+{{- if $headerClass -}}
+  {{- $headerBaseClass = printf "%s %s" $headerBaseClass $headerClass -}}
+{{- end -}}
+
+{{- if $bodyClass -}}
+  {{- $bodyBaseClass = printf "%s %s" $bodyBaseClass $bodyClass -}}
+{{- end -}}
+
+{{- if $footerClass -}}
+  {{- $footerBaseClass = printf "%s %s" $footerBaseClass $footerClass -}}
+{{- end -}}
+
+<!-- Backdrop -->
+{{- if $backdrop -}}
+<div 
+  id="{{ $id }}-backdrop" 
+  class="{{ $backdropClass }}" 
+  data-offcanvas-backdrop="{{ $id }}"
+  aria-hidden="true"
+  tabindex="-1"
+></div>
+{{- end -}}
+
+<!-- Offcanvas Panel -->
+<div 
+  id="{{ $id }}" 
+  class="{{ $offcanvasBaseClass }}"
+  aria-labelledby="{{ $id }}-title"
+  role="dialog"
+  aria-modal="true"
+  tabindex="-1"
+  data-offcanvas="{{ $id }}"
+  data-close-on-esc="{{ $closeOnEsc }}"
+  data-close-on-backdrop="{{ $closeOnBackdrop }}"
+  data-placement="{{ $placement }}"
+  data-transform-final="{{ $transformFinal }}"
+>
+  {{- if $showHeader -}}
+  <div class="{{ $headerBaseClass }}">
+    <h3 class="text-lg font-medium text-gray-900 dark:text-white" id="{{ $id }}-title">
+      {{ $title }}
+    </h3>
+    {{- if $showClose -}}
+    <button 
+      type="button" 
+      class="{{ $closeButtonClass }}" 
+      aria-label="Close" 
+      data-offcanvas-close="{{ $id }}"
+    >
+      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+    {{- end -}}
+  </div>
+  {{- end -}}
+  
+  <div class="{{ $bodyBaseClass }}">
+    {{ $content | safeHTML }}
+  </div>
+  
+  {{- if $showFooter -}}
+  <div class="{{ $footerBaseClass }}">
+    {{ $footerContent | safeHTML }}
+  </div>
+  {{- end -}}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize offcanvas
+    const offcanvasPanel = document.getElementById('{{ $id }}');
+    const backdrop = document.getElementById('{{ $id }}-backdrop');
+    
+    if (!offcanvasPanel) return;
+    
+    // Helper function to open the offcanvas
+    function openOffcanvas() {
+      // Show backdrop first
+      if (backdrop) {
+        backdrop.classList.remove('invisible', 'opacity-0');
+        backdrop.classList.add('visible', 'opacity-100');
+      }
+      
+      // Then show panel with transform
+      requestAnimationFrame(() => {
+        const transformFinal = offcanvasPanel.dataset.transformFinal;
+        offcanvasPanel.classList.remove('{{ $transformInitial }}');
+        offcanvasPanel.classList.add(transformFinal);
+        
+        // Set focus to the panel
+        setTimeout(() => {
+          offcanvasPanel.focus();
+        }, 50);
+        
+        // Prevent body scrolling
+        document.body.style.overflow = 'hidden';
+      });
+    }
+    
+    // Helper function to close the offcanvas
+    function closeOffcanvas() {
+      // Hide panel first
+      offcanvasPanel.classList.remove('{{ $transformFinal }}');
+      offcanvasPanel.classList.add('{{ $transformInitial }}');
+      
+      // Then hide backdrop
+      if (backdrop) {
+        backdrop.classList.remove('visible', 'opacity-100');
+        backdrop.classList.add('invisible', 'opacity-0');
+      }
+      
+      // Restore body scrolling
+      document.body.style.overflow = '';
+      
+      // Fire custom event when offcanvas closes
+      offcanvasPanel.dispatchEvent(new Event('offcanvas:close'));
+    }
+    
+    // Setup close on backdrop click if enabled
+    if (backdrop && offcanvasPanel.dataset.closeOnBackdrop === 'true') {
+      backdrop.addEventListener('click', function(event) {
+        closeOffcanvas();
+      });
+    }
+    
+    // Setup close on Escape key if enabled
+    if (offcanvasPanel.dataset.closeOnEsc === 'true') {
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && 
+            !offcanvasPanel.classList.contains('{{ $transformInitial }}')) {
+          closeOffcanvas();
+        }
+      });
+    }
+    
+    // Setup click handlers for close buttons
+    const closeButtons = document.querySelectorAll(`[data-offcanvas-close="{{ $id }}"]`);
+    closeButtons.forEach(button => {
+      button.addEventListener('click', closeOffcanvas);
+    });
+    
+    // Setup click handlers for open buttons
+    const openButtons = document.querySelectorAll(`[data-offcanvas-open="{{ $id }}"]`);
+    openButtons.forEach(button => {
+      button.addEventListener('click', openOffcanvas);
+    });
+    
+    // Trap focus within offcanvas when open
+    offcanvasPanel.addEventListener('keydown', function(event) {
+      if (event.key === 'Tab') {
+        const focusableElements = offcanvasPanel.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        
+        if (focusableElements.length > 0) {
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
+          
+          if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+          } else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    });
+    
+    // Expose API for programmatic control
+    window.offcanvas = window.offcanvas || {};
+    window.offcanvas['{{ $id }}'] = {
+      open: openOffcanvas,
+      close: closeOffcanvas
+    };
+  });
+</script>

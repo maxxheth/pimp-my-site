@@ -1,0 +1,211 @@
+{{- /*
+  ScrollSpy Component
+  
+  Parameters:
+    - target: String - CSS selector for the target scrollable element (default: "window")
+    - links: Array - Array of link objects (required)
+      Format: Each item can have:
+        - id: ID of the target section without '#'
+        - text: Text to display for the link
+        - icon: Icon name (optional)
+    - offset: Number - Offset in pixels when calculating active section (default: 100)
+    - activeClass: String - Class to apply to active links (default: "active")
+    - smooth: Boolean - Enable smooth scrolling (default: true)
+    - orientation: String - Orientation of the navigation (default: "vertical")
+      Options: vertical, horizontal
+    - stickyNav: Boolean - Make the navigation sticky (default: false)
+    - stickyOffset: String - Top offset for sticky navigation (default: "0")
+    - highlightParents: Boolean - Highlight parent items when child is active (default: true)
+    - navClass: String - Additional classes for the nav container (default: "")
+    - linkClass: String - Additional classes for links (default: "")
+    - activeLinkClass: String - Additional classes for active links (default: "")
+*/ -}}
+
+{{- $target := .target | default "window" -}}
+{{- $links := .links | default slice -}}
+{{- $offset := .offset | default 100 -}}
+{{- $activeClass := .activeClass | default "active" -}}
+{{- $smooth := .smooth | default true -}}
+{{- $orientation := .orientation | default "vertical" -}}
+{{- $stickyNav := .stickyNav | default false -}}
+{{- $stickyOffset := .stickyOffset | default "0" -}}
+{{- $highlightParents := .highlightParents | default true -}}
+{{- $navClass := .navClass | default "" -}}
+{{- $linkClass := .linkClass | default "" -}}
+{{- $activeLinkClass := .activeLinkClass | default "" -}}
+
+{{- /* Generate unique ID for this instance */ -}}
+{{- $uniqueId := printf "scrollspy-%s" (now.Unix) -}}
+
+{{- /* Base classes */ -}}
+{{- $navBaseClass := "" -}}
+{{- $navItemClass := "flex items-center" -}}
+{{- $linkBaseClass := "transition-colors duration-200 ease-in-out rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" -}}
+
+{{- /* Orientation classes */ -}}
+{{- if eq $orientation "vertical" -}}
+  {{- $navBaseClass = "flex flex-col space-y-2" -}}
+  {{- $linkBaseClass = printf "%s py-2 px-3" $linkBaseClass -}}
+{{- else -}}
+  {{- $navBaseClass = "flex flex-row flex-wrap space-x-4" -}}
+  {{- $linkBaseClass = printf "%s py-2 px-4" $linkBaseClass -}}
+{{- end -}}
+
+{{- /* Sticky navigation */ -}}
+{{- if $stickyNav -}}
+  {{- $navBaseClass = printf "%s sticky top-[%s] z-10 bg-white dark:bg-gray-800 p-4 shadow-md rounded-lg" $navBaseClass $stickyOffset -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $navClass -}}
+  {{- $navBaseClass = printf "%s %s" $navBaseClass $navClass -}}
+{{- end -}}
+
+{{- if $linkClass -}}
+  {{- $linkBaseClass = printf "%s %s" $linkBaseClass $linkClass -}}
+{{- end -}}
+
+<nav id="{{ $uniqueId }}" class="{{ $navBaseClass }}" data-scrollspy-nav>
+  {{- range $links -}}
+    <div class="{{ $navItemClass }}">
+      <a 
+        href="#{{ .id }}" 
+        class="{{ $linkBaseClass }}" 
+        data-scrollspy-link="#{{ .id }}"
+      >
+        {{- if .icon -}}
+        <span class="mr-2">
+          {{ partial "icon.html" (dict "name" .icon "size" "sm") }}
+        </span>
+        {{- end -}}
+        <span>{{ .text }}</span>
+      </a>
+    </div>
+  {{- end -}}
+</nav>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Check if the ScrollSpy nav exists
+    const scrollspyNav = document.getElementById('{{ $uniqueId }}');
+    if (!scrollspyNav) return;
+    
+    // Get all section links
+    const links = scrollspyNav.querySelectorAll('[data-scrollspy-link]');
+    if (!links.length) return;
+    
+    // Get the target scrollable element
+    const targetSelector = '{{ $target }}';
+    const scrollTarget = targetSelector === 'window' ? window : document.querySelector(targetSelector);
+    if (!scrollTarget && targetSelector !== 'window') {
+      console.warn(`ScrollSpy target not found: ${targetSelector}`);
+      return;
+    }
+    
+    // Get all section elements
+    const sections = Array.from(links).map(link => {
+      const selector = link.getAttribute('data-scrollspy-link');
+      return document.querySelector(selector);
+    }).filter(Boolean);
+    
+    // Constants
+    const offset = {{ $offset }};
+    const activeClass = '{{ $activeClass }}';
+    const customActiveClass = '{{ $activeLinkClass }}';
+    const highlightParents = {{ $highlightParents }};
+    
+    // Handle smooth scrolling when clicking on links
+    if ({{ $smooth }}) {
+      links.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('data-scrollspy-link');
+          const targetSection = document.querySelector(targetId);
+          
+          if (targetSection) {
+            // Calculate scroll position with offset
+            const scrollPosition = targetSection.offsetTop - offset;
+            
+            // Scroll to the target
+            if (scrollTarget === window) {
+              window.scrollTo({
+                top: scrollPosition,
+                behavior: 'smooth'
+              });
+            } else {
+              scrollTarget.scrollTo({
+                top: scrollPosition,
+                behavior: 'smooth'
+              });
+            }
+          }
+        });
+      });
+    }
+    
+    // Function to determine which section is active
+    function updateActiveSection() {
+      // Get current scroll position
+      const scrollPosition = scrollTarget === window ? 
+        window.scrollY : scrollTarget.scrollTop;
+      
+      // Find the section that is currently in view
+      // Start from the end to handle overlapping sections correctly
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const section = sections[i];
+        
+        // Calculate the position relative to viewport
+        const sectionTop = scrollTarget === window ?
+          section.getBoundingClientRect().top + window.scrollY :
+          section.offsetTop;
+        
+        // Check if we've scrolled to this section
+        if (scrollPosition >= sectionTop - offset) {
+          // Remove active class from all links
+          links.forEach(link => {
+            link.classList.remove(activeClass);
+            if (customActiveClass) {
+              link.classList.remove(...customActiveClass.split(' '));
+            }
+          });
+          
+          // Add active class to the corresponding link
+          const activeLink = scrollspyNav.querySelector(`[data-scrollspy-link="#${section.id}"]`);
+          if (activeLink) {
+            activeLink.classList.add(activeClass);
+            if (customActiveClass) {
+              activeLink.classList.add(...customActiveClass.split(' '));
+            }
+            
+            // Highlight parent if option is enabled
+            if (highlightParents) {
+              let parent = activeLink.parentElement;
+              while (parent && parent !== scrollspyNav) {
+                // Check if parent contains another link that is a parent item
+                const parentLink = parent.querySelector('a[data-scrollspy-link]');
+                if (parentLink && parentLink !== activeLink) {
+                  parentLink.classList.add(activeClass);
+                  if (customActiveClass) {
+                    parentLink.classList.add(...customActiveClass.split(' '));
+                  }
+                }
+                parent = parent.parentElement;
+              }
+            }
+          }
+          
+          break;
+        }
+      }
+    }
+    
+    // Add scroll event listener
+    (scrollTarget === window ? window : scrollTarget).addEventListener('scroll', updateActiveSection, { passive: true });
+    
+    // Initial update
+    updateActiveSection();
+    
+    // Update on window resize
+    window.addEventListener('resize', updateActiveSection, { passive: true });
+  });
+</script>

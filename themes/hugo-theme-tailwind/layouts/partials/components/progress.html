@@ -1,0 +1,213 @@
+{{- /*
+  Progress Component
+  
+  Parameters:
+    - value: Number - Current progress value (default: 0)
+    - maxValue: Number - Maximum progress value (default: 100)
+    - minValue: Number - Minimum progress value (default: 0)
+    - showValue: Boolean - Display value as text/percentage (default: false)
+    - valueFormat: String - Format for displayed value (default: "percentage")
+      Options: percentage, value, custom
+    - customValueFormat: String - Custom format string with %value% placeholder (default: "")
+    - size: String - Height of the progress bar (default: "md")
+      Options: xs, sm, md, lg, xl
+    - variant: String - Visual style (default: "default")
+      Options: default, gradient, striped, animated
+    - color: String - Color of the progress bar (default: "blue")
+      Options: blue, green, red, yellow, indigo, purple, or any tailwind color
+    - rounded: Boolean - Use rounded corners (default: true)
+    - trackColor: String - Color of the track/background (default: "gray-200")
+    - indeterminate: Boolean - Show indeterminate animation (default: false)
+    - class: String - Additional custom classes (default: "")
+    - barClass: String - Additional classes for the progress bar (default: "")
+    - labelClass: String - Additional classes for the label (default: "")
+*/ -}}
+
+{{- $value := .value | default 0 -}}
+{{- $maxValue := .maxValue | default 100 -}}
+{{- $minValue := .minValue | default 0 -}}
+{{- $showValue := .showValue | default false -}}
+{{- $valueFormat := .valueFormat | default "percentage" -}}
+{{- $customValueFormat := .customValueFormat | default "" -}}
+{{- $size := .size | default "md" -}}
+{{- $variant := .variant | default "default" -}}
+{{- $color := .color | default "blue" -}}
+{{- $rounded := .rounded | default true -}}
+{{- $trackColor := .trackColor | default "gray-200" -}}
+{{- $indeterminate := .indeterminate | default false -}}
+{{- $class := .class | default "" -}}
+{{- $barClass := .barClass | default "" -}}
+{{- $labelClass := .labelClass | default "" -}}
+
+{{- /* Calculate the percentage for width and display */ -}}
+{{- $percentage := 0 -}}
+{{- if ne (sub $maxValue $minValue) 0 -}}
+  {{- $percentage = mul (div (sub $value $minValue) (sub $maxValue $minValue)) 100 -}}
+{{- end -}}
+
+{{- /* Format the display value based on valueFormat */ -}}
+{{- $displayValue := "" -}}
+{{- if eq $valueFormat "percentage" -}}
+  {{- $displayValue = printf "%d%%" (int $percentage) -}}
+{{- else if eq $valueFormat "value" -}}
+  {{- $displayValue = printf "%g" $value -}}
+{{- else if eq $valueFormat "custom" and $customValueFormat -}}
+  {{- $displayValue = replace $customValueFormat "%value%" (printf "%g" $value) -}}
+  {{- $displayValue = replace $displayValue "%percentage%" (printf "%d%%" (int $percentage)) -}}
+  {{- $displayValue = replace $displayValue "%max%" (printf "%g" $maxValue) -}}
+  {{- $displayValue = replace $displayValue "%min%" (printf "%g" $minValue) -}}
+{{- end -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "w-full overflow-hidden bg-gray-200 dark:bg-gray-700" -}}
+{{- $progressClass := "h-full transition-all duration-300 ease-in-out" -}}
+{{- $valueClass := "text-xs font-medium" -}}
+
+{{- /* Size classes */ -}}
+{{- if eq $size "xs" -}}
+  {{- $containerClass = printf "%s h-1" $containerClass -}}
+  {{- if $showValue -}}
+    {{- $containerClass = printf "%s mb-1" $containerClass -}}
+    {{- $valueClass = printf "%s text-xs" $valueClass -}}
+  {{- end -}}
+{{- else if eq $size "sm" -}}
+  {{- $containerClass = printf "%s h-2" $containerClass -}}
+  {{- if $showValue -}}
+    {{- $containerClass = printf "%s mb-1" $containerClass -}}
+    {{- $valueClass = printf "%s text-xs" $valueClass -}}
+  {{- end -}}
+{{- else if eq $size "md" -}}
+  {{- $containerClass = printf "%s h-3" $containerClass -}}
+  {{- if $showValue -}}
+    {{- $containerClass = printf "%s mb-1" $containerClass -}}
+    {{- $valueClass = printf "%s text-sm" $valueClass -}}
+  {{- end -}}
+{{- else if eq $size "lg" -}}
+  {{- $containerClass = printf "%s h-4" $containerClass -}}
+  {{- if $showValue -}}
+    {{- $containerClass = printf "%s mb-1" $containerClass -}}
+    {{- $valueClass = printf "%s text-sm" $valueClass -}}
+  {{- end -}}
+{{- else if eq $size "xl" -}}
+  {{- $containerClass = printf "%s h-6" $containerClass -}}
+  {{- if $showValue -}}
+    {{- $containerClass = printf "%s mb-2" $containerClass -}}
+    {{- $valueClass = printf "%s text-base" $valueClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Rounded corners */ -}}
+{{- if $rounded -}}
+  {{- $containerClass = printf "%s rounded-full" $containerClass -}}
+  {{- $progressClass = printf "%s rounded-full" $progressClass -}}
+{{- end -}}
+
+{{- /* Track color */ -}}
+{{- $containerClass = replace $containerClass "bg-gray-200" (printf "bg-%s" $trackColor) -}}
+
+{{- /* Color and variant classes */ -}}
+{{- if eq $variant "default" -}}
+  {{- $progressClass = printf "%s bg-%s-600 dark:bg-%s-500" $progressClass $color $color -}}
+{{- else if eq $variant "gradient" -}}
+  {{- $progressClass = printf "%s bg-gradient-to-r from-%s-500 to-%s-600 dark:from-%s-600 dark:to-%s-500" $progressClass $color $color $color $color -}}
+{{- else if eq $variant "striped" -}}
+  {{- $progressClass = printf "%s bg-stripes bg-%s-600 dark:bg-%s-500" $progressClass $color $color -}}
+{{- else if eq $variant "animated" -}}
+  {{- $progressClass = printf "%s bg-stripes-animated bg-%s-600 dark:bg-%s-500" $progressClass $color $color -}}
+{{- end -}}
+
+{{- /* Indeterminate animation */ -}}
+{{- if $indeterminate -}}
+  {{- $progressClass = printf "%s progress-indeterminate" $progressClass -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $barClass -}}
+  {{- $progressClass = printf "%s %s" $progressClass $barClass -}}
+{{- end -}}
+
+{{- if $labelClass -}}
+  {{- $valueClass = printf "%s %s" $valueClass $labelClass -}}
+{{- end -}}
+
+{{- /* Render component */ -}}
+<div class="w-full">
+  {{- if and $showValue (ne $size "xs") (ne $size "sm") -}}
+    <div class="flex justify-between items-center mb-1">
+      <div class="{{ $valueClass }}">{{ $displayValue }}</div>
+    </div>
+  {{- end -}}
+  
+  <div class="{{ $containerClass }}" role="progressbar" aria-valuenow="{{ $value }}" aria-valuemin="{{ $minValue }}" aria-valuemax="{{ $maxValue }}">
+    <div 
+      class="{{ $progressClass }}" 
+      style="{{ if not $indeterminate }}width: {{ $percentage }}%;{{ else }}width: 100%;{{ end }}"
+    ></div>
+  </div>
+  
+  {{- if and $showValue (or (eq $size "xs") (eq $size "sm")) -}}
+    <div class="{{ $valueClass }} mt-1">{{ $displayValue }}</div>
+  {{- end -}}
+</div>
+
+{{- if or (eq $variant "striped") (eq $variant "animated") (eq $indeterminate true) -}}
+<style>
+  /* Striped background pattern */
+  .bg-stripes {
+    background-image: linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.15) 25%,
+      transparent 25%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.15) 75%,
+      transparent 75%,
+      transparent
+    );
+    background-size: 1rem 1rem;
+  }
+  
+  /* Animated stripes */
+  .bg-stripes-animated {
+    background-image: linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.15) 25%,
+      transparent 25%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.15) 75%,
+      transparent 75%,
+      transparent
+    );
+    background-size: 1rem 1rem;
+    animation: progress-bar-stripes 1s linear infinite;
+  }
+  
+  /* Indeterminate animation */
+  .progress-indeterminate {
+    position: relative;
+    animation: progress-indeterminate 1.5s ease-in-out infinite;
+    background-size: 200% 100%;
+  }
+  
+  @keyframes progress-bar-stripes {
+    from { background-position: 1rem 0; }
+    to { background-position: 0 0; }
+  }
+  
+  @keyframes progress-indeterminate {
+    0% {
+      background-position: 200% 0;
+      transform: translateX(-100%);
+    }
+    100% {
+      background-position: -200% 0;
+      transform: translateX(100%);
+    }
+  }
+</style>
+{{- end -}}

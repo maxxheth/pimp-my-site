@@ -1,0 +1,360 @@
+{{- /*
+  Stepper Component
+  
+  Parameters:
+    - id: String - Unique ID for the stepper (default: auto-generated)
+    - steps: Array - Array of step labels/content (required)
+    - currentStep: Number - Current active step index (default: 0)
+    - orientation: String - Layout direction (default: "horizontal")
+      Options: horizontal, vertical
+    - size: String - Size of the stepper (default: "md")
+      Options: sm, md, lg
+    - variant: String - Visual style (default: "default")
+      Options: default, pills, dotted, numbered, icon, timeline
+    - interactive: Boolean - Allow clicking on steps to navigate (default: false)
+    - showLabels: Boolean - Show step labels (default: true)
+    - labelPosition: String - Position of labels (default: "bottom")
+      Options: top, bottom, right, left
+    - showConnectors: Boolean - Show connecting lines between steps (default: true)
+    - allowStepClick: Array - Array of step indices that are clickable (default: all completed steps)
+    - color: String - Color theme (default: "blue")
+      Options: blue, green, red, yellow, purple, indigo, or any tailwind color
+    - completedIcon: String - Icon name for completed steps (default: "check")
+    - errorIcon: String - Icon name for error steps (default: "x")
+    - icons: Array - Array of icons for steps (default: empty)
+    - status: Array - Array of step statuses (default: empty)
+      Options per item: "completed", "error", "disabled", "active"
+    - onChange: String - JS function to call when step changes (default: "")
+    - class: String - Additional custom classes for container (default: "")
+    - stepClass: String - Additional classes for steps (default: "")
+    - labelClass: String - Additional classes for labels (default: "")
+    - connectorClass: String - Additional classes for connectors (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "stepper-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $steps := .steps -}}
+{{- $currentStep := .currentStep | default 0 -}}
+{{- $orientation := .orientation | default "horizontal" -}}
+{{- $size := .size | default "md" -}}
+{{- $variant := .variant | default "default" -}}
+{{- $interactive := .interactive | default false -}}
+{{- $showLabels := .showLabels | default true -}}
+{{- $labelPosition := .labelPosition | default "bottom" -}}
+{{- $showConnectors := .showConnectors | default true -}}
+{{- $allowStepClick := .allowStepClick | default slice -}}
+{{- $color := .color | default "blue" -}}
+{{- $completedIcon := .completedIcon | default "check" -}}
+{{- $errorIcon := .errorIcon | default "x" -}}
+{{- $icons := .icons | default slice -}}
+{{- $status := .status | default slice -}}
+{{- $onChange := .onChange | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $stepClass := .stepClass | default "" -}}
+{{- $labelClass := .labelClass | default "" -}}
+{{- $connectorClass := .connectorClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "relative flex" -}}
+{{- $stepBaseClass := "relative flex items-center justify-center z-10" -}}
+{{- $stepIconClass := "flex items-center justify-center" -}}
+{{- $labelBaseClass := "text-sm" -}}
+{{- $connectorBaseClass := "flex-1" -}}
+
+{{- /* Check if we should use vertical orientation */ -}}
+{{- $isVertical := eq $orientation "vertical" -}}
+
+{{- /* Orientation classes */ -}}
+{{- if $isVertical -}}
+  {{- $containerClass = printf "%s flex-col" $containerClass -}}
+  {{- $connectorBaseClass = printf "%s w-0.5 my-2 self-center" $connectorBaseClass -}}
+{{- else -}}
+  {{- $containerClass = printf "%s flex-row" $containerClass -}}
+  {{- $connectorBaseClass = printf "%s h-0.5 mx-2 self-center" $connectorBaseClass -}}
+{{- end -}}
+
+{{- /* Size classes */ -}}
+{{- $stepSizeClass := "" -}}
+{{- $iconSizeClass := "" -}}
+
+{{- if eq $size "sm" -}}
+  {{- $stepSizeClass = "w-6 h-6" -}}
+  {{- $iconSizeClass = "w-3 h-3" -}}
+{{- else if eq $size "md" -}}
+  {{- $stepSizeClass = "w-8 h-8" -}}
+  {{- $iconSizeClass = "w-4 h-4" -}}
+{{- else if eq $size "lg" -}}
+  {{- $stepSizeClass = "w-10 h-10" -}}
+  {{- $iconSizeClass = "w-5 h-5" -}}
+{{- end -}}
+
+{{- /* Color classes */ -}}
+{{- $activeColor := printf "bg-%s-600 dark:bg-%s-500 text-white" $color $color -}}
+{{- $completedColor := printf "bg-%s-600 dark:bg-%s-500 text-white" $color $color -}}
+{{- $defaultColor := "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300" -}}
+{{- $errorColor := "bg-red-500 dark:bg-red-600 text-white" -}}
+{{- $disabledColor := "bg-gray-300 dark:bg-gray-800 text-gray-500 dark:text-gray-400" -}}
+{{- $connectorDefaultColor := "bg-gray-300 dark:bg-gray-700" -}}
+{{- $connectorActiveColor := printf "bg-%s-500 dark:bg-%s-400" $color $color -}}
+
+{{- /* Label position classes */ -}}
+{{- $labelPositionClass := "" -}}
+{{- if eq $labelPosition "top" -}}
+  {{- $labelPositionClass = "mb-2 items-start" -}}
+{{- else if eq $labelPosition "bottom" -}}
+  {{- $labelPositionClass = "mt-2 items-start" -}}
+{{- else if eq $labelPosition "left" -}}
+  {{- $labelPositionClass = "mr-2 items-center" -}}
+{{- else if eq $labelPosition "right" -}}
+  {{- $labelPositionClass = "ml-2 items-center" -}}
+{{- end -}}
+
+{{- /* Variant specific classes */ -}}
+{{- $stepVariantClass := "rounded-full" -}}
+{{- if eq $variant "pills" -}}
+  {{- $stepVariantClass = "rounded-full" -}}
+{{- else if eq $variant "dotted" -}}
+  {{- $stepVariantClass = "rounded-full" -}}
+  {{- if eq $size "sm" -}}
+    {{- $stepSizeClass = "w-3 h-3" -}}
+  {{- else if eq $size "md" -}}
+    {{- $stepSizeClass = "w-4 h-4" -}}
+  {{- else if eq $size "lg" -}}
+    {{- $stepSizeClass = "w-5 h-5" -}}
+  {{- end -}}
+{{- else if eq $variant "numbered" -}}
+  {{- $stepVariantClass = "rounded-full font-medium" -}}
+{{- else if eq $variant "icon" -}}
+  {{- $stepVariantClass = "rounded-full" -}}
+{{- else if eq $variant "timeline" -}}
+  {{- $stepVariantClass = "rounded-full border-2 border-white dark:border-gray-800" -}}
+  {{- $connectorBaseClass = printf "%s %s" $connectorBaseClass "bg-gradient-to-r" -}}
+  {{- $containerClass = printf "%s relative before:absolute before:inset-0 before:h-0.5 before:bg-gray-200 dark:before:bg-gray-700 before:z-0" $containerClass -}}
+  {{- if $isVertical -}}
+    {{- $containerClass = printf "%s relative before:absolute before:inset-0 before:w-0.5 before:h-full before:bg-gray-200 dark:before:bg-gray-700 before:z-0" $containerClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $stepClass -}}
+  {{- $stepBaseClass = printf "%s %s" $stepBaseClass $stepClass -}}
+{{- end -}}
+
+{{- if $labelClass -}}
+  {{- $labelBaseClass = printf "%s %s" $labelBaseClass $labelClass -}}
+{{- end -}}
+
+{{- if $connectorClass -}}
+  {{- $connectorBaseClass = printf "%s %s" $connectorBaseClass $connectorClass -}}
+{{- end -}}
+
+<div
+  id="{{ $id }}"
+  class="{{ $containerClass }}"
+  data-stepper
+  data-orientation="{{ $orientation }}"
+  data-current-step="{{ $currentStep }}"
+  data-interactive="{{ $interactive }}"
+  role="navigation"
+  aria-label="Progress steps"
+>
+  {{- range $index, $step := $steps -}}
+    {{- /* Determine step status */ -}}
+    {{- $isActive := eq $index $currentStep -}}
+    {{- $isCompleted := lt $index $currentStep -}}
+    {{- $isClickable := or (and $interactive $isCompleted) (in $allowStepClick $index) -}}
+    
+    {{- /* Custom status override if provided */ -}}
+    {{- $customStatus := "" -}}
+    {{- if isset $status $index -}}
+      {{- $customStatus = index $status $index -}}
+    {{- end -}}
+    
+    {{- $stepStatus := cond $isActive "active" (cond $isCompleted "completed" "default") -}}
+    {{- if $customStatus -}}
+      {{- $stepStatus = $customStatus -}}
+    {{- end -}}
+    
+    {{- /* Step color based on status */ -}}
+    {{- $stepColorClass := $defaultColor -}}
+    {{- if eq $stepStatus "active" -}}
+      {{- $stepColorClass = $activeColor -}}
+    {{- else if eq $stepStatus "completed" -}}
+      {{- $stepColorClass = $completedColor -}}
+    {{- else if eq $stepStatus "error" -}}
+      {{- $stepColorClass = $errorColor -}}
+    {{- else if eq $stepStatus "disabled" -}}
+      {{- $stepColorClass = $disabledColor -}}
+    {{- end -}}
+    
+    {{- /* Step icon or number */ -}}
+    {{- $stepContent := "" -}}
+    {{- if eq $variant "numbered" -}}
+      {{- $stepContent = add $index 1 -}}
+    {{- else if eq $variant "icon" -}}
+      {{- if isset $icons $index -}}
+        {{- $stepContent = index $icons $index -}}
+      {{- else if eq $stepStatus "completed" -}}
+        {{- $stepContent = $completedIcon -}}
+      {{- else if eq $stepStatus "error" -}}
+        {{- $stepContent = $errorIcon -}}
+      {{- else -}}
+        {{- $stepContent = add $index 1 -}}
+      {{- end -}}
+    {{- else if eq $stepStatus "completed" -}}
+      {{- if ne $variant "dotted" -}}
+        {{- $stepContent = $completedIcon -}}
+      {{- end -}}
+    {{- else if eq $stepStatus "error" -}}
+      {{- if ne $variant "dotted" -}}
+        {{- $stepContent = $errorIcon -}}
+      {{- end -}}
+    {{- else if ne $variant "dotted" -}}
+      {{- $stepContent = add $index 1 -}}
+    {{- end -}}
+    
+    <div class="flex {{ if $isVertical }}flex-row items-start{{ else }}flex-col items-center{{ end }} {{ if ne $index 0 }}flex-1{{ end }}">
+      {{- /* Label if positioned before step */ -}}
+      {{- if and $showLabels (or (eq $labelPosition "top") (eq $labelPosition "left")) -}}
+        <div class="flex {{ $labelPositionClass }}">
+          <span class="{{ $labelBaseClass }} {{ if $isActive }}font-medium text-gray-900 dark:text-white{{ else }}text-gray-500 dark:text-gray-400{{ end }}">
+            {{ if kindIs "map" $step }}{{ $step.label }}{{ else }}{{ $step }}{{ end }}
+          </span>
+        </div>
+      {{- end -}}
+      
+      <div class="flex {{ if $isVertical }}flex-col{{ else }}flex-row{{ end }} items-center flex-1">
+        {{- /* Left connector for all except first item */ -}}
+        {{- if and $showConnectors (ne $index 0) -}}
+          <div class="{{ $connectorBaseClass }} {{ if lt $index $currentStep }}{{ $connectorActiveColor }}{{ else }}{{ $connectorDefaultColor }}{{ end }}"></div>
+        {{- end -}}
+        
+        {{- /* Step circle */ -}}
+        <div 
+          class="{{ $stepBaseClass }} {{ $stepSizeClass }} {{ $stepVariantClass }} {{ $stepColorClass }} {{ if $isClickable }}cursor-pointer hover:opacity-80{{ end }}"
+          data-step="{{ $index }}"
+          {{- if $isClickable }}
+          role="button"
+          tabindex="0"
+          {{- end }}
+          aria-label="Step {{ add $index 1 }} {{ if kindIs "map" $step }}{{ $step.label }}{{ else }}{{ $step }}{{ end }} {{ if $isActive }}(current){{ else if $isCompleted }}(completed){{ end }}"
+          {{- if $isActive }} aria-current="step"{{ end }}
+        >
+          {{- if kindIs "string" $stepContent -}}
+            {{- if eq $stepContent $completedIcon -}}
+              {{ partial "icon.html" (dict "name" $completedIcon "size" "sm" "class" $iconSizeClass) }}
+            {{- else if eq $stepContent $errorIcon -}}
+              {{ partial "icon.html" (dict "name" $errorIcon "size" "sm" "class" $iconSizeClass) }}
+            {{- else if in $icons $stepContent -}}
+              {{ partial "icon.html" (dict "name" $stepContent "size" "sm" "class" $iconSizeClass) }}
+            {{- else -}}
+              {{ $stepContent }}
+            {{- end -}}
+          {{- else -}}
+            {{ $stepContent }}
+          {{- end -}}
+        </div>
+        
+        {{- /* Right connector for all except last item */ -}}
+        {{- if and $showConnectors (ne $index (sub (len $steps) 1)) -}}
+          <div class="{{ $connectorBaseClass }} {{ if le (add $index 1) $currentStep }}{{ $connectorActiveColor }}{{ else }}{{ $connectorDefaultColor }}{{ end }}"></div>
+        {{- end -}}
+      </div>
+      
+      {{- /* Label if positioned after step */ -}}
+      {{- if and $showLabels (or (eq $labelPosition "bottom") (eq $labelPosition "right")) -}}
+        <div class="flex {{ $labelPositionClass }}">
+          <span class="{{ $labelBaseClass }} {{ if $isActive }}font-medium text-gray-900 dark:text-white{{ else }}text-gray-500 dark:text-gray-400{{ end }}">
+            {{ if kindIs "map" $step }}{{ $step.label }}{{ else }}{{ $step }}{{ end }}
+          </span>
+        </div>
+      {{- end -}}
+    </div>
+  {{- end -}}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const stepperElement = document.getElementById('{{ $id }}');
+    if (!stepperElement) return;
+    
+    // Get stepper options from data attributes
+    const interactive = stepperElement.dataset.interactive === 'true';
+    let currentStep = parseInt(stepperElement.dataset.currentStep, 10);
+    
+    // Exit if not interactive
+    if (!interactive) return;
+    
+    // Get all step elements
+    const steps = stepperElement.querySelectorAll('[data-step]');
+    
+    // Add click event listeners to steps
+    steps.forEach(step => {
+      step.addEventListener('click', function() {
+        const stepIndex = parseInt(this.dataset.step, 10);
+        const clickable = this.classList.contains('cursor-pointer');
+        
+        if (clickable) {
+          goToStep(stepIndex);
+        }
+      });
+      
+      // Add keyboard support
+      step.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const stepIndex = parseInt(this.dataset.step, 10);
+          const clickable = this.classList.contains('cursor-pointer');
+          
+          if (clickable) {
+            goToStep(stepIndex);
+          }
+        }
+      });
+    });
+    
+    // Go to a specific step
+    function goToStep(index) {
+      if (index === currentStep) return;
+      
+      const oldStep = currentStep;
+      currentStep = index;
+      
+      // Update data attribute
+      stepperElement.dataset.currentStep = currentStep;
+      
+      // Trigger onChange callback
+      if ('{{ $onChange }}') {
+        try {
+          window['{{ $onChange }}']({
+            oldStep: oldStep,
+            newStep: currentStep,
+            container: stepperElement
+          });
+        } catch (err) {
+          console.error('Error in onChange callback:', err);
+        }
+      }
+      
+      // Dispatch custom event
+      stepperElement.dispatchEvent(new CustomEvent('step:change', {
+        detail: {
+          oldStep: oldStep,
+          newStep: currentStep
+        }
+      }));
+    }
+    
+    // Expose API
+    window.steppers = window.steppers || {};
+    window.steppers['{{ $id }}'] = {
+      goToStep,
+      getCurrentStep: () => currentStep,
+      getTotalSteps: () => steps.length
+    };
+  });
+</script>

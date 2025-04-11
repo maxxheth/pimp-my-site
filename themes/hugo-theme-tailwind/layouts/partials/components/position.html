@@ -1,0 +1,338 @@
+{{- /*
+  Position Component
+  
+  Parameters:
+    - content: String - Content to be positioned (required)
+    - referenceSelector: String - CSS selector for reference element (required for JS positioning)
+    - placement: String - Placement relative to reference element (default: "bottom")
+      Options: top, right, bottom, left, top-start, top-end, right-start, right-end, bottom-start, bottom-end, left-start, left-end
+    - strategy: String - Positioning strategy (default: "absolute")
+      Options: absolute, fixed
+    - offset: Number - Distance from reference element in pixels (default: 8)
+    - arrow: Boolean - Show directional arrow (default: false)
+    - arrowSize: Number - Size of arrow in pixels (default: 8)
+    - arrowOffset: Number - Arrow offset from edge in pixels (default: 12)
+    - fallbackPlacements: String - Comma-separated list of fallback placements (default: "")
+    - flip: Boolean - Allow flipping to maintain visibility (default: true)
+    - shift: Boolean - Allow shifting to maintain visibility (default: true)
+    - autoUpdate: Boolean - Update position on scroll/resize (default: true)
+    - zIndex: Number - Z-index for positioned element (default: 20)
+    - class: String - Additional custom classes (default: "")
+    - arrowClass: String - Additional classes for arrow element (default: "")
+    - contentClass: String - Additional classes for content wrapper (default: "")
+*/ -}}
+
+{{- $content := .content -}}
+{{- $referenceSelector := .referenceSelector -}}
+{{- $placement := .placement | default "bottom" -}}
+{{- $strategy := .strategy | default "absolute" -}}
+{{- $offset := .offset | default 8 -}}
+{{- $arrow := .arrow | default false -}}
+{{- $arrowSize := .arrowSize | default 8 -}}
+{{- $arrowOffset := .arrowOffset | default 12 -}}
+{{- $fallbackPlacements := .fallbackPlacements | default "" -}}
+{{- $flip := .flip | default true -}}
+{{- $shift := .shift | default true -}}
+{{- $autoUpdate := .autoUpdate | default true -}}
+{{- $zIndex := .zIndex | default 20 -}}
+{{- $class := .class | default "" -}}
+{{- $arrowClass := .arrowClass | default "" -}}
+{{- $contentClass := .contentClass | default "" -}}
+
+{{- /* Generate unique ID for this instance */ -}}
+{{- $uniqueId := printf "position-%s" (now.Unix) -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := printf "position-container" -}}
+{{- $positionedClass := printf "position-element z-%d" $zIndex -}}
+{{- $arrowBaseClass := printf "position-arrow absolute w-[%dpx] h-[%dpx] rotate-45 z-[-1]" $arrowSize $arrowSize -}}
+
+{{- /* Strategy classes */ -}}
+{{- if eq $strategy "absolute" -}}
+  {{- $positionedClass = printf "%s absolute" $positionedClass -}}
+{{- else if eq $strategy "fixed" -}}
+  {{- $positionedClass = printf "%s fixed" $positionedClass -}}
+{{- end -}}
+
+{{- /* Arrow color/background classes - should match content background */ -}}
+{{- $arrowBaseClass = printf "%s bg-white dark:bg-gray-800" $arrowBaseClass -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $positionedClass = printf "%s %s" $positionedClass $class -}}
+{{- end -}}
+
+{{- if $arrowClass -}}
+  {{- $arrowBaseClass = printf "%s %s" $arrowBaseClass $arrowClass -}}
+{{- end -}}
+
+{{- /* Default content wrapper class */ -}}
+{{- $contentWrapperClass := "bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 ring-1 ring-black ring-opacity-5" -}}
+
+{{- if $contentClass -}}
+  {{- $contentWrapperClass = printf "%s %s" $contentWrapperClass $contentClass -}}
+{{- end -}}
+
+<div 
+  id="{{ $uniqueId }}" 
+  class="{{ $containerClass }}"
+  data-position-container
+  data-reference="{{ $referenceSelector }}"
+  data-placement="{{ $placement }}"
+  data-strategy="{{ $strategy }}"
+  data-offset="{{ $offset }}"
+  data-arrow="{{ $arrow }}"
+  data-arrow-size="{{ $arrowSize }}"
+  data-arrow-offset="{{ $arrowOffset }}"
+  data-fallback-placements="{{ $fallbackPlacements }}"
+  data-flip="{{ $flip }}"
+  data-shift="{{ $shift }}"
+  data-auto-update="{{ $autoUpdate }}"
+>
+  <div class="{{ $positionedClass }}" data-positioned-element>
+    <div class="{{ $contentWrapperClass }}">
+      {{ $content | safeHTML }}
+    </div>
+    
+    {{- if $arrow -}}
+    <div class="{{ $arrowBaseClass }}" data-position-arrow></div>
+    {{- end -}}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Check if the position container exists
+    const container = document.getElementById('{{ $uniqueId }}');
+    if (!container) return;
+    
+    // Get the positioned element
+    const positionedElement = container.querySelector('[data-positioned-element]');
+    if (!positionedElement) return;
+    
+    // Get the reference element
+    const referenceSelector = container.dataset.reference;
+    const referenceElement = document.querySelector(referenceSelector);
+    if (!referenceElement) {
+      console.warn(`Reference element not found: ${referenceSelector}`);
+      return;
+    }
+    
+    // Get configuration options
+    const placement = container.dataset.placement;
+    const strategy = container.dataset.strategy;
+    const offset = parseInt(container.dataset.offset, 10);
+    const showArrow = container.dataset.arrow === 'true';
+    const arrowSize = parseInt(container.dataset.arrowSize, 10);
+    const arrowOffset = parseInt(container.dataset.arrowOffset, 10);
+    const fallbackPlacementsStr = container.dataset.fallbackPlacements;
+    const fallbackPlacements = fallbackPlacementsStr ? fallbackPlacementsStr.split(',').map(p => p.trim()) : [];
+    const flip = container.dataset.flip === 'true';
+    const shift = container.dataset.shift === 'true';
+    const autoUpdate = container.dataset.autoUpdate === 'true';
+    
+    // Get arrow element if it exists
+    const arrowElement = showArrow ? container.querySelector('[data-position-arrow]') : null;
+    
+    // Function to calculate position
+    function calculatePosition() {
+      // Get dimensions and positions
+      const referenceRect = referenceElement.getBoundingClientRect();
+      const positionedRect = positionedElement.getBoundingClientRect();
+      
+      // Initialize position data
+      let top = 0;
+      let left = 0;
+      let arrowTop = '0';
+      let arrowLeft = '0';
+      let arrowPlacement = '';
+      
+      // Calculate base position based on placement
+      if (placement.startsWith('top')) {
+        top = referenceRect.top - positionedRect.height - offset;
+        arrowPlacement = 'bottom';
+      } else if (placement.startsWith('bottom')) {
+        top = referenceRect.bottom + offset;
+        arrowPlacement = 'top';
+      } else if (placement.startsWith('left')) {
+        left = referenceRect.left - positionedRect.width - offset;
+        arrowPlacement = 'right';
+      } else if (placement.startsWith('right')) {
+        left = referenceRect.right + offset;
+        arrowPlacement = 'left';
+      }
+      
+      // Handle alignment (start, center, end)
+      if (placement.includes('start')) {
+        if (placement.startsWith('top') || placement.startsWith('bottom')) {
+          left = referenceRect.left;
+          if (arrowElement) {
+            arrowLeft = `${arrowOffset}px`;
+          }
+        } else if (placement.startsWith('left') || placement.startsWith('right')) {
+          top = referenceRect.top;
+          if (arrowElement) {
+            arrowTop = `${arrowOffset}px`;
+          }
+        }
+      } else if (placement.includes('end')) {
+        if (placement.startsWith('top') || placement.startsWith('bottom')) {
+          left = referenceRect.right - positionedRect.width;
+          if (arrowElement) {
+            arrowLeft = `calc(100% - ${arrowOffset + arrowSize}px)`;
+          }
+        } else if (placement.startsWith('left') || placement.startsWith('right')) {
+          top = referenceRect.bottom - positionedRect.height;
+          if (arrowElement) {
+            arrowTop = `calc(100% - ${arrowOffset + arrowSize}px)`;
+          }
+        }
+      } else {
+        // Center alignment is default
+        if (placement.startsWith('top') || placement.startsWith('bottom')) {
+          left = referenceRect.left + (referenceRect.width / 2) - (positionedRect.width / 2);
+          if (arrowElement) {
+            arrowLeft = `calc(50% - ${arrowSize / 2}px)`;
+          }
+        } else if (placement.startsWith('left') || placement.startsWith('right')) {
+          top = referenceRect.top + (referenceRect.height / 2) - (positionedRect.height / 2);
+          if (arrowElement) {
+            arrowTop = `calc(50% - ${arrowSize / 2}px)`;
+          }
+        }
+      }
+      
+      // Apply shift if enabled (prevent overflow)
+      if (shift) {
+        // Prevent horizontal overflow
+        const viewportWidth = window.innerWidth;
+        if (left < 0) {
+          left = Math.min(10, referenceRect.left);
+          if (arrowElement && !placement.includes('start') && !placement.includes('end')) {
+            // Recalculate arrow position
+            const arrowLeft = referenceRect.left + (referenceRect.width / 2) - left - (arrowSize / 2);
+            arrowElement.style.left = `${arrowLeft}px`;
+          }
+        } else if (left + positionedRect.width > viewportWidth) {
+          left = Math.max(viewportWidth - positionedRect.width - 10, referenceRect.right - positionedRect.width);
+          if (arrowElement && !placement.includes('start') && !placement.includes('end')) {
+            // Recalculate arrow position
+            const arrowLeft = referenceRect.left + (referenceRect.width / 2) - left - (arrowSize / 2);
+            arrowElement.style.left = `${arrowLeft}px`;
+          }
+        }
+        
+        // Prevent vertical overflow
+        const viewportHeight = window.innerHeight;
+        if (top < 0) {
+          top = Math.min(10, referenceRect.top);
+          if (arrowElement && !placement.includes('start') && !placement.includes('end')) {
+            // Recalculate arrow position
+            const arrowTop = referenceRect.top + (referenceRect.height / 2) - top - (arrowSize / 2);
+            arrowElement.style.top = `${arrowTop}px`;
+          }
+        } else if (top + positionedRect.height > viewportHeight) {
+          top = Math.max(viewportHeight - positionedRect.height - 10, referenceRect.bottom - positionedRect.height);
+          if (arrowElement && !placement.includes('start') && !placement.includes('end')) {
+            // Recalculate arrow position
+            const arrowTop = referenceRect.top + (referenceRect.height / 2) - top - (arrowSize / 2);
+            arrowElement.style.top = `${arrowTop}px`;
+          }
+        }
+      }
+      
+      // Apply flip if enabled (flip to opposite side if no space)
+      if (flip) {
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        
+        // Check if we need to flip vertically
+        if (placement.startsWith('top') && top < 0) {
+          top = referenceRect.bottom + offset;
+          arrowPlacement = 'top';
+        } else if (placement.startsWith('bottom') && top + positionedRect.height > viewportHeight) {
+          top = referenceRect.top - positionedRect.height - offset;
+          arrowPlacement = 'bottom';
+        }
+        
+        // Check if we need to flip horizontally
+        if (placement.startsWith('left') && left < 0) {
+          left = referenceRect.right + offset;
+          arrowPlacement = 'left';
+        } else if (placement.startsWith('right') && left + positionedRect.width > viewportWidth) {
+          left = referenceRect.left - positionedRect.width - offset;
+          arrowPlacement = 'right';
+        }
+      }
+      
+      // Apply final position styles
+      if (strategy === 'fixed') {
+        positionedElement.style.top = `${top}px`;
+        positionedElement.style.left = `${left}px`;
+      } else {
+        // For absolute positioning, adjust based on scroll position
+        positionedElement.style.top = `${top + window.scrollY}px`;
+        positionedElement.style.left = `${left + window.scrollX}px`;
+      }
+      
+      // Position arrow if it exists
+      if (arrowElement) {
+        // Set arrow position
+        if (arrowPlacement === 'top') {
+          arrowElement.style.top = `-${arrowSize / 2}px`;
+          arrowElement.style.left = arrowLeft;
+          arrowElement.style.right = 'auto';
+          arrowElement.style.bottom = 'auto';
+        } else if (arrowPlacement === 'bottom') {
+          arrowElement.style.bottom = `-${arrowSize / 2}px`;
+          arrowElement.style.left = arrowLeft;
+          arrowElement.style.right = 'auto';
+          arrowElement.style.top = 'auto';
+        } else if (arrowPlacement === 'left') {
+          arrowElement.style.left = `-${arrowSize / 2}px`;
+          arrowElement.style.top = arrowTop;
+          arrowElement.style.right = 'auto';
+          arrowElement.style.bottom = 'auto';
+        } else if (arrowPlacement === 'right') {
+          arrowElement.style.right = `-${arrowSize / 2}px`;
+          arrowElement.style.top = arrowTop;
+          arrowElement.style.left = 'auto';
+          arrowElement.style.bottom = 'auto';
+        }
+      }
+    }
+    
+    // Initial position calculation
+    calculatePosition();
+    
+    // Set up auto-update if enabled
+    if (autoUpdate) {
+      const updateEvents = ['scroll', 'resize', 'orientationchange'];
+      updateEvents.forEach(eventType => {
+        window.addEventListener(eventType, calculatePosition, { passive: true });
+      });
+      
+      // Clean up event listeners when element is removed
+      const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+          if ([...mutation.removedNodes].includes(container) || 
+              [...mutation.removedNodes].some(node => node.contains(container))) {
+            updateEvents.forEach(eventType => {
+              window.removeEventListener(eventType, calculatePosition);
+            });
+            observer.disconnect();
+          }
+        });
+      });
+      
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+    
+    // Expose API for programmatic control
+    window.positionElements = window.positionElements || {};
+    window.positionElements['{{ $uniqueId }}'] = {
+      update: calculatePosition,
+      element: positionedElement
+    };
+  });
+</script>

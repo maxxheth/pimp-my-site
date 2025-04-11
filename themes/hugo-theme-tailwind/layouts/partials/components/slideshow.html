@@ -1,0 +1,446 @@
+{{- /*
+  Slideshow Component
+  
+  Parameters:
+    - id: String - Unique ID for the slideshow (default: auto-generated)
+    - slides: Array - Array of slide content (required)
+    - initialSlide: Number - Index of initial slide to show (default: 0)
+    - autoplay: Boolean - Enable automatic slide transitions (default: false)
+    - autoplaySpeed: Number - Milliseconds between autoplay transitions (default: 5000)
+    - pauseOnHover: Boolean - Pause autoplay on hover (default: true)
+    - loop: Boolean - Enable infinite looping (default: true)
+    - arrows: Boolean - Show navigation arrows (default: true)
+    - dots: Boolean - Show navigation dots (default: true)
+    - animation: String - Transition animation type (default: "slide")
+      Options: slide, fade, zoom, flip
+    - swipe: Boolean - Enable touch/mouse swipe (default: true)
+    - adaptiveHeight: Boolean - Adjust height to current slide (default: false)
+    - centerMode: Boolean - Center current slide with partial prev/next visible (default: false)
+    - centerPadding: String - Padding when centerMode is enabled (default: "50px")
+    - slidesToShow: Number - Number of slides to show at once (default: 1)
+    - slidesToScroll: Number - Number of slides to scroll at once (default: 1)
+    - speed: Number - Transition speed in milliseconds (default: 300)
+    - responsive: Array - Breakpoint settings for different screen sizes (default: empty)
+    - class: String - Additional custom classes for container (default: "")
+    - slideClass: String - Additional classes for slides (default: "")
+    - arrowClass: String - Additional classes for arrows (default: "")
+    - dotsClass: String - Additional classes for dots (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "slideshow-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $slides := .slides -}}
+{{- $initialSlide := .initialSlide | default 0 -}}
+{{- $autoplay := .autoplay | default false -}}
+{{- $autoplaySpeed := .autoplaySpeed | default 5000 -}}
+{{- $pauseOnHover := .pauseOnHover | default true -}}
+{{- $loop := .loop | default true -}}
+{{- $arrows := .arrows | default true -}}
+{{- $dots := .dots | default true -}}
+{{- $animation := .animation | default "slide" -}}
+{{- $swipe := .swipe | default true -}}
+{{- $adaptiveHeight := .adaptiveHeight | default false -}}
+{{- $centerMode := .centerMode | default false -}}
+{{- $centerPadding := .centerPadding | default "50px" -}}
+{{- $slidesToShow := .slidesToShow | default 1 -}}
+{{- $slidesToScroll := .slidesToScroll | default 1 -}}
+{{- $speed := .speed | default 300 -}}
+{{- $responsive := .responsive | default slice -}}
+{{- $class := .class | default "" -}}
+{{- $slideClass := .slideClass | default "" -}}
+{{- $arrowClass := .arrowClass | default "" -}}
+{{- $dotsClass := .dotsClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "relative overflow-hidden" -}}
+{{- $trackClass := "flex transition-transform duration-300 ease-in-out" -}}
+{{- $slideBaseClass := "flex-shrink-0 w-full" -}}
+{{- $arrowBaseClass := "absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white dark:bg-gray-800 bg-opacity-80 dark:bg-opacity-80 rounded-full shadow text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500" -}}
+{{- $dotsContainerClass := "absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2" -}}
+{{- $dotBaseClass := "w-3 h-3 rounded-full bg-gray-400 dark:bg-gray-600 cursor-pointer transition-colors duration-200 hover:bg-gray-700 dark:hover:bg-gray-300" -}}
+{{- $dotActiveClass := "bg-blue-500 dark:bg-blue-400" -}}
+
+{{- /* Animation variants */ -}}
+{{- if eq $animation "fade" -}}
+  {{- $trackClass = "relative" -}}
+  {{- $slideBaseClass = "absolute inset-0 opacity-0 transition-opacity duration-300 ease-in-out" -}}
+{{- else if eq $animation "zoom" -}}
+  {{- $trackClass = "relative" -}}
+  {{- $slideBaseClass = "absolute inset-0 opacity-0 scale-90 transition-all duration-300 ease-in-out" -}}
+{{- else if eq $animation "flip" -}}
+  {{- $trackClass = "relative perspective-1000" -}}
+  {{- $slideBaseClass = "absolute inset-0 opacity-0 rotateY-90 backface-hidden transition-all duration-300 ease-in-out" -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $slideClass -}}
+  {{- $slideBaseClass = printf "%s %s" $slideBaseClass $slideClass -}}
+{{- end -}}
+
+{{- if $arrowClass -}}
+  {{- $arrowBaseClass = printf "%s %s" $arrowBaseClass $arrowClass -}}
+{{- end -}}
+
+{{- if $dotsClass -}}
+  {{- $dotsContainerClass = printf "%s %s" $dotsContainerClass $dotsClass -}}
+{{- end -}}
+
+<div
+  id="{{ $id }}"
+  class="{{ $containerClass }}"
+  data-slideshow
+  data-animation="{{ $animation }}"
+  data-autoplay="{{ $autoplay }}"
+  data-autoplay-speed="{{ $autoplaySpeed }}"
+  data-pause-on-hover="{{ $pauseOnHover }}"
+  data-loop="{{ $loop }}"
+  data-swipe="{{ $swipe }}"
+  data-adaptive-height="{{ $adaptiveHeight }}"
+  data-center-mode="{{ $centerMode }}"
+  data-center-padding="{{ $centerPadding }}"
+  data-slides-to-show="{{ $slidesToShow }}"
+  data-slides-to-scroll="{{ $slidesToScroll }}"
+  data-speed="{{ $speed }}"
+  data-initial-slide="{{ $initialSlide }}"
+  aria-roledescription="carousel"
+>
+  <div 
+    class="{{ $trackClass }}" 
+    data-slideshow-track
+    aria-live="polite"
+  >
+    {{- range $index, $slide := $slides -}}
+    <div 
+      class="{{ $slideBaseClass }} {{ if eq $index $initialSlide }}{{ if eq $animation "fade" or eq $animation "zoom" or eq $animation "flip" }}opacity-100 scale-100 rotateY-0{{ end }}{{ end }}"
+      data-slideshow-slide="{{ $index }}"
+      {{- if eq $index $initialSlide }}
+      aria-current="true"
+      {{- else }}
+      aria-hidden="true"
+      {{- end -}}
+      role="group"
+      aria-roledescription="slide"
+      aria-label="slide {{ add $index 1 }} of {{ len $slides }}"
+    >
+      {{ $slide | safeHTML }}
+    </div>
+    {{- end -}}
+  </div>
+
+  {{- if $arrows -}}
+  <button 
+    type="button"
+    class="{{ $arrowBaseClass }} left-4" 
+    data-slideshow-prev 
+    aria-label="Previous slide"
+  >
+    {{ partial "icon.html" (dict "name" "chevron-left" "size" "sm") }}
+  </button>
+  
+  <button 
+    type="button"
+    class="{{ $arrowBaseClass }} right-4" 
+    data-slideshow-next 
+    aria-label="Next slide"
+  >
+    {{ partial "icon.html" (dict "name" "chevron-right" "size" "sm") }}
+  </button>
+  {{- end -}}
+
+  {{- if $dots -}}
+  <div class="{{ $dotsContainerClass }}" data-slideshow-dots>
+    {{- range $index, $_ := $slides -}}
+    <button 
+      type="button"
+      class="{{ $dotBaseClass }} {{ if eq $index $initialSlide }}{{ $dotActiveClass }}{{ end }}" 
+      data-slideshow-dot="{{ $index }}" 
+      aria-label="Go to slide {{ add $index 1 }}"
+      {{- if eq $index $initialSlide }}
+      aria-current="true"
+      {{- end -}}
+    ></button>
+    {{- end -}}
+  </div>
+  {{- end -}}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const slideshowElement = document.getElementById('{{ $id }}');
+    if (!slideshowElement) return;
+    
+    // Get slideshow options from data attributes
+    const options = {
+      animation: slideshowElement.dataset.animation,
+      autoplay: slideshowElement.dataset.autoplay === 'true',
+      autoplaySpeed: parseInt(slideshowElement.dataset.autoplaySpeed, 10),
+      pauseOnHover: slideshowElement.dataset.pauseOnHover === 'true',
+      loop: slideshowElement.dataset.loop === 'true',
+      swipe: slideshowElement.dataset.swipe === 'true',
+      adaptiveHeight: slideshowElement.dataset.adaptiveHeight === 'true',
+      centerMode: slideshowElement.dataset.centerMode === 'true',
+      centerPadding: slideshowElement.dataset.centerPadding,
+      slidesToShow: parseInt(slideshowElement.dataset.slidesToShow, 10),
+      slidesToScroll: parseInt(slideshowElement.dataset.slidesToScroll, 10),
+      speed: parseInt(slideshowElement.dataset.speed, 10),
+      initialSlide: parseInt(slideshowElement.dataset.initialSlide, 10)
+    };
+    
+    // Get elements
+    const track = slideshowElement.querySelector('[data-slideshow-track]');
+    const slides = slideshowElement.querySelectorAll('[data-slideshow-slide]');
+    const prevButton = slideshowElement.querySelector('[data-slideshow-prev]');
+    const nextButton = slideshowElement.querySelector('[data-slideshow-next]');
+    const dots = slideshowElement.querySelectorAll('[data-slideshow-dot]');
+    
+    // State
+    let currentSlide = options.initialSlide;
+    let autoplayInterval = null;
+    let slideWidth = 0;
+    let slideHeight = 0;
+    let isDragging = false;
+    let startPos = 0;
+    let currentTranslate = 0;
+    let prevTranslate = 0;
+    
+    // Initialize
+    function init() {
+      // Set up initial position
+      updateSlides();
+      
+      // Set up event listeners
+      if (prevButton) prevButton.addEventListener('click', goToPrevSlide);
+      if (nextButton) nextButton.addEventListener('click', goToNextSlide);
+      
+      dots.forEach(dot => {
+        dot.addEventListener('click', () => {
+          const index = parseInt(dot.dataset.slideshowDot, 10);
+          goToSlide(index);
+        });
+      });
+      
+      // Set up touch/mouse events if swipe is enabled
+      if (options.swipe) {
+        setupSwipeEvents();
+      }
+      
+      // Set up autoplay if enabled
+      if (options.autoplay) {
+        startAutoplay();
+        
+        if (options.pauseOnHover) {
+          slideshowElement.addEventListener('mouseenter', pauseAutoplay);
+          slideshowElement.addEventListener('mouseleave', startAutoplay);
+        }
+      }
+      
+      // Set up resize handler
+      window.addEventListener('resize', handleResize);
+      
+      // Update dimensions
+      updateDimensions();
+    }
+    
+    // Update dimensions
+    function updateDimensions() {
+      slideWidth = slideshowElement.offsetWidth;
+      
+      if (options.adaptiveHeight) {
+        slideHeight = slides[currentSlide].offsetHeight;
+        slideshowElement.style.height = `${slideHeight}px`;
+      }
+    }
+    
+    // Handle window resize
+    function handleResize() {
+      updateDimensions();
+      updateSlides();
+    }
+    
+    // Update slides based on current slide
+    function updateSlides() {
+      const totalSlides = slides.length;
+      
+      if (options.animation === 'slide') {
+        // For slide animation, translate the track
+        const translateX = -currentSlide * slideWidth;
+        track.style.transform = `translateX(${translateX}px)`;
+      } else {
+        // For other animations, show/hide slides
+        slides.forEach((slide, index) => {
+          slide.classList.remove('opacity-100', 'scale-100', 'rotateY-0');
+          slide.classList.add('opacity-0', 'scale-90', 'rotateY-90');
+          slide.setAttribute('aria-hidden', 'true');
+          
+          if (index === currentSlide) {
+            slide.classList.remove('opacity-0', 'scale-90', 'rotateY-90');
+            slide.classList.add('opacity-100', 'scale-100', 'rotateY-0');
+            slide.setAttribute('aria-hidden', 'false');
+            slide.setAttribute('aria-current', 'true');
+          } else {
+            slide.removeAttribute('aria-current');
+          }
+        });
+      }
+      
+      // Update dots
+      dots.forEach((dot, index) => {
+        dot.classList.toggle('{{ $dotActiveClass }}', index === currentSlide);
+        dot.setAttribute('aria-current', index === currentSlide ? 'true' : 'false');
+      });
+      
+      // Update adaptive height if enabled
+      if (options.adaptiveHeight) {
+        slideHeight = slides[currentSlide].offsetHeight;
+        slideshowElement.style.height = `${slideHeight}px`;
+      }
+      
+      // Trigger slide change event
+      slideshowElement.dispatchEvent(new CustomEvent('slideChange', {
+        detail: { currentSlide }
+      }));
+    }
+    
+    // Go to specific slide
+    function goToSlide(index) {
+      const totalSlides = slides.length;
+      
+      // Handle loop behavior
+      if (!options.loop) {
+        index = Math.max(0, Math.min(index, totalSlides - 1));
+      } else {
+        // Wrap around if needed
+        if (index < 0) index = totalSlides - 1;
+        if (index >= totalSlides) index = 0;
+      }
+      
+      currentSlide = index;
+      updateSlides();
+    }
+    
+    // Go to previous slide
+    function goToPrevSlide() {
+      goToSlide(currentSlide - 1);
+    }
+    
+    // Go to next slide
+    function goToNextSlide() {
+      goToSlide(currentSlide + 1);
+    }
+    
+    // Set up swipe events
+    function setupSwipeEvents() {
+      const events = {
+        mouse: {
+          down: 'mousedown',
+          move: 'mousemove',
+          up: 'mouseup',
+          leave: 'mouseleave'
+        },
+        touch: {
+          down: 'touchstart',
+          move: 'touchmove',
+          up: 'touchend',
+          leave: 'touchcancel'
+        }
+      };
+      
+      // Handle both mouse and touch events
+      [events.mouse, events.touch].forEach(eventTypes => {
+        track.addEventListener(eventTypes.down, handleDragStart);
+        track.addEventListener(eventTypes.move, handleDragMove);
+        track.addEventListener(eventTypes.up, handleDragEnd);
+        track.addEventListener(eventTypes.leave, handleDragEnd);
+      });
+    }
+    
+    // Handle drag start
+    function handleDragStart(event) {
+      if (options.animation !== 'slide') return;
+      
+      isDragging = true;
+      startPos = getPositionX(event);
+      currentTranslate = -currentSlide * slideWidth;
+      prevTranslate = currentTranslate;
+      
+      // Disable transition during drag
+      track.style.transition = 'none';
+    }
+    
+    // Handle drag move
+    function handleDragMove(event) {
+      if (!isDragging) return;
+      
+      const currentPosition = getPositionX(event);
+      const diff = currentPosition - startPos;
+      currentTranslate = prevTranslate + diff;
+      
+      // Apply transform
+      track.style.transform = `translateX(${currentTranslate}px)`;
+    }
+    
+    // Handle drag end
+    function handleDragEnd() {
+      if (!isDragging) return;
+      
+      isDragging = false;
+      
+      // Restore transition
+      track.style.transition = `transform ${options.speed}ms ease-in-out`;
+      
+      // Determine if slide should change
+      const diffThreshold = slideWidth * 0.2; // 20% threshold
+      const diff = currentTranslate - prevTranslate;
+      
+      if (diff < -diffThreshold) {
+        goToNextSlide();
+      } else if (diff > diffThreshold) {
+        goToPrevSlide();
+      } else {
+        // Return to current slide
+        goToSlide(currentSlide);
+      }
+    }
+    
+    // Helper to get X position from event
+    function getPositionX(event) {
+      return event.type.includes('mouse') ? event.clientX : event.touches[0].clientX;
+    }
+    
+    // Start autoplay
+    function startAutoplay() {
+      if (autoplayInterval) clearInterval(autoplayInterval);
+      
+      autoplayInterval = setInterval(() => {
+        goToNextSlide();
+      }, options.autoplaySpeed);
+    }
+    
+    // Pause autoplay
+    function pauseAutoplay() {
+      if (autoplayInterval) {
+        clearInterval(autoplayInterval);
+        autoplayInterval = null;
+      }
+    }
+    
+    // Initialize slideshow
+    init();
+    
+    // Expose API
+    window.slideshows = window.slideshows || {};
+    window.slideshows['{{ $id }}'] = {
+      goToSlide,
+      goToNextSlide,
+      goToPrevSlide,
+      getCurrentSlide: () => currentSlide,
+      getTotalSlides: () => slides.length,
+      startAutoplay,
+      pauseAutoplay
+    };
+  });
+</script>

@@ -1,0 +1,675 @@
+{{- /*
+  Slider Component
+  
+  Parameters:
+    - id: String - Unique ID for the slider (default: auto-generated)
+    - value: Number - Current value of the slider (default: 0)
+    - min: Number - Minimum value (default: 0)
+    - max: Number - Maximum value (default: 100)
+    - step: Number - Step increment (default: 1)
+    - orientation: String - Slider orientation (default: "horizontal")
+      Options: horizontal, vertical
+    - size: String - Size of the slider (default: "md")
+      Options: sm, md, lg
+    - color: String - Color theme (default: "blue")
+      Options: blue, green, red, yellow, purple, indigo, or any tailwind color
+    - showLabels: Boolean - Show min and max labels (default: false)
+    - showValue: Boolean - Show current value (default: false)
+    - valuePrefix: String - Prefix for displayed value (default: "")
+    - valueSuffix: String - Suffix for displayed value (default: "")
+    - showTicks: Boolean - Show tick marks (default: false)
+    - tickCount: Number - Number of ticks to display (default: 5)
+    - tickLabels: Array - Labels for ticks (default: empty array)
+    - disabled: Boolean - Disable the slider (default: false)
+    - range: Boolean - Enable range mode with two handles (default: false)
+    - rangeValue: Number - Second value for range mode (default: max value)
+    - tooltips: Boolean - Show tooltips when dragging (default: false)
+    - marks: Object - Custom marks to display (default: empty)
+    - onChange: String - JavaScript function to call when value changes (default: "")
+    - class: String - Additional custom classes for container (default: "")
+    - trackClass: String - Additional classes for track (default: "")
+    - thumbClass: String - Additional classes for thumb (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "slider-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $value := .value | default 0 -}}
+{{- $min := .min | default 0 -}}
+{{- $max := .max | default 100 -}}
+{{- $step := .step | default 1 -}}
+{{- $orientation := .orientation | default "horizontal" -}}
+{{- $size := .size | default "md" -}}
+{{- $color := .color | default "blue" -}}
+{{- $showLabels := .showLabels | default false -}}
+{{- $showValue := .showValue | default false -}}
+{{- $valuePrefix := .valuePrefix | default "" -}}
+{{- $valueSuffix := .valueSuffix | default "" -}}
+{{- $showTicks := .showTicks | default false -}}
+{{- $tickCount := .tickCount | default 5 -}}
+{{- $tickLabels := .tickLabels | default slice -}}
+{{- $disabled := .disabled | default false -}}
+{{- $range := .range | default false -}}
+{{- $rangeValue := .rangeValue | default $max -}}
+{{- $tooltips := .tooltips | default false -}}
+{{- $marks := .marks | default dict -}}
+{{- $onChange := .onChange | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $trackClass := .trackClass | default "" -}}
+{{- $thumbClass := .thumbClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "slider-container relative" -}}
+{{- $sliderClass := "slider-track rounded-full outline-none" -}}
+{{- $railClass := "absolute rounded-full bg-gray-200 dark:bg-gray-700" -}}
+{{- $trackFillClass := sprintf "absolute rounded-full bg-%s-500 dark:bg-%s-600" $color $color -}}
+{{- $thumbClass := sprintf "absolute bg-white border-2 border-%s-500 dark:border-%s-600 rounded-full shadow focus:ring-2 focus:ring-%s-500 focus:ring-offset-2" $color $color $color -}}
+{{- $labelClass := "text-sm text-gray-600 dark:text-gray-400" -}}
+{{- $valueClass := "text-sm font-medium text-gray-700 dark:text-gray-300" -}}
+{{- $tickClass := "absolute w-1 bg-gray-300 dark:bg-gray-600" -}}
+{{- $tickLabelClass := "absolute text-xs text-gray-500 dark:text-gray-400" -}}
+{{- $tooltipClass := sprintf "absolute z-10 px-2 py-1 text-xs text-white rounded bg-%s-600 dark:bg-%s-700 opacity-0 transition-opacity" $color $color -}}
+
+{{- /* Size classes */ -}}
+{{- $trackHeight := "h-2" -}}
+{{- $thumbSize := "w-5 h-5" -}}
+{{- if eq $size "sm" -}}
+  {{- $trackHeight = "h-1" -}}
+  {{- $thumbSize = "w-4 h-4" -}}
+{{- else if eq $size "lg" -}}
+  {{- $trackHeight = "h-3" -}}
+  {{- $thumbSize = "w-6 h-6" -}}
+{{- end -}}
+
+{{- /* Orientation classes */ -}}
+{{- $isVertical := eq $orientation "vertical" -}}
+{{- if $isVertical -}}
+  {{- $containerClass = printf "%s h-64" $containerClass -}}
+  {{- $railClass = printf "%s w-2 h-full" $railClass -}}
+  {{- $trackFillClass = printf "%s w-full" $trackFillClass -}}
+  {{- $tickClass = printf "%s h-1" $tickClass -}}
+{{- else -}}
+  {{- $containerClass = printf "%s w-full" $containerClass -}}
+  {{- $railClass = printf "%s w-full %s" $railClass $trackHeight -}}
+  {{- $trackFillClass = printf "%s %s" $trackFillClass $trackHeight -}}
+  {{- $tickClass = printf "%s %s" $tickClass $trackHeight -}}
+{{- end -}}
+
+{{- /* Disabled state */ -}}
+{{- if $disabled -}}
+  {{- $thumbClass = printf "%s opacity-50 cursor-not-allowed" $thumbClass -}}
+  {{- $railClass = printf "%s opacity-50" $railClass -}}
+  {{- $trackFillClass = printf "%s opacity-50" $trackFillClass -}}
+{{- else -}}
+  {{- $thumbClass = printf "%s cursor-pointer" $thumbClass -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $trackClass -}}
+  {{- $railClass = printf "%s %s" $railClass $trackClass -}}
+{{- end -}}
+
+{{- if $thumbClass -}}
+  {{- $thumbClass = printf "%s %s" $thumbClass $.thumbClass -}}
+{{- end -}}
+
+{{- /* Calculate initial positions for rendering */ -}}
+{{- $valuePercent := 0 -}}
+{{- $rangeValuePercent := 100 -}}
+{{- if ne (sub $max $min) 0 -}}
+  {{- $valuePercent = mul (div (sub $value $min) (sub $max $min)) 100 -}}
+  {{- if $range -}}
+    {{- $rangeValuePercent = mul (div (sub $rangeValue $min) (sub $max $min)) 100 -}}
+  {{- end -}}
+{{- end -}}
+
+<div 
+  id="{{ $id }}-container" 
+  class="{{ $containerClass }}" 
+  data-disabled="{{ $disabled }}"
+>
+  {{- /* Optional value display */ -}}
+  {{- if $showValue -}}
+    <div class="mb-2 {{ $valueClass }}">
+      <span id="{{ $id }}-value-display">{{ $valuePrefix }}{{ $value }}{{ $valueSuffix }}</span>
+      {{- if $range -}}
+        <span> - </span>
+        <span id="{{ $id }}-range-value-display">{{ $valuePrefix }}{{ $rangeValue }}{{ $valueSuffix }}</span>
+      {{- end -}}
+    </div>
+  {{- end -}}
+  
+  <div 
+    class="relative {{ if $isVertical }}h-full{{ else }}w-full{{ end }} {{ if $showLabels }}{{ if $isVertical }}mx-6{{ else }}my-6{{ end }}{{ end }}"
+  >
+    {{- /* Min/Max labels */ -}}
+    {{- if $showLabels -}}
+      {{- if $isVertical -}}
+        <div class="{{ $labelClass }} absolute -left-6 bottom-0">{{ $min }}</div>
+        <div class="{{ $labelClass }} absolute -left-6 top-0">{{ $max }}</div>
+      {{- else -}}
+        <div class="{{ $labelClass }} absolute -bottom-6 left-0">{{ $min }}</div>
+        <div class="{{ $labelClass }} absolute -bottom-6 right-0">{{ $max }}</div>
+      {{- end -}}
+    {{- end -}}
+    
+    {{- /* Ticks */ -}}
+    {{- if $showTicks -}}
+      {{- $tickStep := div 100 (sub $tickCount 1) -}}
+      {{- range $i := seq 0 (sub $tickCount 1) -}}
+        {{- $tickPosition := mul $i $tickStep -}}
+        {{- $tickLabel := "" -}}
+        {{- if and (isset $tickLabels $i) (ne (index $tickLabels $i) "") -}}
+          {{- $tickLabel = index $tickLabels $i -}}
+        {{- end -}}
+        
+        {{- if $isVertical -}}
+          <div 
+            class="{{ $tickClass }}" 
+            style="bottom: {{ $tickPosition }}%; left: 50%; transform: translateX(-50%);"
+          ></div>
+          {{- if $tickLabel -}}
+            <div 
+              class="{{ $tickLabelClass }}" 
+              style="bottom: {{ $tickPosition }}%; left: calc(100% + 0.5rem); transform: translateY(50%);"
+            >{{ $tickLabel }}</div>
+          {{- end -}}
+        {{- else -}}
+          <div 
+            class="{{ $tickClass }}" 
+            style="left: {{ $tickPosition }}%; top: 50%; transform: translateY(-50%);"
+          ></div>
+          {{- if $tickLabel -}}
+            <div 
+              class="{{ $tickLabelClass }}" 
+              style="left: {{ $tickPosition }}%; top: calc(100% + 0.5rem); transform: translateX(-50%);"
+            >{{ $tickLabel }}</div>
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+    
+    {{- /* Custom marks */ -}}
+    {{- range $markValue, $markLabel := $marks -}}
+      {{- $markPercent := 0 -}}
+      {{- if ne (sub $max $min) 0 -}}
+        {{- $markPercent = mul (div (sub $markValue $min) (sub $max $min)) 100 -}}
+      {{- end -}}
+      
+      {{- if $isVertical -}}
+        <div 
+          class="{{ $tickClass }} w-3 h-1" 
+          style="bottom: {{ $markPercent }}%; left: 50%; transform: translateX(-50%);"
+        ></div>
+        <div 
+          class="{{ $tickLabelClass }}" 
+          style="bottom: {{ $markPercent }}%; left: calc(100% + 0.5rem); transform: translateY(50%);"
+        >{{ $markLabel }}</div>
+      {{- else -}}
+        <div 
+          class="{{ $tickClass }} w-1 h-3" 
+          style="left: {{ $markPercent }}%; top: 50%; transform: translateY(-50%);"
+        ></div>
+        <div 
+          class="{{ $tickLabelClass }}" 
+          style="left: {{ $markPercent }}%; top: calc(100% + 0.5rem); transform: translateX(-50%);"
+        >{{ $markLabel }}</div>
+      {{- end -}}
+    {{- end -}}
+    
+    {{- /* Rail background */ -}}
+    <div 
+      class="{{ $railClass }}" 
+      {{- if $isVertical }}
+      style="left: 50%; transform: translateX(-50%);"
+      {{- else }}
+      style="top: 50%; transform: translateY(-50%);"
+      {{- end -}}
+    ></div>
+    
+    {{- /* Filled track */ -}}
+    <div 
+      id="{{ $id }}-track-fill" 
+      class="{{ $trackFillClass }}" 
+      {{- if $isVertical }}
+      style="bottom: 0; left: 50%; transform: translateX(-50%); height: {{ $valuePercent }}%;"
+      {{- else }}
+      style="left: 0; top: 50%; transform: translateY(-50%); width: {{ if $range }}{{ min $valuePercent $rangeValuePercent }}%; right: {{ sub 100 (max $valuePercent $rangeValuePercent) }}%;{{ else }}{{ $valuePercent }}%{{ end }};"
+      {{- end -}}
+    ></div>
+    
+    {{- /* Primary thumb */ -}}
+    <div 
+      id="{{ $id }}-thumb" 
+      class="{{ $thumbClass }} {{ $thumbSize }}" 
+      tabindex="{{ if $disabled }}-1{{ else }}0{{ end }}"
+      role="slider"
+      aria-valuemin="{{ $min }}"
+      aria-valuemax="{{ $max }}"
+      aria-valuenow="{{ $value }}"
+      aria-orientation="{{ $orientation }}"
+      {{- if $disabled }} aria-disabled="true"{{ end }}
+      {{- if $isVertical }}
+      style="bottom: {{ $valuePercent }}%; left: 50%; transform: translate(-50%, 50%);"
+      {{- else }}
+      style="left: {{ $valuePercent }}%; top: 50%; transform: translate(-50%, -50%);"
+      {{- end -}}
+      data-handle="primary"
+    ></div>
+    
+    {{- /* Secondary thumb for range mode */ -}}
+    {{- if $range -}}
+    <div 
+      id="{{ $id }}-range-thumb" 
+      class="{{ $thumbClass }} {{ $thumbSize }}" 
+      tabindex="{{ if $disabled }}-1{{ else }}0{{ end }}"
+      role="slider"
+      aria-valuemin="{{ $min }}"
+      aria-valuemax="{{ $max }}"
+      aria-valuenow="{{ $rangeValue }}"
+      aria-orientation="{{ $orientation }}"
+      {{- if $disabled }} aria-disabled="true"{{ end }}
+      {{- if $isVertical }}
+      style="bottom: {{ $rangeValuePercent }}%; left: 50%; transform: translate(-50%, 50%);"
+      {{- else }}
+      style="left: {{ $rangeValuePercent }}%; top: 50%; transform: translate(-50%, -50%);"
+      {{- end -}}
+      data-handle="secondary"
+    ></div>
+    {{- end -}}
+    
+    {{- /* Tooltips */ -}}
+    {{- if $tooltips -}}
+    <div 
+      id="{{ $id }}-tooltip" 
+      class="{{ $tooltipClass }}"
+      style="display: none;"
+    ></div>
+    
+    {{- if $range -}}
+    <div 
+      id="{{ $id }}-range-tooltip" 
+      class="{{ $tooltipClass }}"
+      style="display: none;"
+    ></div>
+    {{- end -}}
+    {{- end -}}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('{{ $id }}-container');
+    if (!container) return;
+    
+    const isDisabled = {{ $disabled }};
+    if (isDisabled) return;
+    
+    const isVertical = {{ $isVertical }};
+    const isRange = {{ $range }};
+    const min = {{ $min }};
+    const max = {{ $max }};
+    const step = {{ $step }};
+    const valuePrefix = '{{ $valuePrefix }}';
+    const valueSuffix = '{{ $valueSuffix }}';
+    const showTooltip = {{ $tooltips }};
+    
+    // Elements
+    const trackFill = document.getElementById('{{ $id }}-track-fill');
+    const primaryThumb = document.getElementById('{{ $id }}-thumb');
+    const secondaryThumb = isRange ? document.getElementById('{{ $id }}-range-thumb') : null;
+    const valueDisplay = {{ $showValue }} ? document.getElementById('{{ $id }}-value-display') : null;
+    const rangeValueDisplay = isRange && {{ $showValue }} ? document.getElementById('{{ $id }}-range-value-display') : null;
+    const tooltip = showTooltip ? document.getElementById('{{ $id }}-tooltip') : null;
+    const rangeTooltip = isRange && showTooltip ? document.getElementById('{{ $id }}-range-tooltip') : null;
+    
+    // State
+    let isDragging = false;
+    let activeThumb = null;
+    let currentValue = {{ $value }};
+    let rangeValue = {{ $rangeValue }};
+    
+    // Get the track dimensions for calculations
+    function getTrackRect() {
+      return container.getBoundingClientRect();
+    }
+    
+    // Convert position to value
+    function positionToValue(position, trackRect) {
+      let percentage;
+      if (isVertical) {
+        const trackHeight = trackRect.height;
+        const offsetY = trackRect.bottom - position;
+        percentage = Math.max(0, Math.min(100, (offsetY / trackHeight) * 100));
+      } else {
+        const trackWidth = trackRect.width;
+        const offsetX = position - trackRect.left;
+        percentage = Math.max(0, Math.min(100, (offsetX / trackWidth) * 100));
+      }
+      
+      // Convert percentage to actual value
+      const rawValue = (percentage / 100) * (max - min) + min;
+      
+      // Apply step constraints
+      const steppedValue = Math.round(rawValue / step) * step;
+      
+      // Ensure value is within bounds
+      return Math.max(min, Math.min(max, steppedValue));
+    }
+    
+    // Update the UI based on values
+    function updateUI(animate = false) {
+      // Ensure secondary value is not less than primary in range mode
+      if (isRange) {
+        if (!isVertical) {
+          // For horizontal sliders, left thumb is primary
+          if (rangeValue < currentValue) {
+            const temp = currentValue;
+            currentValue = rangeValue;
+            rangeValue = temp;
+            activeThumb = activeThumb === primaryThumb ? secondaryThumb : primaryThumb;
+          }
+        } else {
+          // For vertical sliders, bottom thumb is primary
+          if (rangeValue > currentValue) {
+            const temp = currentValue;
+            currentValue = rangeValue;
+            rangeValue = temp;
+            activeThumb = activeThumb === primaryThumb ? secondaryThumb : primaryThumb;
+          }
+        }
+      }
+      
+      // Calculate percentages
+      const primaryPercent = ((currentValue - min) / (max - min)) * 100;
+      const secondaryPercent = isRange ? ((rangeValue - min) / (max - min)) * 100 : 100;
+      
+      // Apply transitions if animating
+      if (animate) {
+        trackFill.style.transition = 'all 0.2s ease';
+        primaryThumb.style.transition = 'all 0.2s ease';
+        if (secondaryThumb) secondaryThumb.style.transition = 'all 0.2s ease';
+      } else {
+        trackFill.style.transition = 'none';
+        primaryThumb.style.transition = 'none';
+        if (secondaryThumb) secondaryThumb.style.transition = 'none';
+      }
+      
+      // Update track fill
+      if (isVertical) {
+        trackFill.style.height = `${primaryPercent}%`;
+      } else {
+        if (isRange) {
+          const lower = Math.min(primaryPercent, secondaryPercent);
+          const upper = Math.max(primaryPercent, secondaryPercent);
+          trackFill.style.left = `${lower}%`;
+          trackFill.style.width = `${upper - lower}%`;
+        } else {
+          trackFill.style.width = `${primaryPercent}%`;
+        }
+      }
+      
+      // Update thumbs
+      if (isVertical) {
+        primaryThumb.style.bottom = `${primaryPercent}%`;
+        if (secondaryThumb) secondaryThumb.style.bottom = `${secondaryPercent}%`;
+      } else {
+        primaryThumb.style.left = `${primaryPercent}%`;
+        if (secondaryThumb) secondaryThumb.style.left = `${secondaryPercent}%`;
+      }
+      
+      // Update ARIA values
+      primaryThumb.setAttribute('aria-valuenow', currentValue);
+      if (secondaryThumb) secondaryThumb.setAttribute('aria-valuenow', rangeValue);
+      
+      // Update value displays
+      if (valueDisplay) {
+        valueDisplay.textContent = `${valuePrefix}${currentValue}${valueSuffix}`;
+      }
+      if (rangeValueDisplay) {
+        rangeValueDisplay.textContent = `${valuePrefix}${rangeValue}${valueSuffix}`;
+      }
+      
+      // Update tooltips
+      if (showTooltip && tooltip) {
+        tooltip.textContent = `${valuePrefix}${currentValue}${valueSuffix}`;
+        
+        const thumbRect = primaryThumb.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        
+        if (isVertical) {
+          tooltip.style.bottom = `${primaryPercent}%`;
+          tooltip.style.left = `${thumbRect.right + 10}px`;
+          tooltip.style.transform = 'translateY(50%)';
+        } else {
+          tooltip.style.left = `${primaryPercent}%`;
+          tooltip.style.top = `${thumbRect.top - tooltipRect.height - 10}px`;
+          tooltip.style.transform = 'translateX(-50%)';
+        }
+      }
+      
+      if (showTooltip && rangeTooltip && secondaryThumb) {
+        rangeTooltip.textContent = `${valuePrefix}${rangeValue}${valueSuffix}`;
+        
+        const thumbRect = secondaryThumb.getBoundingClientRect();
+        const tooltipRect = rangeTooltip.getBoundingClientRect();
+        
+        if (isVertical) {
+          rangeTooltip.style.bottom = `${secondaryPercent}%`;
+          rangeTooltip.style.left = `${thumbRect.right + 10}px`;
+          rangeTooltip.style.transform = 'translateY(50%)';
+        } else {
+          rangeTooltip.style.left = `${secondaryPercent}%`;
+          rangeTooltip.style.top = `${thumbRect.top - tooltipRect.height - 10}px`;
+          rangeTooltip.style.transform = 'translateX(-50%)';
+        }
+      }
+      
+      // Trigger onChange callback if defined
+      {{ if $onChange }}
+      if (window.{{ $onChange }}) {
+        window.{{ $onChange }}({
+          value: currentValue,
+          rangeValue: rangeValue,
+          isRange: isRange
+        });
+      }
+      {{ end }}
+    }
+    
+    // Handle pointer down on thumbs
+    function onThumbPointerDown(event) {
+      if (isDisabled) return;
+      
+      event.preventDefault();
+      isDragging = true;
+      activeThumb = event.target;
+      
+      document.addEventListener('pointermove', onPointerMove);
+      document.addEventListener('pointerup', onPointerUp);
+      
+      // Show tooltip if enabled
+      if (showTooltip) {
+        if (activeThumb === primaryThumb && tooltip) {
+          tooltip.style.display = 'block';
+          tooltip.style.opacity = '1';
+        } else if (activeThumb === secondaryThumb && rangeTooltip) {
+          rangeTooltip.style.display = 'block';
+          rangeTooltip.style.opacity = '1';
+        }
+      }
+      
+      // Add active class to thumb
+      activeThumb.classList.add('ring-2');
+    }
+    
+    // Handle pointer move
+    function onPointerMove(event) {
+      if (!isDragging || !activeThumb) return;
+      
+      event.preventDefault();
+      const trackRect = getTrackRect();
+      const position = isVertical ? event.clientY : event.clientX;
+      const newValue = positionToValue(position, trackRect);
+      
+      if (activeThumb === primaryThumb) {
+        currentValue = newValue;
+      } else {
+        rangeValue = newValue;
+      }
+      
+      updateUI();
+    }
+    
+    // Handle pointer up
+    function onPointerUp() {
+      isDragging = false;
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+      
+      // Hide tooltip
+      if (showTooltip) {
+        if (tooltip) tooltip.style.opacity = '0';
+        if (rangeTooltip) rangeTooltip.style.opacity = '0';
+        
+        setTimeout(() => {
+          if (tooltip) tooltip.style.display = 'none';
+          if (rangeTooltip) rangeTooltip.style.display = 'none';
+        }, 200);
+      }
+      
+      // Remove active class from thumb
+      if (activeThumb) {
+        activeThumb.classList.remove('ring-2');
+        activeThumb = null;
+      }
+    }
+    
+    // Handle click on the track
+    function onTrackClick(event) {
+      if (isDisabled) return;
+      
+      const trackRect = getTrackRect();
+      const position = isVertical ? event.clientY : event.clientX;
+      const newValue = positionToValue(position, trackRect);
+      
+      // In range mode, move the closest thumb
+      if (isRange) {
+        const primaryPercent = ((currentValue - min) / (max - min)) * 100;
+        const secondaryPercent = ((rangeValue - min) / (max - min)) * 100;
+        const clickPercent = ((newValue - min) / (max - min)) * 100;
+        
+        // Determine which thumb to move based on click proximity
+        const primaryDistance = Math.abs(clickPercent - primaryPercent);
+        const secondaryDistance = Math.abs(clickPercent - secondaryPercent);
+        
+        if (primaryDistance <= secondaryDistance) {
+          currentValue = newValue;
+          activeThumb = primaryThumb;
+        } else {
+          rangeValue = newValue;
+          activeThumb = secondaryThumb;
+        }
+      } else {
+        currentValue = newValue;
+        activeThumb = primaryThumb;
+      }
+      
+      updateUI(true);
+    }
+    
+    // Handle keyboard navigation
+    function onKeyDown(event) {
+      if (isDisabled) return;
+      
+      const thumb = event.target;
+      let newValue;
+      
+      if (thumb === primaryThumb) {
+        newValue = currentValue;
+      } else if (thumb === secondaryThumb) {
+        newValue = rangeValue;
+      } else {
+        return;
+      }
+      
+      let change = 0;
+      
+      switch(event.key) {
+        case 'ArrowUp':
+        case 'ArrowRight':
+          change = step;
+          break;
+        case 'ArrowDown':
+        case 'ArrowLeft':
+          change = -step;
+          break;
+        case 'Home':
+          newValue = min;
+          break;
+        case 'End':
+          newValue = max;
+          break;
+        case 'PageUp':
+          change = step * 10;
+          break;
+        case 'PageDown':
+          change = -step * 10;
+          break;
+        default:
+          return;
+      }
+      
+      event.preventDefault();
+      
+      if (change !== 0) {
+        newValue = Math.max(min, Math.min(max, newValue + change));
+      }
+      
+      if (thumb === primaryThumb) {
+        currentValue = newValue;
+      } else {
+        rangeValue = newValue;
+      }
+      
+      activeThumb = thumb;
+      updateUI(true);
+    }
+    
+    // Initialize event listeners
+    container.addEventListener('click', onTrackClick);
+    primaryThumb.addEventListener('pointerdown', onThumbPointerDown);
+    primaryThumb.addEventListener('keydown', onKeyDown);
+    
+    if (secondaryThumb) {
+      secondaryThumb.addEventListener('pointerdown', onThumbPointerDown);
+      secondaryThumb.addEventListener('keydown', onKeyDown);
+    }
+    
+    // Initial UI update
+    updateUI();
+    
+    // Expose API for programmatic control
+    window.sliders = window.sliders || {};
+    window.sliders['{{ $id }}'] = {
+      setValue: function(value, animate = true) {
+        currentValue = Math.max(min, Math.min(max, value));
+        updateUI(animate);
+      },
+      getValue: function() {
+        return currentValue;
+      },
+      setRangeValue: function(value, animate = true) {
+        if (!isRange) return;
+        rangeValue = Math.max(min, Math.min(max, value));
+        updateUI(animate);
+      },
+      getRangeValue: function() {
+        return rangeValue;
+      }
+    };
+  });
+</script>

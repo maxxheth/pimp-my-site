@@ -1,0 +1,455 @@
+{{- /*
+  Subnav Component
+  
+  Parameters:
+    - id: String - Unique ID for the subnav (default: auto-generated)
+    - items: Array - Array of navigation items (required)
+    - activeItem: Number/String - Index or ID of active item (default: 0)
+    - variant: String - Visual style (default: "tabs")
+      Options: tabs, pills, underlined, bordered, line
+    - size: String - Size of the navigation items (default: "md")
+      Options: sm, md, lg
+    - orientation: String - Layout direction (default: "horizontal")
+      Options: horizontal, vertical
+    - fullWidth: Boolean - Stretch items to full width (default: false)
+    - justified: Boolean - Equal width items (default: false)
+    - centered: Boolean - Center items (default: false)
+    - rounded: Boolean - Use rounded styles (default: true)
+    - iconPosition: String - Position of icons in items (default: "left")
+      Options: left, right, top, only
+    - color: String - Theme color (default: "blue")
+      Options: blue, green, red, yellow, purple, indigo, or any tailwind color
+    - gutter: String - Space between items (default: "normal")
+      Options: none, tight, normal, relaxed
+    - mobileCollapse: Boolean - Collapse to dropdown on mobile (default: false)
+    - mobileBreakpoint: String - Breakpoint for mobile collapse (default: "md")
+      Options: sm, md, lg, xl, 2xl
+    - scrollable: Boolean - Allow horizontal scrolling (default: false)
+    - sticky: Boolean - Make sticky to top (default: false)
+    - stickyOffset: Number - Offset for sticky positioning (default: 0)
+    - onChange: String - JS function to call when item changes (default: "")
+    - class: String - Additional custom classes for container (default: "")
+    - itemClass: String - Additional classes for items (default: "")
+    - activeClass: String - Additional classes for active item (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "subnav-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $items := .items -}}
+{{- $activeItem := .activeItem | default 0 -}}
+{{- $variant := .variant | default "tabs" -}}
+{{- $size := .size | default "md" -}}
+{{- $orientation := .orientation | default "horizontal" -}}
+{{- $fullWidth := .fullWidth | default false -}}
+{{- $justified := .justified | default false -}}
+{{- $centered := .centered | default false -}}
+{{- $rounded := .rounded | default true -}}
+{{- $iconPosition := .iconPosition | default "left" -}}
+{{- $color := .color | default "blue" -}}
+{{- $gutter := .gutter | default "normal" -}}
+{{- $mobileCollapse := .mobileCollapse | default false -}}
+{{- $mobileBreakpoint := .mobileBreakpoint | default "md" -}}
+{{- $scrollable := .scrollable | default false -}}
+{{- $sticky := .sticky | default false -}}
+{{- $stickyOffset := .stickyOffset | default 0 -}}
+{{- $onChange := .onChange | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $itemClass := .itemClass | default "" -}}
+{{- $activeClass := .activeClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "relative" -}}
+{{- $navClass := "flex" -}}
+{{- $itemBaseClass := "flex items-center transition-colors duration-200" -}}
+{{- $activeBaseClass := "" -}}
+
+{{- /* Size classes */ -}}
+{{- $itemSizeClass := "" -}}
+{{- if eq $size "sm" -}}
+  {{- $itemSizeClass = "text-sm px-3 py-1.5" -}}
+{{- else if eq $size "md" -}}
+  {{- $itemSizeClass = "px-4 py-2" -}}
+{{- else if eq $size "lg" -}}
+  {{- $itemSizeClass = "text-lg px-5 py-2.5" -}}
+{{- end -}}
+
+{{- /* Orientation classes */ -}}
+{{- $isVertical := eq $orientation "vertical" -}}
+{{- if $isVertical -}}
+  {{- $navClass = printf "%s flex-col" $navClass -}}
+{{- end -}}
+
+{{- /* Gutter/spacing classes */ -}}
+{{- $gutterClass := "" -}}
+{{- if eq $gutter "none" -}}
+  {{- $gutterClass = $isVertical | ternary "space-y-0" "space-x-0" -}}
+{{- else if eq $gutter "tight" -}}
+  {{- $gutterClass = $isVertical | ternary "space-y-1" "space-x-1" -}}
+{{- else if eq $gutter "normal" -}}
+  {{- $gutterClass = $isVertical | ternary "space-y-2" "space-x-2" -}}
+{{- else if eq $gutter "relaxed" -}}
+  {{- $gutterClass = $isVertical | ternary "space-y-4" "space-x-4" -}}
+{{- end -}}
+
+{{- /* Layout classes */ -}}
+{{- if $fullWidth -}}
+  {{- $containerClass = printf "%s w-full" $containerClass -}}
+  {{- $navClass = printf "%s w-full" $navClass -}}
+{{- end -}}
+
+{{- if $justified and not $isVertical -}}
+  {{- $navClass = printf "%s justify-between" $navClass -}}
+{{- else if $centered and not $isVertical -}}
+  {{- $navClass = printf "%s justify-center" $navClass -}}
+{{- end -}}
+
+{{- if $isVertical and $fullWidth -}}
+  {{- $itemBaseClass = printf "%s w-full" $itemBaseClass -}}
+{{- end -}}
+
+{{- /* Sticky classes */ -}}
+{{- if $sticky -}}
+  {{- $containerClass = printf "%s sticky top-%d z-10" $containerClass $stickyOffset -}}
+{{- end -}}
+
+{{- /* Scrollable classes */ -}}
+{{- if $scrollable and not $isVertical -}}
+  {{- $containerClass = printf "%s overflow-x-auto scrollbar-thin" $containerClass -}}
+  {{- $gutterClass = "pr-2" -}}
+{{- end -}}
+
+{{- /* Mobile collapse classes */ -}}
+{{- $mobileClass := "" -}}
+{{- if $mobileCollapse -}}
+  {{- $mobileClass = printf "hidden %s:flex" $mobileBreakpoint -}}
+  {{- $navClass = printf "%s %s" $navClass $mobileClass -}}
+{{- end -}}
+
+{{- /* Variant specific classes */ -}}
+{{- if eq $variant "tabs" -}}
+  {{- $itemBaseClass = printf "%s font-medium border-b-2 border-transparent hover:text-gray-700 dark:hover:text-gray-300 hover:border-%s-500" $itemBaseClass $color -}}
+  {{- $activeBaseClass = printf "text-gray-900 dark:text-white border-%s-500" $color -}}
+{{- else if eq $variant "pills" -}}
+  {{- $itemBaseClass = printf "%s font-medium hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white" $itemBaseClass -}}
+  {{- $activeBaseClass = printf "bg-%s-500 text-white" $color -}}
+  {{- if $rounded -}}
+    {{- $itemBaseClass = printf "%s rounded-full" $itemBaseClass -}}
+  {{- end -}}
+{{- else if eq $variant "underlined" -}}
+  {{- $itemBaseClass = printf "%s font-medium border-b-2 border-transparent hover:text-gray-700 dark:hover:text-gray-300" $itemBaseClass -}}
+  {{- $activeBaseClass = printf "text-gray-900 dark:text-white border-%s-500" $color -}}
+  {{- $containerClass = printf "%s border-b border-gray-200 dark:border-gray-700" $containerClass -}}
+{{- else if eq $variant "bordered" -}}
+  {{- $itemBaseClass = printf "%s font-medium border border-transparent hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-900 dark:hover:text-white" $itemBaseClass -}}
+  {{- $activeBaseClass = printf "text-gray-900 dark:text-white border-%s-500" $color -}}
+  {{- if $rounded -}}
+    {{- $itemBaseClass = printf "%s rounded-md" $itemBaseClass -}}
+  {{- end -}}
+{{- else if eq $variant "line" -}}
+  {{- $navClass = printf "%s relative" $navClass -}}
+  {{- $itemBaseClass = printf "%s font-medium z-10 hover:text-gray-700 dark:hover:text-gray-300" $itemBaseClass -}}
+  {{- $activeBaseClass = printf "text-%s-600 dark:text-%s-500" $color $color -}}
+  
+  {{- /* Special handling for line indicator */ -}}
+  {{- $lineClass := printf "absolute bottom-0 left-0 h-0.5 bg-%s-500 dark:bg-%s-400 transition-all duration-300" $color $color -}}
+  {{- if $isVertical -}}
+    {{- $lineClass = printf "absolute left-0 top-0 w-0.5 bg-%s-500 dark:bg-%s-400 transition-all duration-300" $color $color -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $itemClass -}}
+  {{- $itemBaseClass = printf "%s %s" $itemBaseClass $itemClass -}}
+{{- end -}}
+
+{{- if $activeClass -}}
+  {{- $activeBaseClass = printf "%s %s" $activeBaseClass $activeClass -}}
+{{- end -}}
+
+<div
+  id="{{ $id }}"
+  class="{{ $containerClass }} {{ if eq $variant "line" }}pb-0.5{{ end }}"
+  data-subnav
+  data-variant="{{ $variant }}"
+  data-orientation="{{ $orientation }}"
+>
+  {{- /* Mobile dropdown for collapsed nav */ -}}
+  {{- if $mobileCollapse -}}
+  <div class="block {{ $mobileBreakpoint }}:hidden">
+    <select 
+      id="{{ $id }}-mobile" 
+      class="block w-full rounded-md border-gray-300 dark:border-gray-700 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:bg-gray-800 dark:text-white sm:text-sm"
+      data-subnav-mobile
+      aria-label="Navigation"
+    >
+      {{- range $index, $item := $items -}}
+        {{- $itemId := "" -}}
+        {{- $itemLabel := "" -}}
+        {{- $itemHref := "#" -}}
+        {{- $itemTarget := "" -}}
+        {{- $itemIcon := "" -}}
+        
+        {{- if kindIs "map" $item -}}
+          {{- $itemId = $item.id | default (printf "item-%d" $index) -}}
+          {{- $itemLabel = $item.label -}}
+          {{- $itemHref = $item.href | default "#" -}}
+          {{- $itemTarget = $item.target | default "" -}}
+          {{- $itemIcon = $item.icon | default "" -}}
+        {{- else -}}
+          {{- $itemId = printf "item-%d" $index -}}
+          {{- $itemLabel = $item -}}
+        {{- end -}}
+        
+        {{- $isActive := or (eq $activeItem $index) (eq $activeItem $itemId) -}}
+        
+        <option 
+          value="{{ $itemHref }}" 
+          {{ if $isActive }}selected{{ end }}
+          data-item-id="{{ $itemId }}"
+        >
+          {{ $itemLabel }}
+        </option>
+      {{- end -}}
+    </select>
+  </div>
+  {{- end -}}
+  
+  {{- /* Main navigation */ -}}
+  <nav 
+    class="{{ $navClass }} {{ $gutterClass }}"
+    data-subnav-nav
+    aria-label="Secondary navigation"
+    role="navigation"
+  >
+    {{- /* Line indicator for line variant */ -}}
+    {{- if eq $variant "line" -}}
+    <div class="{{ $lineClass }}" data-subnav-line></div>
+    {{- end -}}
+    
+    {{- range $index, $item := $items -}}
+      {{- $itemId := "" -}}
+      {{- $itemLabel := "" -}}
+      {{- $itemHref := "#" -}}
+      {{- $itemTarget := "" -}}
+      {{- $itemIcon := "" -}}
+      {{- $itemDisabled := false -}}
+      {{- $itemBadge := "" -}}
+      
+      {{- if kindIs "map" $item -}}
+        {{- $itemId = $item.id | default (printf "item-%d" $index) -}}
+        {{- $itemLabel = $item.label -}}
+        {{- $itemHref = $item.href | default "#" -}}
+        {{- $itemTarget = $item.target | default "" -}}
+        {{- $itemIcon = $item.icon | default "" -}}
+        {{- $itemDisabled = $item.disabled | default false -}}
+        {{- $itemBadge = $item.badge | default "" -}}
+      {{- else -}}
+        {{- $itemId = printf "item-%d" $index -}}
+        {{- $itemLabel = $item -}}
+      {{- end -}}
+      
+      {{- $isActive := or (eq $activeItem $index) (eq $activeItem $itemId) -}}
+      
+      <a 
+        id="{{ $id }}-{{ $itemId }}"
+        href="{{ $itemHref }}"
+        class="{{ $itemBaseClass }} {{ $itemSizeClass }} {{ if $isActive }}{{ $activeBaseClass }}{{ else }}text-gray-500 dark:text-gray-400{{ end }} {{ if $itemDisabled }}opacity-50 pointer-events-none{{ end }}"
+        {{ if $itemTarget }}target="{{ $itemTarget }}"{{ end }}
+        {{ if $isActive }}aria-current="page"{{ end }}
+        {{ if $itemDisabled }}aria-disabled="true" tabindex="-1"{{ end }}
+        data-subnav-item
+        data-item-id="{{ $itemId }}"
+        data-item-index="{{ $index }}"
+      >
+        {{- /* Icon positioning */ -}}
+        {{- if and $itemIcon (or (eq $iconPosition "left") (eq $iconPosition "top")) -}}
+          <span class="{{ if eq $iconPosition "left" }}mr-2{{ else }}mb-1{{ end }} {{ if eq $iconPosition "top" }}flex flex-col items-center{{ end }}">
+            {{ partial "icon.html" (dict "name" $itemIcon "size" "sm") }}
+          </span>
+        {{- end -}}
+        
+        {{- /* Item label - hide if icon only */ -}}
+        {{- if ne $iconPosition "only" -}}
+          <span>{{ $itemLabel }}</span>
+        {{- end -}}
+        
+        {{- /* Right positioned icon */ -}}
+        {{- if and $itemIcon (eq $iconPosition "right") -}}
+          <span class="ml-2">
+            {{ partial "icon.html" (dict "name" $itemIcon "size" "sm") }}
+          </span>
+        {{- end -}}
+        
+        {{- /* Badge if provided */ -}}
+        {{- if $itemBadge -}}
+          <span class="ml-2 inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-800 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
+            {{ $itemBadge }}
+          </span>
+        {{- end -}}
+      </a>
+    {{- end -}}
+  </nav>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const subnavElement = document.getElementById('{{ $id }}');
+    if (!subnavElement) return;
+    
+    // Get options from data attributes
+    const variant = subnavElement.dataset.variant;
+    const orientation = subnavElement.dataset.orientation;
+    const isVertical = orientation === 'vertical';
+    
+    // Elements
+    const navElement = subnavElement.querySelector('[data-subnav-nav]');
+    const items = subnavElement.querySelectorAll('[data-subnav-item]');
+    const mobileSelect = subnavElement.querySelector('[data-subnav-mobile]');
+    const lineIndicator = subnavElement.querySelector('[data-subnav-line]');
+    
+    // Set up mobile dropdown
+    if (mobileSelect) {
+      mobileSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const itemId = selectedOption.dataset.itemId;
+        
+        // Find and navigate to the corresponding item
+        if (selectedOption.value && selectedOption.value !== '#') {
+          window.location.href = selectedOption.value;
+        }
+        
+        // Trigger onChange callback
+        if ('{{ $onChange }}') {
+          try {
+            const itemIndex = Array.from(items).findIndex(item => item.dataset.itemId === itemId);
+            window['{{ $onChange }}']({
+              itemId: itemId,
+              itemIndex: itemIndex,
+              element: items[itemIndex]
+            });
+          } catch (err) {
+            console.error('Error in onChange callback:', err);
+          }
+        }
+      });
+    }
+    
+    // Set up click handlers for items
+    items.forEach(item => {
+      item.addEventListener('click', function(e) {
+        if (this.getAttribute('href') === '#') {
+          e.preventDefault();
+          
+          // Get item info
+          const itemId = this.dataset.itemId;
+          const itemIndex = parseInt(this.dataset.itemIndex, 10);
+          
+          // Update active state
+          updateActiveItem(itemId, itemIndex);
+          
+          // Trigger onChange callback
+          if ('{{ $onChange }}') {
+            try {
+              window['{{ $onChange }}']({
+                itemId: itemId,
+                itemIndex: itemIndex,
+                element: this
+              });
+            } catch (err) {
+              console.error('Error in onChange callback:', err);
+            }
+          }
+          
+          // Dispatch custom event
+          subnavElement.dispatchEvent(new CustomEvent('subnav:change', {
+            detail: {
+              itemId: itemId,
+              itemIndex: itemIndex,
+              element: this
+            }
+          }));
+        }
+      });
+    });
+    
+    // Position line indicator for line variant
+    function positionLineIndicator() {
+      if (variant !== 'line' || !lineIndicator) return;
+      
+      const activeItem = subnavElement.querySelector('[aria-current="page"]');
+      if (!activeItem) return;
+      
+      if (isVertical) {
+        lineIndicator.style.top = `${activeItem.offsetTop}px`;
+        lineIndicator.style.height = `${activeItem.offsetHeight}px`;
+      } else {
+        lineIndicator.style.left = `${activeItem.offsetLeft}px`;
+        lineIndicator.style.width = `${activeItem.offsetWidth}px`;
+      }
+    }
+    
+    // Update active item
+    function updateActiveItem(itemId, itemIndex) {
+      // Remove active state from all items
+      items.forEach(item => {
+        item.classList.remove('{{ $activeBaseClass }}');
+        item.classList.add('text-gray-500', 'dark:text-gray-400');
+        item.removeAttribute('aria-current');
+      });
+      
+      // Add active state to selected item
+      const activeItem = subnavElement.querySelector(`[data-item-id="${itemId}"]`);
+      if (activeItem) {
+        activeItem.classList.remove('text-gray-500', 'dark:text-gray-400');
+        activeItem.classList.add('{{ $activeBaseClass }}');
+        activeItem.setAttribute('aria-current', 'page');
+        
+        // Update mobile select if exists
+        if (mobileSelect) {
+          const options = mobileSelect.options;
+          for (let i = 0; i < options.length; i++) {
+            if (options[i].dataset.itemId === itemId) {
+              mobileSelect.selectedIndex = i;
+              break;
+            }
+          }
+        }
+        
+        // Update line indicator
+        positionLineIndicator();
+      }
+    }
+    
+    // Initialize line indicator
+    if (variant === 'line') {
+      positionLineIndicator();
+      
+      // Reposition on window resize
+      window.addEventListener('resize', positionLineIndicator);
+    }
+    
+    // Expose API
+    window.subnavs = window.subnavs || {};
+    window.subnavs['{{ $id }}'] = {
+      setActiveItem: function(itemId) {
+        const item = subnavElement.querySelector(`[data-item-id="${itemId}"]`);
+        if (item) {
+          const itemIndex = parseInt(item.dataset.itemIndex, 10);
+          updateActiveItem(itemId, itemIndex);
+        }
+      },
+      getActiveItem: function() {
+        const activeItem = subnavElement.querySelector('[aria-current="page"]');
+        return activeItem ? {
+          id: activeItem.dataset.itemId,
+          index: parseInt(activeItem.dataset.itemIndex, 10),
+          element: activeItem
+        } : null;
+      }
+    };
+  });
+</script>

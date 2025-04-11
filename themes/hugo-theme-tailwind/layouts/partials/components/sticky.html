@@ -1,0 +1,400 @@
+{{- /*
+  Sticky Component
+  
+  Parameters:
+    - id: String - Unique ID for the sticky element (default: auto-generated)
+    - content: String - Content to be made sticky (required)
+    - position: String - Position of the sticky element (default: "top")
+      Options: top, bottom
+    - offset: Number - Offset from the specified position in pixels (default: 0)
+    - zIndex: Number - Z-index for the sticky element (default: 30)
+    - boundarySelector: String - CSS selector for boundary element (default: "")
+    - breakpoint: String - Minimum breakpoint to enable sticky (default: "")
+      Options: sm, md, lg, xl, 2xl
+    - parentAsBoundary: Boolean - Use parent element as boundary (default: false)
+    - calculateViewport: Boolean - Adjust for viewport height (default: true)
+    - shadow: Boolean - Add shadow when sticky (default: false)
+    - animation: Boolean - Animate when becoming sticky (default: false)
+    - disabled: Boolean - Disable sticky behavior (default: false)
+    - onStuck: String - JS function to call when becoming sticky (default: "")
+    - onUnstuck: String - JS function to call when unsticking (default: "")
+    - class: String - Additional custom classes for container (default: "")
+    - stickyClass: String - Additional classes applied when sticky (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "sticky-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $content := .content -}}
+{{- $position := .position | default "top" -}}
+{{- $offset := .offset | default 0 -}}
+{{- $zIndex := .zIndex | default 30 -}}
+{{- $boundarySelector := .boundarySelector | default "" -}}
+{{- $breakpoint := .breakpoint | default "" -}}
+{{- $parentAsBoundary := .parentAsBoundary | default false -}}
+{{- $calculateViewport := .calculateViewport | default true -}}
+{{- $shadow := .shadow | default false -}}
+{{- $animation := .animation | default false -}}
+{{- $disabled := .disabled | default false -}}
+{{- $onStuck := .onStuck | default "" -}}
+{{- $onUnstuck := .onUnstuck | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $stickyClass := .stickyClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "" -}}
+{{- $innerClass := "transition-all" -}}
+{{- $shadowClass := "shadow-md" -}}
+
+{{- /* Animation classes */ -}}
+{{- $animationClass := "" -}}
+{{- if $animation -}}
+  {{- if eq $position "top" -}}
+    {{- $animationClass = "animate-slide-down" -}}
+  {{- else -}}
+    {{- $animationClass = "animate-slide-up" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Breakpoint classes */ -}}
+{{- $breakpointClass := "" -}}
+{{- if $breakpoint -}}
+  {{- if eq $breakpoint "sm" -}}
+    {{- $breakpointClass = "sm:sticky hidden sm:block" -}}
+  {{- else if eq $breakpoint "md" -}}
+    {{- $breakpointClass = "md:sticky hidden md:block" -}}
+  {{- else if eq $breakpoint "lg" -}}
+    {{- $breakpointClass = "lg:sticky hidden lg:block" -}}
+  {{- else if eq $breakpoint "xl" -}}
+    {{- $breakpointClass = "xl:sticky hidden xl:block" -}}
+  {{- else if eq $breakpoint "2xl" -}}
+    {{- $breakpointClass = "2xl:sticky hidden 2xl:block" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- /* Generate sticky style */ -}}
+{{- $stickyStyle := printf "%s: %dpx; z-index: %d;" $position $offset $zIndex -}}
+
+<div 
+  id="{{ $id }}-container" 
+  class="{{ $containerClass }}"
+  data-sticky-container
+  {{- if $parentAsBoundary }}
+  data-boundary="parent"
+  {{- end }}
+>
+  <div
+    id="{{ $id }}"
+    class="{{ $innerClass }} relative {{ if not $disabled }}{{ if not $breakpointClass }}sticky{{ else }}{{ $breakpointClass }}{{ end }}{{ end }}"
+    style="{{ if not $disabled }}{{ $stickyStyle }}{{ end }}"
+    data-sticky
+    data-sticky-position="{{ $position }}"
+    data-sticky-offset="{{ $offset }}"
+    data-sticky-z-index="{{ $zIndex }}"
+    data-sticky-boundary="{{ $boundarySelector }}"
+    data-sticky-viewport="{{ $calculateViewport }}"
+    data-sticky-shadow="{{ $shadow }}"
+    data-sticky-animation="{{ $animation }}"
+    data-sticky-disabled="{{ $disabled }}"
+  >
+    <div 
+      id="{{ $id }}-content" 
+      data-sticky-content
+      class="sticky-content"
+    >
+      {{ $content | safeHTML }}
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes slide-down {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slide-up {
+    0% {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-down {
+    animation: slide-down 0.3s ease forwards;
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.3s ease forwards;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const stickyElement = document.getElementById('{{ $id }}');
+    const container = document.getElementById('{{ $id }}-container');
+    const content = document.getElementById('{{ $id }}-content');
+    
+    if (!stickyElement || !container || !content) return;
+    
+    // Get sticky options from data attributes
+    const options = {
+      position: stickyElement.dataset.stickyPosition,
+      offset: parseInt(stickyElement.dataset.stickyOffset, 10),
+      zIndex: parseInt(stickyElement.dataset.stickyZIndex, 10),
+      boundarySelector: stickyElement.dataset.stickyBoundary,
+      calculateViewport: stickyElement.dataset.stickyViewport === 'true',
+      shadow: stickyElement.dataset.stickyShadow === 'true',
+      animation: stickyElement.dataset.stickyAnimation === 'true',
+      disabled: stickyElement.dataset.stickyDisabled === 'true',
+      parentAsBoundary: container.dataset.boundary === 'parent'
+    };
+    
+    // Exit if disabled
+    if (options.disabled) return;
+    
+    // Current state
+    let isStuck = false;
+    let boundaryElement = null;
+    let stickyTop = 0;
+    
+    // Find boundary element
+    if (options.boundarySelector) {
+      boundaryElement = document.querySelector(options.boundarySelector);
+    } else if (options.parentAsBoundary) {
+      boundaryElement = container;
+    }
+    
+    // Get initial position
+    function updateInitialPosition() {
+      if (!isStuck) {
+        const rect = stickyElement.getBoundingClientRect();
+        stickyTop = rect.top + window.scrollY;
+      }
+    }
+    
+    // Add shadow class when stuck
+    function addShadow() {
+      if (options.shadow && !stickyElement.classList.contains('{{ $shadowClass }}')) {
+        stickyElement.classList.add('{{ $shadowClass }}');
+      }
+    }
+    
+    // Remove shadow class when unstuck
+    function removeShadow() {
+      if (options.shadow && stickyElement.classList.contains('{{ $shadowClass }}')) {
+        stickyElement.classList.remove('{{ $shadowClass }}');
+      }
+    }
+    
+    // Add animation class
+    function addAnimation() {
+      if (options.animation && !stickyElement.classList.contains('{{ $animationClass }}')) {
+        stickyElement.classList.add('{{ $animationClass }}');
+      }
+    }
+    
+    // Remove animation class
+    function removeAnimation() {
+      if (options.animation && stickyElement.classList.contains('{{ $animationClass }}')) {
+        stickyElement.classList.remove('{{ $animationClass }}');
+      }
+    }
+    
+    // Add sticky class
+    function addStickyClass() {
+      if (!stickyElement.classList.contains('is-stuck')) {
+        stickyElement.classList.add('is-stuck');
+        
+        if ('{{ $stickyClass }}') {
+          const classes = '{{ $stickyClass }}'.split(' ').filter(Boolean);
+          stickyElement.classList.add(...classes);
+        }
+      }
+    }
+    
+    // Remove sticky class
+    function removeStickyClass() {
+      if (stickyElement.classList.contains('is-stuck')) {
+        stickyElement.classList.remove('is-stuck');
+        
+        if ('{{ $stickyClass }}') {
+          const classes = '{{ $stickyClass }}'.split(' ').filter(Boolean);
+          stickyElement.classList.remove(...classes);
+        }
+      }
+    }
+    
+    // Check if element should be stuck
+    function checkSticky() {
+      const scrollY = window.scrollY;
+      
+      // Calculate if should be stuck based on position
+      let shouldBeStuck = false;
+      let endPoint = null;
+      
+      if (options.position === 'top') {
+        shouldBeStuck = scrollY + options.offset >= stickyTop;
+      } else {
+        const viewportHeight = window.innerHeight;
+        shouldBeStuck = scrollY + viewportHeight - content.offsetHeight - options.offset <= stickyTop;
+      }
+      
+      // Check boundary if available
+      if (shouldBeStuck && boundaryElement) {
+        const boundaryRect = boundaryElement.getBoundingClientRect();
+        const stickyRect = stickyElement.getBoundingClientRect();
+        
+        if (options.position === 'top') {
+          // Stop at boundary bottom
+          endPoint = boundaryRect.bottom + window.scrollY - stickyRect.height - options.offset;
+          shouldBeStuck = scrollY <= endPoint;
+        } else {
+          // Stop at boundary top
+          endPoint = boundaryRect.top + window.scrollY + options.offset;
+          shouldBeStuck = scrollY + window.innerHeight >= endPoint;
+        }
+      }
+      
+      // Apply or remove sticky state
+      if (shouldBeStuck !== isStuck) {
+        isStuck = shouldBeStuck;
+        
+        if (isStuck) {
+          addStickyClass();
+          addShadow();
+          addAnimation();
+          
+          // Trigger callback
+          if ('{{ $onStuck }}') {
+            try {
+              window['{{ $onStuck }}']({
+                element: stickyElement,
+                container: container
+              });
+            } catch (err) {
+              console.error('Error in onStuck callback:', err);
+            }
+          }
+          
+          // Dispatch custom event
+          stickyElement.dispatchEvent(new CustomEvent('sticky:stuck', {
+            detail: {
+              element: stickyElement
+            }
+          }));
+        } else {
+          removeStickyClass();
+          removeShadow();
+          removeAnimation();
+          
+          // Trigger callback
+          if ('{{ $onUnstuck }}') {
+            try {
+              window['{{ $onUnstuck }}']({
+                element: stickyElement,
+                container: container
+              });
+            } catch (err) {
+              console.error('Error in onUnstuck callback:', err);
+            }
+          }
+          
+          // Dispatch custom event
+          stickyElement.dispatchEvent(new CustomEvent('sticky:unstuck', {
+            detail: {
+              element: stickyElement
+            }
+          }));
+        }
+      }
+      
+      // Handle boundary
+      if (isStuck && boundaryElement && endPoint !== null) {
+        if (options.position === 'top' && scrollY > endPoint) {
+          // Stick to bottom of boundary
+          stickyElement.style.position = 'absolute';
+          stickyElement.style.top = `${endPoint}px`;
+          stickyElement.style.bottom = 'auto';
+        } else if (options.position === 'bottom' && scrollY + window.innerHeight < endPoint) {
+          // Stick to top of boundary
+          stickyElement.style.position = 'absolute';
+          stickyElement.style.top = 'auto';
+          stickyElement.style.bottom = `${endPoint}px`;
+        } else {
+          // Normal sticky behavior
+          stickyElement.style.position = 'sticky';
+          stickyElement.style[options.position] = `${options.offset}px`;
+        }
+      }
+    }
+    
+    // Initialize
+    function init() {
+      updateInitialPosition();
+      checkSticky();
+      
+      // Set up event listeners
+      window.addEventListener('scroll', checkSticky, { passive: true });
+      window.addEventListener('resize', () => {
+        updateInitialPosition();
+        checkSticky();
+      }, { passive: true });
+      
+      // Dispatch initialized event
+      stickyElement.dispatchEvent(new CustomEvent('sticky:initialized', {
+        detail: {
+          element: stickyElement
+        }
+      }));
+    }
+    
+    // Initialize sticky functionality
+    init();
+    
+    // Expose API
+    window.stickyElements = window.stickyElements || {};
+    window.stickyElements['{{ $id }}'] = {
+      refresh: () => {
+        updateInitialPosition();
+        checkSticky();
+      },
+      enable: () => {
+        options.disabled = false;
+        stickyElement.dataset.stickyDisabled = 'false';
+        stickyElement.style.position = 'sticky';
+        stickyElement.style[options.position] = `${options.offset}px`;
+        stickyElement.style.zIndex = options.zIndex;
+        init();
+      },
+      disable: () => {
+        options.disabled = true;
+        stickyElement.dataset.stickyDisabled = 'true';
+        stickyElement.style.position = '';
+        stickyElement.style.top = '';
+        stickyElement.style.bottom = '';
+        removeStickyClass();
+        removeShadow();
+        removeAnimation();
+        
+        window.removeEventListener('scroll', checkSticky);
+        window.removeEventListener('resize', checkSticky);
+      },
+      isStuck: () => isStuck
+    };
+  });
+</script>

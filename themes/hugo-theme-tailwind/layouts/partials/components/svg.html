@@ -1,0 +1,289 @@
+{{- /*
+  SVG Component
+  
+  Parameters:
+    - src: String - Path to SVG file (required if not using inline)
+    - inline: String - Inline SVG content (required if not using src)
+    - sprite: String - SVG sprite ID (optional, format: "sprite-id#icon-id")
+    - width: String - Width of the SVG (default: "24px")
+    - height: String - Height of the SVG (default: "24px")
+    - size: String - Shorthand for equal width/height (default: "")
+    - viewBox: String - ViewBox attribute (default: from the source SVG)
+    - title: String - Accessibility title (default: "")
+    - desc: String - Accessibility description (default: "")
+    - focusable: Boolean - Make SVG focusable (default: false)
+    - role: String - ARIA role (default: "img")
+    - preserveAspectRatio: String - Aspect ratio setting (default: "xMidYMid meet")
+    - color: String - Fill/stroke color (default: "currentColor")
+    - stroke: String - Stroke color (default: "")
+    - strokeWidth: String - Stroke width (default: "")
+    - fill: String - Fill color (default: "")
+    - responsive: Boolean - Make SVG responsive (default: false)
+    - replaceColors: Object - Map of colors to replace (default: empty)
+    - optimize: Boolean - Remove unnecessary attributes (default: true)
+    - ariaHidden: Boolean - Hide from screen readers (default: depends on title)
+    - class: String - Additional custom classes (default: "")
+    - wrapperClass: String - Classes for wrapper element (default: "")
+    - style: String - Inline styles (default: "")
+*/ -}}
+
+{{- $src := .src | default "" -}}
+{{- $inline := .inline | default "" -}}
+{{- $sprite := .sprite | default "" -}}
+{{- $width := .width | default "24px" -}}
+{{- $height := .height | default "24px" -}}
+{{- $size := .size | default "" -}}
+{{- $viewBox := .viewBox | default "" -}}
+{{- $title := .title | default "" -}}
+{{- $desc := .desc | default "" -}}
+{{- $focusable := .focusable | default false -}}
+{{- $role := .role | default "img" -}}
+{{- $preserveAspectRatio := .preserveAspectRatio | default "xMidYMid meet" -}}
+{{- $color := .color | default "currentColor" -}}
+{{- $stroke := .stroke | default "" -}}
+{{- $strokeWidth := .strokeWidth | default "" -}}
+{{- $fill := .fill | default "" -}}
+{{- $responsive := .responsive | default false -}}
+{{- $replaceColors := .replaceColors | default dict -}}
+{{- $optimize := .optimize | default true -}}
+{{- $ariaHidden := .ariaHidden | default false -}}
+{{- $class := .class | default "" -}}
+{{- $wrapperClass := .wrapperClass | default "" -}}
+{{- $style := .style | default "" -}}
+
+{{- /* Generate a unique ID for the SVG */ -}}
+{{- $uniqueId := printf "svg-%s" (now.Unix) -}}
+
+{{- /* Determine if aria-hidden should be true based on title presence */ -}}
+{{- if not $ariaHidden -}}
+  {{- $ariaHidden = not $title -}}
+{{- end -}}
+
+{{- /* Adjust size if provided */ -}}
+{{- if $size -}}
+  {{- $width = $size -}}
+  {{- $height = $size -}}
+{{- end -}}
+
+{{- /* Base SVG attributes */ -}}
+{{- $svgAttrs := printf `xmlns="http://www.w3.org/2000/svg" width="%s" height="%s" preserveAspectRatio="%s" role="%s"` $width $height $preserveAspectRatio $role -}}
+
+{{- /* Add viewBox if provided */ -}}
+{{- if $viewBox -}}
+  {{- $svgAttrs = printf `%s viewBox="%s"` $svgAttrs $viewBox -}}
+{{- end -}}
+
+{{- /* Add accessibility attributes */ -}}
+{{- if $focusable -}}
+  {{- $svgAttrs = printf `%s focusable="true" tabindex="0"` $svgAttrs -}}
+{{- else -}}
+  {{- $svgAttrs = printf `%s focusable="false"` $svgAttrs -}}
+{{- end -}}
+
+{{- if $ariaHidden -}}
+  {{- $svgAttrs = printf `%s aria-hidden="true"` $svgAttrs -}}
+{{- else if $title -}}
+  {{- $svgAttrs = printf `%s aria-labelledby="%s-title"` $svgAttrs $uniqueId -}}
+{{- end -}}
+
+{{- /* Add color attributes */ -}}
+{{- if $color -}}
+  {{- $svgAttrs = printf `%s style="%s color: %s;"` $svgAttrs $style $color -}}
+{{- else if $style -}}
+  {{- $svgAttrs = printf `%s style="%s"` $svgAttrs $style -}}
+{{- end -}}
+
+{{- /* Add responsive class if needed */ -}}
+{{- if $responsive -}}
+  {{- $class = printf `%s w-full h-auto` $class -}}
+{{- end -}}
+
+{{- /* Add custom class */ -}}
+{{- if $class -}}
+  {{- $svgAttrs = printf `%s class="%s"` $svgAttrs $class -}}
+{{- end -}}
+
+{{- /* Determine which method to use for displaying SVG */ -}}
+{{- if $sprite -}}
+<span class="{{ $wrapperClass }}">
+  <svg {{ $svgAttrs | safeHTMLAttr }}>
+    {{- if $title -}}
+    <title id="{{ $uniqueId }}-title">{{ $title }}</title>
+    {{- end -}}
+    
+    {{- if $desc -}}
+    <desc id="{{ $uniqueId }}-desc">{{ $desc }}</desc>
+    {{- end -}}
+    
+    <use href="{{ $sprite }}" {{ if $fill }}fill="{{ $fill }}"{{ end }} {{ if $stroke }}stroke="{{ $stroke }}"{{ end }} {{ if $strokeWidth }}stroke-width="{{ $strokeWidth }}"{{ end }}></use>
+  </svg>
+</span>
+{{- else if $src -}}
+{{- /* Load SVG from file */ -}}
+<span class="{{ $wrapperClass }}">
+  {{- $svgContent := "" -}}
+  
+  {{- /* Try to read the file as a resource */ -}}
+  {{- $resource := resources.Get $src -}}
+  {{- if $resource -}}
+    {{- $svgContent = $resource.Content -}}
+  {{- else -}}
+    {{- /* Try to read from static folder */ -}}
+    {{- $staticPath := printf "static/%s" $src -}}
+    {{- if fileExists $staticPath -}}
+      {{- $svgContent = readFile $staticPath -}}
+    {{- else -}}
+      {{- warnf "SVG file not found: %s" $src -}}
+    {{- end -}}
+  {{- end -}}
+  
+  {{- /* Process the SVG content */ -}}
+  {{- if $svgContent -}}
+    {{- /* Extract viewBox from original SVG if not provided */ -}}
+    {{- if not $viewBox -}}
+      {{- $viewBoxPattern := `viewBox="([^"]*)"` -}}
+      {{- $viewBoxMatch := findRE $viewBoxPattern $svgContent 1 -}}
+      {{- if $viewBoxMatch -}}
+        {{- $viewBox = replaceRE $viewBoxPattern "$1" (index $viewBoxMatch 0) -}}
+        {{- $svgAttrs = printf `%s viewBox="%s"` $svgAttrs $viewBox -}}
+      {{- end -}}
+    {{- end -}}
+    
+    {{- /* Replace SVG tag with our custom attributes */ -}}
+    {{- $svgTagPattern := `<svg[^>]*>` -}}
+    {{- $processedSvg := replaceRE $svgTagPattern (printf `<svg %s>` $svgAttrs) $svgContent -}}
+    
+    {{- /* Add title and desc if provided */ -}}
+    {{- if or $title $desc -}}
+      {{- $svgOpeningTag := printf `<svg %s>` $svgAttrs -}}
+      {{- $titleDescContent := "" -}}
+      
+      {{- if $title -}}
+        {{- $titleDescContent = printf `%s<title id="%s-title">%s</title>` $titleDescContent $uniqueId $title -}}
+      {{- end -}}
+      
+      {{- if $desc -}}
+        {{- $titleDescContent = printf `%s<desc id="%s-desc">%s</desc>` $titleDescContent $uniqueId $desc -}}
+      {{- end -}}
+      
+      {{- $processedSvg = replace $processedSvg $svgOpeningTag (printf `%s%s` $svgOpeningTag $titleDescContent) -}}
+    {{- end -}}
+    
+    {{- /* Apply fill or stroke if provided */ -}}
+    {{- if or $fill $stroke $strokeWidth -}}
+      {{- $processedSvg = replaceRE `<(path|circle|rect|ellipse|line|polyline|polygon)([^>]*)>` (printf `<$1$2 %s%s%s>` 
+          (cond $fill (printf `fill="%s" ` $fill) "") 
+          (cond $stroke (printf `stroke="%s" ` $stroke) "") 
+          (cond $strokeWidth (printf `stroke-width="%s" ` $strokeWidth) "")) $processedSvg -}}
+    {{- end -}}
+    
+    {{- /* Replace colors if specified */ -}}
+    {{- range $oldColor, $newColor := $replaceColors -}}
+      {{- $oldColorPattern := printf `(%s|"%s")` $oldColor $oldColor -}}
+      {{- $processedSvg = replaceRE $oldColorPattern $newColor $processedSvg -}}
+    {{- end -}}
+    
+    {{- /* Optimize SVG */ -}}
+    {{- if $optimize -}}
+      {{- /* Remove comments */ -}}
+      {{- $processedSvg = replaceRE `<!--.*?-->` "" $processedSvg -}}
+      
+      {{- /* Remove unnecessary whitespace */ -}}
+      {{- $processedSvg = replaceRE `>\s+<` "><" $processedSvg -}}
+      
+      {{- /* Remove metadata */ -}}
+      {{- $processedSvg = replaceRE `<metadata>.*?</metadata>` "" $processedSvg -}}
+      
+      {{- /* Remove XML declaration */ -}}
+      {{- $processedSvg = replaceRE `<\?xml.*?\?>` "" $processedSvg -}}
+    {{- end -}}
+    
+    {{- /* Output the processed SVG */ -}}
+    {{ $processedSvg | safeHTML }}
+  {{- else -}}
+    <svg {{ $svgAttrs | safeHTMLAttr }}>
+      {{- if $title -}}
+      <title id="{{ $uniqueId }}-title">{{ $title }}</title>
+      {{- end -}}
+      
+      {{- if $desc -}}
+      <desc id="{{ $uniqueId }}-desc">{{ $desc }}</desc>
+      {{- end -}}
+      
+      <rect width="100%" height="100%" fill="#ccc"></rect>
+      <text x="50%" y="50%" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle" dy=".3em">SVG not found</text>
+    </svg>
+  {{- end -}}
+</span>
+{{- else if $inline -}}
+{{- /* Use inline SVG content */ -}}
+<span class="{{ $wrapperClass }}">
+  {{- /* Replace SVG tag with our custom attributes */ -}}
+  {{- $svgTagPattern := `<svg[^>]*>` -}}
+  {{- $processedSvg := replaceRE $svgTagPattern (printf `<svg %s>` $svgAttrs) $inline -}}
+  
+  {{- /* Add title and desc if provided */ -}}
+  {{- if or $title $desc -}}
+    {{- $svgOpeningTag := printf `<svg %s>` $svgAttrs -}}
+    {{- $titleDescContent := "" -}}
+    
+    {{- if $title -}}
+      {{- $titleDescContent = printf `%s<title id="%s-title">%s</title>` $titleDescContent $uniqueId $title -}}
+    {{- end -}}
+    
+    {{- if $desc -}}
+      {{- $titleDescContent = printf `%s<desc id="%s-desc">%s</desc>` $titleDescContent $uniqueId $desc -}}
+    {{- end -}}
+    
+    {{- $processedSvg = replace $processedSvg $svgOpeningTag (printf `%s%s` $svgOpeningTag $titleDescContent) -}}
+  {{- end -}}
+  
+  {{- /* Apply fill or stroke if provided */ -}}
+  {{- if or $fill $stroke $strokeWidth -}}
+    {{- $processedSvg = replaceRE `<(path|circle|rect|ellipse|line|polyline|polygon)([^>]*)>` (printf `<$1$2 %s%s%s>` 
+        (cond $fill (printf `fill="%s" ` $fill) "") 
+        (cond $stroke (printf `stroke="%s" ` $stroke) "") 
+        (cond $strokeWidth (printf `stroke-width="%s" ` $strokeWidth) "")) $processedSvg -}}
+  {{- end -}}
+  
+  {{- /* Replace colors if specified */ -}}
+  {{- range $oldColor, $newColor := $replaceColors -}}
+    {{- $oldColorPattern := printf `(%s|"%s")` $oldColor $oldColor -}}
+    {{- $processedSvg = replaceRE $oldColorPattern $newColor $processedSvg -}}
+  {{- end -}}
+  
+  {{- /* Optimize SVG */ -}}
+  {{- if $optimize -}}
+    {{- /* Remove comments */ -}}
+    {{- $processedSvg = replaceRE `<!--.*?-->` "" $processedSvg -}}
+    
+    {{- /* Remove unnecessary whitespace */ -}}
+    {{- $processedSvg = replaceRE `>\s+<` "><" $processedSvg -}}
+    
+    {{- /* Remove metadata */ -}}
+    {{- $processedSvg = replaceRE `<metadata>.*?</metadata>` "" $processedSvg -}}
+    
+    {{- /* Remove XML declaration */ -}}
+    {{- $processedSvg = replaceRE `<\?xml.*?\?>` "" $processedSvg -}}
+  {{- end -}}
+  
+  {{- /* Output the processed SVG */ -}}
+  {{ $processedSvg | safeHTML }}
+</span>
+{{- else -}}
+{{- /* Display a placeholder when no source is provided */ -}}
+<span class="{{ $wrapperClass }}">
+  <svg {{ $svgAttrs | safeHTMLAttr }}>
+    {{- if $title -}}
+    <title id="{{ $uniqueId }}-title">{{ $title }}</title>
+    {{- end -}}
+    
+    {{- if $desc -}}
+    <desc id="{{ $uniqueId }}-desc">{{ $desc }}</desc>
+    {{- end -}}
+    
+    <rect width="100%" height="100%" fill="#ccc"></rect>
+    <text x="50%" y="50%" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle" dy=".3em">No SVG Source</text>
+  </svg>
+</span>
+{{- end -}}

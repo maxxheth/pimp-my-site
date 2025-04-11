@@ -1,0 +1,879 @@
+{{- /*
+  Video Component
+  
+  Parameters:
+    - id: String - Unique ID for the video (default: auto-generated)
+    - src: String/Array - Video source URL(s) (required)
+    - poster: String - Poster image URL (default: "")
+    - title: String - Video title for accessibility (default: "")
+    - width: String/Number - Video width (default: "auto")
+    - height: String/Number - Video height (default: "auto")
+    - aspectRatio: String - Aspect ratio (default: "16/9")
+      Options: 16/9, 4/3, 1/1, 21/9, auto
+    - controls: Boolean - Show video controls (default: true)
+    - autoplay: Boolean - Autoplay video (default: false)
+    - muted: Boolean - Mute video (default: false)
+    - loop: Boolean - Loop video (default: false)
+    - preload: String - Preload behavior (default: "metadata")
+      Options: none, metadata, auto
+    - playsInline: Boolean - Play inline on mobile (default: true)
+    - responsive: Boolean - Make video responsive (default: true)
+    - overlay: Boolean - Show play button overlay (default: false)
+    - thumbnail: Boolean - Show thumbnail mode with play button (default: false)
+    - lazy: Boolean - Use lazy loading (default: true)
+    - captions: String/Array - Caption/subtitle file URL(s) (default: [])
+    - captionsDefault: String - Default caption language (default: "")
+    - pip: Boolean - Enable picture-in-picture (default: false)
+    - fullscreen: Boolean - Enable fullscreen (default: true)
+    - startTime: Number - Start time in seconds (default: 0)
+    - endTime: Number - End time in seconds (default: 0)
+    - volume: Number - Initial volume (0-1) (default: 1)
+    - playbackRate: Number - Initial playback rate (default: 1)
+    - showProgress: Boolean - Show progress bar (default: true)
+    - showDuration: Boolean - Show duration (default: true)
+    - showVolume: Boolean - Show volume control (default: true)
+    - showPlaybackRate: Boolean - Show playback rate control (default: false)
+    - showPipControl: Boolean - Show PIP control (default: false)
+    - showFullscreenControl: Boolean - Show fullscreen control (default: true)
+    - showCaptionsControl: Boolean - Show captions control (default: true)
+    - showSettingsControl: Boolean - Show settings control (default: true)
+    - apiProvider: String - External API provider (default: "")
+      Options: youtube, vimeo, dailymotion, custom
+    - apiId: String - Video ID for external API (default: "")
+    - apiParams: Map - Additional API parameters (default: {})
+    - consent: Boolean - Require consent before loading (default: false)
+    - consentText: String - Text to show before consent (default: "Play video")
+    - onPlay: String - JS function to call on play (default: "")
+    - onPause: String - JS function to call on pause (default: "")
+    - onEnded: String - JS function to call on end (default: "")
+    - onTimeUpdate: String - JS function to call on time update (default: "")
+    - onReady: String - JS function to call when ready (default: "")
+    - onError: String - JS function to call on error (default: "")
+    - class: String - Additional custom classes for container (default: "")
+    - videoClass: String - Additional classes for video element (default: "")
+    - posterClass: String - Additional classes for poster image (default: "")
+    - controlsClass: String - Additional classes for controls (default: "")
+    - overlayClass: String - Additional classes for overlay (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "video-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $src := .src -}}
+{{- $poster := .poster | default "" -}}
+{{- $title := .title | default "" -}}
+{{- $width := .width | default "auto" -}}
+{{- $height := .height | default "auto" -}}
+{{- $aspectRatio := .aspectRatio | default "16/9" -}}
+{{- $controls := .controls | default true -}}
+{{- $autoplay := .autoplay | default false -}}
+{{- $muted := .muted | default false -}}
+{{- $loop := .loop | default false -}}
+{{- $preload := .preload | default "metadata" -}}
+{{- $playsInline := .playsInline | default true -}}
+{{- $responsive := .responsive | default true -}}
+{{- $overlay := .overlay | default false -}}
+{{- $thumbnail := .thumbnail | default false -}}
+{{- $lazy := .lazy | default true -}}
+{{- $captions := .captions | default slice -}}
+{{- $captionsDefault := .captionsDefault | default "" -}}
+{{- $pip := .pip | default false -}}
+{{- $fullscreen := .fullscreen | default true -}}
+{{- $startTime := .startTime | default 0 -}}
+{{- $endTime := .endTime | default 0 -}}
+{{- $volume := .volume | default 1 -}}
+{{- $playbackRate := .playbackRate | default 1 -}}
+{{- $showProgress := .showProgress | default true -}}
+{{- $showDuration := .showDuration | default true -}}
+{{- $showVolume := .showVolume | default true -}}
+{{- $showPlaybackRate := .showPlaybackRate | default false -}}
+{{- $showPipControl := .showPipControl | default false -}}
+{{- $showFullscreenControl := .showFullscreenControl | default true -}}
+{{- $showCaptionsControl := .showCaptionsControl | default true -}}
+{{- $showSettingsControl := .showSettingsControl | default true -}}
+{{- $apiProvider := .apiProvider | default "" -}}
+{{- $apiId := .apiId | default "" -}}
+{{- $apiParams := .apiParams | default dict -}}
+{{- $consent := .consent | default false -}}
+{{- $consentText := .consentText | default "Play video" -}}
+{{- $onPlay := .onPlay | default "" -}}
+{{- $onPause := .onPause | default "" -}}
+{{- $onEnded := .onEnded | default "" -}}
+{{- $onTimeUpdate := .onTimeUpdate | default "" -}}
+{{- $onReady := .onReady | default "" -}}
+{{- $onError := .onError | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $videoClass := .videoClass | default "" -}}
+{{- $posterClass := .posterClass | default "" -}}
+{{- $controlsClass := .controlsClass | default "" -}}
+{{- $overlayClass := .overlayClass | default "" -}}
+
+{{- /* Process video sources */ -}}
+{{- $sources := slice -}}
+{{- if eq (printf "%T" $src) "string" -}}
+  {{- $sources = slice $src -}}
+{{- else -}}
+  {{- $sources = $src -}}
+{{- end -}}
+
+{{- /* Process caption sources */ -}}
+{{- $captionSources := slice -}}
+{{- if eq (printf "%T" $captions) "string" -}}
+  {{- $captionSources = slice (dict "src" $captions "srclang" $captionsDefault "label" $captionsDefault "default" true) -}}
+{{- else if gt (len $captions) 0 -}}
+  {{- range $index, $caption := $captions -}}
+    {{- if eq (printf "%T" $caption) "string" -}}
+      {{- $isDefault := eq $index 0 -}}
+      {{- if ne $captionsDefault "" -}}
+        {{- $isDefault = eq $caption $captionsDefault -}}
+      {{- end -}}
+      {{- $captionSources = $captionSources | append (dict "src" $caption "srclang" "en" "label" "English" "default" $isDefault) -}}
+    {{- else -}}
+      {{- $isDefault := and (eq $index 0) (eq $captionsDefault "") -}}
+      {{- if ne $captionsDefault "" -}}
+        {{- $isDefault = eq $caption.srclang $captionsDefault -}}
+      {{- end -}}
+      {{- $captionItem := dict "src" $caption.src "srclang" $caption.srclang "label" $caption.label "default" $isDefault -}}
+      {{- $captionSources = $captionSources | append $captionItem -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Build container classes */ -}}
+{{- $containerClass := "video-container relative" -}}
+
+{{- /* Responsive video container */ -}}
+{{- if $responsive -}}
+  {{- $containerClass = printf "%s w-full" $containerClass -}}
+  
+  {{- /* Aspect ratio classes */ -}}
+  {{- if eq $aspectRatio "16/9" -}}
+    {{- $containerClass = printf "%s aspect-video" $containerClass -}}
+  {{- else if eq $aspectRatio "4/3" -}}
+    {{- $containerClass = printf "%s aspect-[4/3]" $containerClass -}}
+  {{- else if eq $aspectRatio "1/1" -}}
+    {{- $containerClass = printf "%s aspect-square" $containerClass -}}
+  {{- else if eq $aspectRatio "21/9" -}}
+    {{- $containerClass = printf "%s aspect-[21/9]" $containerClass -}}
+  {{- else if ne $aspectRatio "auto" -}}
+    {{- /* Custom aspect ratio */ -}}
+    {{- $containerClass = printf "%s aspect-[%s]" $containerClass $aspectRatio -}}
+  {{- end -}}
+{{- else -}}
+  {{- /* Fixed size */ -}}
+  {{- if ne $width "auto" -}}
+    {{- if eq (printf "%T" $width) "string" -}}
+      {{- if hasPrefix $width "w-" -}}
+        {{- $containerClass = printf "%s %s" $containerClass $width -}}
+      {{- else -}}
+        {{- $containerClass = printf "%s w-[%s]" $containerClass $width -}}
+      {{- end -}}
+    {{- else -}}
+      {{- $containerClass = printf "%s w-[%dpx]" $containerClass $width -}}
+    {{- end -}}
+  {{- end -}}
+  
+  {{- if ne $height "auto" -}}
+    {{- if eq (printf "%T" $height) "string" -}}
+      {{- if hasPrefix $height "h-" -}}
+        {{- $containerClass = printf "%s %s" $containerClass $height -}}
+      {{- else -}}
+        {{- $containerClass = printf "%s h-[%s]" $containerClass $height -}}
+      {{- end -}}
+    {{- else -}}
+      {{- $containerClass = printf "%s h-[%dpx]" $containerClass $height -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Video element classes */ -}}
+{{- $baseVideoClass := "w-full h-full" -}}
+{{- if $videoClass -}}
+  {{- $baseVideoClass = printf "%s %s" $baseVideoClass $videoClass -}}
+{{- end -}}
+
+{{- /* Poster classes */ -}}
+{{- $basePosterClass := "absolute inset-0 w-full h-full object-cover" -}}
+{{- if $posterClass -}}
+  {{- $basePosterClass = printf "%s %s" $basePosterClass $posterClass -}}
+{{- end -}}
+
+{{- /* Overlay classes */ -}}
+{{- $baseOverlayClass := "absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 transition-opacity hover:bg-opacity-30" -}}
+{{- if $overlayClass -}}
+  {{- $baseOverlayClass = printf "%s %s" $baseOverlayClass $overlayClass -}}
+{{- end -}}
+
+{{- /* Controls classes */ -}}
+{{- $baseControlsClass := "" -}}
+{{- if $controlsClass -}}
+  {{- $baseControlsClass = $controlsClass -}}
+{{- end -}}
+
+{{- /* Add custom container classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- /* Determine if we need to use an external API */ -}}
+{{- $useApi := and (ne $apiProvider "") (ne $apiId "") -}}
+
+<div
+  id="{{ $id }}-container"
+  class="{{ $containerClass }}"
+  data-video-container
+  {{- if $consent }} data-video-consent="true"{{ end }}
+>
+  {{- /* External API video providers */ -}}
+  {{- if $useApi -}}
+    {{- if eq $apiProvider "youtube" -}}
+      {{- /* YouTube embed */ -}}
+      {{- $youtubeParams := dict -}}
+      {{- $youtubeParams = merge $youtubeParams (dict "rel" "0") -}}
+      {{- if $autoplay -}}{{- $youtubeParams = merge $youtubeParams (dict "autoplay" "1") -}}{{- end -}}
+      {{- if $muted -}}{{- $youtubeParams = merge $youtubeParams (dict "mute" "1") -}}{{- end -}}
+      {{- if $loop -}}{{- $youtubeParams = merge $youtubeParams (dict "loop" "1") -}}{{- end -}}
+      {{- if $controls -}}{{- $youtubeParams = merge $youtubeParams (dict "controls" "1") -}}{{- else -}}{{- $youtubeParams = merge $youtubeParams (dict "controls" "0") -}}{{- end -}}
+      {{- if gt $startTime 0 -}}{{- $youtubeParams = merge $youtubeParams (dict "start" $startTime) -}}{{- end -}}
+      {{- if gt $endTime 0 -}}{{- $youtubeParams = merge $youtubeParams (dict "end" $endTime) -}}{{- end -}}
+      {{- if $playsInline -}}{{- $youtubeParams = merge $youtubeParams (dict "playsinline" "1") -}}{{- end -}}
+      
+      {{- /* Override with custom params */ -}}
+      {{- $youtubeParams = merge $youtubeParams $apiParams -}}
+      
+      {{- /* Build query string */ -}}
+      {{- $queryString := "?" -}}
+      {{- range $key, $value := $youtubeParams -}}
+        {{- $queryString = printf "%s%s=%s&" $queryString $key $value -}}
+      {{- end -}}
+      {{- $queryString = slice $queryString 0 (sub (len $queryString) 1) -}}
+      
+      {{- if $consent -}}
+        <div class="consent-overlay absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 text-white" data-video-consent-overlay>
+          {{- if $poster -}}
+            <img src="{{ $poster }}" alt="{{ $title }}" class="{{ $basePosterClass }} opacity-40">
+          {{- end -}}
+          <div class="text-center p-4">
+            <p class="mb-4">{{ $consentText }}</p>
+            <button 
+              type="button" 
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              data-video-consent-button
+            >Play Video</button>
+          </div>
+        </div>
+        <div class="video-embed-container w-full h-full" style="display: none;" data-video-embed-container>
+          <iframe 
+            id="{{ $id }}"
+            src="about:blank" 
+            data-src="https://www.youtube.com/embed/{{ $apiId }}{{ $queryString }}"
+            title="{{ $title }}"
+            class="{{ $baseVideoClass }}"
+            frameborder="0"
+            allowfullscreen
+            {{ if $pip }}allowpictureInPicture{{ end }}
+            {{ if $playsInline }}playsinline{{ end }}
+            loading="{{ if $lazy }}lazy{{ else }}eager{{ end }}"
+          ></iframe>
+        </div>
+      {{- else -}}
+        <iframe 
+          id="{{ $id }}"
+          src="https://www.youtube.com/embed/{{ $apiId }}{{ $queryString }}"
+          title="{{ $title }}"
+          class="{{ $baseVideoClass }}"
+          frameborder="0"
+          allowfullscreen
+          {{ if $pip }}allowpictureInPicture{{ end }}
+          {{ if $playsInline }}playsinline{{ end }}
+          loading="{{ if $lazy }}lazy{{ else }}eager{{ end }}"
+        ></iframe>
+      {{- end -}}
+    {{- else if eq $apiProvider "vimeo" -}}
+      {{- /* Vimeo embed */ -}}
+      {{- $vimeoParams := dict -}}
+      {{- if $autoplay -}}{{- $vimeoParams = merge $vimeoParams (dict "autoplay" "1") -}}{{- end -}}
+      {{- if $muted -}}{{- $vimeoParams = merge $vimeoParams (dict "muted" "1") -}}{{- end -}}
+      {{- if $loop -}}{{- $vimeoParams = merge $vimeoParams (dict "loop" "1") -}}{{- end -}}
+      {{- if not $controls -}}{{- $vimeoParams = merge $vimeoParams (dict "controls" "0") -}}{{- end -}}
+      {{- if $showDuration -}}{{- $vimeoParams = merge $vimeoParams (dict "showduration" "1") -}}{{- end -}}
+      {{- if gt $startTime 0 -}}{{- $vimeoParams = merge $vimeoParams (dict "t" $startTime) -}}{{- end -}}
+      
+      {{- /* Override with custom params */ -}}
+      {{- $vimeoParams = merge $vimeoParams $apiParams -}}
+      
+      {{- /* Build query string */ -}}
+      {{- $queryString := "?" -}}
+      {{- range $key, $value := $vimeoParams -}}
+        {{- $queryString = printf "%s%s=%s&" $queryString $key $value -}}
+      {{- end -}}
+      {{- $queryString = slice $queryString 0 (sub (len $queryString) 1) -}}
+      
+      {{- if $consent -}}
+        <div class="consent-overlay absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 text-white" data-video-consent-overlay>
+          {{- if $poster -}}
+            <img src="{{ $poster }}" alt="{{ $title }}" class="{{ $basePosterClass }} opacity-40">
+          {{- end -}}
+          <div class="text-center p-4">
+            <p class="mb-4">{{ $consentText }}</p>
+            <button 
+              type="button" 
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              data-video-consent-button
+            >Play Video</button>
+          </div>
+        </div>
+        <div class="video-embed-container w-full h-full" style="display: none;" data-video-embed-container>
+          <iframe 
+            id="{{ $id }}"
+            src="about:blank" 
+            data-src="https://player.vimeo.com/video/{{ $apiId }}{{ $queryString }}"
+            title="{{ $title }}"
+            class="{{ $baseVideoClass }}"
+            frameborder="0"
+            allowfullscreen
+            {{ if $pip }}allowpictureInPicture{{ end }}
+            {{ if $playsInline }}playsinline{{ end }}
+            loading="{{ if $lazy }}lazy{{ else }}eager{{ end }}"
+          ></iframe>
+        </div>
+      {{- else -}}
+        <iframe 
+          id="{{ $id }}"
+          src="https://player.vimeo.com/video/{{ $apiId }}{{ $queryString }}"
+          title="{{ $title }}"
+          class="{{ $baseVideoClass }}"
+          frameborder="0"
+          allowfullscreen
+          {{ if $pip }}allowpictureInPicture{{ end }}
+          {{ if $playsInline }}playsinline{{ end }}
+          loading="{{ if $lazy }}lazy{{ else }}eager{{ end }}"
+        ></iframe>
+      {{- end -}}
+    {{- else if eq $apiProvider "dailymotion" -}}
+      {{- /* Dailymotion embed */ -}}
+      {{- $dmParams := dict -}}
+      {{- if $autoplay -}}{{- $dmParams = merge $dmParams (dict "autoplay" "1") -}}{{- end -}}
+      {{- if $muted -}}{{- $dmParams = merge $dmParams (dict "mute" "1") -}}{{- end -}}
+      {{- if not $controls -}}{{- $dmParams = merge $dmParams (dict "controls" "0") -}}{{- end -}}
+      {{- if gt $startTime 0 -}}{{- $dmParams = merge $dmParams (dict "start" $startTime) -}}{{- end -}}
+      
+      {{- /* Override with custom params */ -}}
+      {{- $dmParams = merge $dmParams $apiParams -}}
+      
+      {{- /* Build query string */ -}}
+      {{- $queryString := "?" -}}
+      {{- range $key, $value := $dmParams -}}
+        {{- $queryString = printf "%s%s=%s&" $queryString $key $value -}}
+      {{- end -}}
+      {{- $queryString = slice $queryString 0 (sub (len $queryString) 1) -}}
+      
+      {{- if $consent -}}
+        <div class="consent-overlay absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 text-white" data-video-consent-overlay>
+          {{- if $poster -}}
+            <img src="{{ $poster }}" alt="{{ $title }}" class="{{ $basePosterClass }} opacity-40">
+          {{- end -}}
+          <div class="text-center p-4">
+            <p class="mb-4">{{ $consentText }}</p>
+            <button 
+              type="button" 
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              data-video-consent-button
+            >Play Video</button>
+          </div>
+        </div>
+        <div class="video-embed-container w-full h-full" style="display: none;" data-video-embed-container>
+          <iframe 
+            id="{{ $id }}"
+            src="about:blank" 
+            data-src="https://www.dailymotion.com/embed/video/{{ $apiId }}{{ $queryString }}"
+            title="{{ $title }}"
+            class="{{ $baseVideoClass }}"
+            frameborder="0"
+            allowfullscreen
+            {{ if $pip }}allowpictureInPicture{{ end }}
+            {{ if $playsInline }}playsinline{{ end }}
+            loading="{{ if $lazy }}lazy{{ else }}eager{{ end }}"
+          ></iframe>
+        </div>
+      {{- else -}}
+        <iframe 
+          id="{{ $id }}"
+          src="https://www.dailymotion.com/embed/video/{{ $apiId }}{{ $queryString }}"
+          title="{{ $title }}"
+          class="{{ $baseVideoClass }}"
+          frameborder="0"
+          allowfullscreen
+          {{ if $pip }}allowpictureInPicture{{ end }}
+          {{ if $playsInline }}playsinline{{ end }}
+          loading="{{ if $lazy }}lazy{{ else }}eager{{ end }}"
+        ></iframe>
+      {{- end -}}
+    {{- else if eq $apiProvider "custom" -}}
+      {{- /* Custom embed */ -}}
+      {{- if $consent -}}
+        <div class="consent-overlay absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 text-white" data-video-consent-overlay>
+          {{- if $poster -}}
+            <img src="{{ $poster }}" alt="{{ $title }}" class="{{ $basePosterClass }} opacity-40">
+          {{- end -}}
+          <div class="text-center p-4">
+            <p class="mb-4">{{ $consentText }}</p>
+            <button 
+              type="button" 
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              data-video-consent-button
+            >Play Video</button>
+          </div>
+        </div>
+        <div class="video-embed-container w-full h-full" style="display: none;" data-video-embed-container>
+          <iframe 
+            id="{{ $id }}"
+            src="about:blank" 
+            data-src="{{ $apiId }}"
+            title="{{ $title }}"
+            class="{{ $baseVideoClass }}"
+            frameborder="0"
+            allowfullscreen
+            {{ if $pip }}allowpictureInPicture{{ end }}
+            {{ if $playsInline }}playsinline{{ end }}
+            loading="{{ if $lazy }}lazy{{ else }}eager{{ end }}"
+          ></iframe>
+        </div>
+      {{- else -}}
+        <iframe 
+          id="{{ $id }}"
+          src="{{ $apiId }}"
+          title="{{ $title }}"
+          class="{{ $baseVideoClass }}"
+          frameborder="0"
+          allowfullscreen
+          {{ if $pip }}allowpictureInPicture{{ end }}
+          {{ if $playsInline }}playsinline{{ end }}
+          loading="{{ if $lazy }}lazy{{ else }}eager{{ end }}
+        ></iframe>
+      {{- end -}}
+    {{- end -}}
+  {{- else -}}
+    {{- /* HTML5 video */ -}}
+    
+    {{- /* Thumbnail mode */ -}}
+    {{- if $thumbnail -}}
+      {{- if not $poster -}}
+        {{- /* If no poster is provided, use first frame */ -}}
+        {{- $poster = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" -}}
+      {{- end -}}
+      
+      <div class="video-thumbnail-container relative" data-video-thumbnail-container>
+        <img 
+          src="{{ $poster }}" 
+          alt="{{ if $title }}{{ $title }}{{ else }}Video thumbnail{{ end }}" 
+          class="{{ $basePosterClass }}"
+          loading="{{ if $lazy }}lazy{{ else }}eager{{ end }}"
+        >
+        <div class="{{ $baseOverlayClass }}" data-video-thumbnail-overlay>
+          <button 
+            type="button" 
+            class="play-button flex items-center justify-center bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full w-16 h-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            data-video-thumbnail-play
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <div class="video-player-container hidden w-full h-full" data-video-player-container>
+        <video 
+          id="{{ $id }}"
+          class="{{ $baseVideoClass }}"
+          {{ if $title }}title="{{ $title }}"{{ end }}
+          {{ if $poster }}poster="{{ $poster }}"{{ end }}
+          {{ if $controls }}controls{{ end }}
+          {{ if $autoplay }}autoplay{{ end }}
+          {{ if $muted }}muted{{ end }}
+          {{ if $loop }}loop{{ end }}
+          preload="{{ $preload }}"
+          {{ if $playsInline }}playsinline{{ end }}
+          {{ if $pip }}disablePictureInPicture="false"{{ else }}disablePictureInPicture="true"{{ end }}
+          {{ if not $fullscreen }}disablefullscreen{{ end }}
+          data-video-player
+        >
+          {{- range $source := $sources -}}
+            <source src="{{ $source }}" type="{{ if hasPrefix $source "http" -}}
+              {{- if in $source ".mp4" -}}video/mp4
+              {{- else if in $source ".webm" -}}video/webm
+              {{- else if in $source ".ogv" -}}video/ogg
+              {{- else if in $source ".mov" -}}video/quicktime
+              {{- else -}}video/mp4{{- end -}}
+            {{- else -}}
+              {{- $sourceType := path.Ext $source -}}
+              {{- if eq $sourceType ".mp4" -}}video/mp4
+              {{- else if eq $sourceType ".webm" -}}video/webm
+              {{- else if eq $sourceType ".ogv" -}}video/ogg
+              {{- else if eq $sourceType ".mov" -}}video/quicktime
+              {{- else -}}video/mp4{{- end -}}
+            {{- end }}">
+          {{- end -}}
+          
+          {{- /* Captions */ -}}
+          {{- range $caption := $captionSources -}}
+            <track 
+              src="{{ $caption.src }}" 
+              kind="subtitles" 
+              srclang="{{ $caption.srclang }}" 
+              label="{{ $caption.label }}"
+              {{ if $caption.default }}default{{ end }}
+            >
+          {{- end -}}
+          
+          Your browser does not support the video tag.
+        </video>
+
+        {{- /* Custom overlay play button */ -}}
+        {{- if $overlay -}}
+          <div class="{{ $baseOverlayClass }}" data-video-overlay>
+            <button 
+              type="button" 
+              class="play-button flex items-center justify-center bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full w-16 h-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              data-video-overlay-play
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        {{- end -}}
+      </div>
+    {{- else -}}
+      {{- /* Normal video mode */ -}}
+      <video 
+        id="{{ $id }}"
+        class="{{ $baseVideoClass }}"
+        {{ if $title }}title="{{ $title }}"{{ end }}
+        {{ if $poster }}poster="{{ $poster }}"{{ end }}
+        {{ if $controls }}controls{{ end }}
+        {{ if $autoplay }}autoplay{{ end }}
+        {{ if $muted }}muted{{ end }}
+        {{ if $loop }}loop{{ end }}
+        preload="{{ $preload }}"
+        {{ if $playsInline }}playsinline{{ end }}
+        {{ if $pip }}disablePictureInPicture="false"{{ else }}disablePictureInPicture="true"{{ end }}
+        {{ if not $fullscreen }}disablefullscreen{{ end }}
+        data-video-player
+      >
+        {{- range $source := $sources -}}
+          <source src="{{ $source }}" type="{{ if hasPrefix $source "http" -}}
+              {{- if in $source ".mp4" -}}video/mp4
+              {{- else if in $source ".webm" -}}video/webm
+              {{- else if in $source ".ogv" -}}video/ogg
+              {{- else if in $source ".mov" -}}video/quicktime
+              {{- else -}}video/mp4{{- end -}}
+            {{- else -}}
+              {{- $sourceType := path.Ext $source -}}
+              {{- if eq $sourceType ".mp4" -}}video/mp4
+              {{- else if eq $sourceType ".webm" -}}video/webm
+              {{- else if eq $sourceType ".ogv" -}}video/ogg
+              {{- else if eq $sourceType ".mov" -}}video/quicktime
+              {{- else -}}video/mp4{{- end -}}
+            {{- end }}">
+        {{- end -}}
+        
+        {{- /* Captions */ -}}
+        {{- range $caption := $captionSources -}}
+          <track 
+            src="{{ $caption.src }}" 
+            kind="subtitles" 
+            srclang="{{ $caption.srclang }}" 
+            label="{{ $caption.label }}"
+            {{ if $caption.default }}default{{ end }}
+          >
+        {{- end -}}
+        
+        Your browser does not support the video tag.
+      </video>
+
+      {{- /* Custom overlay play button */ -}}
+      {{- if $overlay -}}
+        <div class="{{ $baseOverlayClass }}" data-video-overlay>
+          <button 
+            type="button" 
+            class="play-button flex items-center justify-center bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full w-16 h-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            data-video-overlay-play
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const videoContainer = document.getElementById('{{ $id }}-container');
+    if (!videoContainer) return;
+    
+    // Initialize video player
+    const player = document.getElementById('{{ $id }}');
+    const consentOverlay = videoContainer.querySelector('[data-video-consent-overlay]');
+    const consentButton = videoContainer.querySelector('[data-video-consent-button]');
+    const embedContainer = videoContainer.querySelector('[data-video-embed-container]');
+    const thumbnailContainer = videoContainer.querySelector('[data-video-thumbnail-container]');
+    const thumbnailOverlay = videoContainer.querySelector('[data-video-thumbnail-overlay]');
+    const thumbnailPlayBtn = videoContainer.querySelector('[data-video-thumbnail-play]');
+    const playerContainer = videoContainer.querySelector('[data-video-player-container]');
+    const customOverlay = videoContainer.querySelector('[data-video-overlay]');
+    const customPlayBtn = videoContainer.querySelector('[data-video-overlay-play]');
+    
+    // Set initial volume and playback rate if player exists
+    if (player && player.tagName === 'VIDEO') {
+      player.volume = "{{ $volume }}";
+      player.playbackRate = "{{ $playbackRate }}";
+      
+      // Set start time if specified
+      if ("{{ $startTime }}" > 0) {
+        player.currentTime = "{{ $startTime }}";
+      }
+      
+      // Handle end time if specified
+      if ("{{ $endTime }}" > 0) {
+        player.addEventListener('timeupdate', function() {
+          if (player.currentTime >= "{{ $endTime }}") {
+            player.pause();
+            if ("{{ $loop }}") {
+              player.currentTime = "{{ $startTime }}";
+              player.play();
+            }
+          }
+        });
+      }
+      
+      // Fire onReady event
+      if ('{{ $onReady }}') {
+        try {
+          window['{{ $onReady }}']({
+            id: '{{ $id }}',
+            element: player
+          });
+        } catch (err) {
+          console.error('Error in onReady callback:', err);
+        }
+      }
+      
+      // Set up event listeners
+      player.addEventListener('play', function() {
+        if ('{{ $onPlay }}') {
+          try {
+            window['{{ $onPlay }}']({
+              id: '{{ $id }}',
+              element: player,
+              currentTime: player.currentTime
+            });
+          } catch (err) {
+            console.error('Error in onPlay callback:', err);
+          }
+        }
+        
+        // Hide overlay if present
+        if (customOverlay) {
+          customOverlay.style.opacity = '0';
+          setTimeout(() => {
+            customOverlay.style.display = 'none';
+          }, 300);
+        }
+      });
+      
+      player.addEventListener('pause', function() {
+        if ('{{ $onPause }}') {
+          try {
+            window['{{ $onPause }}']({
+              id: '{{ $id }}',
+              element: player,
+              currentTime: player.currentTime
+            });
+          } catch (err) {
+            console.error('Error in onPause callback:', err);
+          }
+        }
+        
+        // Show overlay if present
+        if (customOverlay && !player.ended) {
+          customOverlay.style.display = 'flex';
+          setTimeout(() => {
+            customOverlay.style.opacity = '1';
+          }, 10);
+        }
+      });
+      
+      player.addEventListener('ended', function() {
+        if ('{{ $onEnded }}') {
+          try {
+            window['{{ $onEnded }}']({
+              id: '{{ $id }}',
+              element: player
+            });
+          } catch (err) {
+            console.error('Error in onEnded callback:', err);
+          }
+        }
+        
+        // Show overlay if present
+        if (customOverlay) {
+          customOverlay.style.display = 'flex';
+          setTimeout(() => {
+            customOverlay.style.opacity = '1';
+          }, 10);
+        }
+      });
+      
+      player.addEventListener('timeupdate', function() {
+        if ('{{ $onTimeUpdate }}') {
+          try {
+            window['{{ $onTimeUpdate }}']({
+              id: '{{ $id }}',
+              element: player,
+              currentTime: player.currentTime,
+              duration: player.duration
+            });
+          } catch (err) {
+            console.error('Error in onTimeUpdate callback:', err);
+          }
+        }
+      });
+      
+      player.addEventListener('error', function() {
+        if ('{{ $onError }}') {
+          try {
+            window['{{ $onError }}']({
+              id: '{{ $id }}',
+              element: player,
+              error: player.error
+            });
+          } catch (err) {
+            console.error('Error in onError callback:', err);
+          }
+        }
+      });
+    }
+    
+    // Handle custom overlay play button
+    if (customPlayBtn) {
+      customPlayBtn.addEventListener('click', function() {
+        if (player && player.paused) {
+          player.play();
+        }
+      });
+    }
+    
+    // Handle thumbnail mode
+    if (thumbnailContainer && thumbnailPlayBtn && playerContainer) {
+      thumbnailPlayBtn.addEventListener('click', function() {
+        thumbnailContainer.style.display = 'none';
+        playerContainer.style.display = 'block';
+        
+        if (player) {
+          player.play();
+        }
+      });
+    }
+    
+    // Handle consent mode for external providers
+    if (consentButton && consentOverlay && embedContainer) {
+      consentButton.addEventListener('click', function() {
+        consentOverlay.style.display = 'none';
+        embedContainer.style.display = 'block';
+        
+        // Load the iframe src from data-src
+        const iframe = embedContainer.querySelector('iframe');
+        if (iframe && iframe.dataset.src) {
+          iframe.src = iframe.dataset.src;
+        }
+      });
+    }
+    
+    // Expose API
+    window.videoPlayers = window.videoPlayers || {};
+    window.videoPlayers['{{ $id }}'] = {
+      play: function() {
+        if (player && player.tagName === 'VIDEO') {
+          player.play();
+        }
+      },
+      pause: function() {
+        if (player && player.tagName === 'VIDEO') {
+          player.pause();
+        }
+      },
+      stop: function() {
+        if (player && player.tagName === 'VIDEO') {
+          player.pause();
+          player.currentTime = 0;
+        }
+      },
+      seek: function(time) {
+        if (player && player.tagName === 'VIDEO') {
+          player.currentTime = time;
+        }
+      },
+      getDuration: function() {
+        return player && player.tagName === 'VIDEO' ? player.duration : 0;
+      },
+      getCurrentTime: function() {
+        return player && player.tagName === 'VIDEO' ? player.currentTime : 0;
+      },
+      setVolume: function(volume) {
+        if (player && player.tagName === 'VIDEO') {
+          player.volume = Math.max(0, Math.min(1, volume));
+        }
+      },
+      getVolume: function() {
+        return player && player.tagName === 'VIDEO' ? player.volume : 0;
+      },
+      mute: function() {
+        if (player && player.tagName === 'VIDEO') {
+          player.muted = true;
+        }
+      },
+      unmute: function() {
+        if (player && player.tagName === 'VIDEO') {
+          player.muted = false;
+        }
+      },
+      isMuted: function() {
+        return player && player.tagName === 'VIDEO' ? player.muted : false;
+      },
+      setPlaybackRate: function(rate) {
+        if (player && player.tagName === 'VIDEO') {
+          player.playbackRate = rate;
+        }
+      },
+      getPlaybackRate: function() {
+        return player && player.tagName === 'VIDEO' ? player.playbackRate : 1;
+      },
+      isPlaying: function() {
+        return player && player.tagName === 'VIDEO' ? !player.paused : false;
+      },
+      isPaused: function() {
+        return player && player.tagName === 'VIDEO' ? player.paused : true;
+      },
+      togglePlay: function() {
+        if (player && player.tagName === 'VIDEO') {
+          if (player.paused) {
+            player.play();
+          } else {
+            player.pause();
+          }
+        }
+      },
+      showThumbnail: function() {
+        if (thumbnailContainer && playerContainer) {
+          player.pause();
+          playerContainer.style.display = 'none';
+          thumbnailContainer.style.display = 'block';
+        }
+      }
+    };
+  });
+</script>

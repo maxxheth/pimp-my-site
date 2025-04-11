@@ -1,0 +1,1148 @@
+{{- /*
+  Utility Component
+  
+  A versatile utility helper component for common UI needs
+  
+  Parameters:
+    - id: String - Unique ID for the element (default: auto-generated)
+    - content: String - Content to display (default: "")
+    - type: String - Type of utility (default: "container")
+      Options: container, spacing, divider, visibility, background, shape, scrollable, group
+    - element: String - HTML element to use (default: "div")
+    - as: String - Alias for element (default: "")
+    - padding: String/Number - Padding size (default: "0")
+      Options: 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, px, 
+               or custom value (e.g. "p-4" or "px-4 py-2")
+    - margin: String/Number - Margin size (default: "0")
+      Options: 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, auto, px,
+               or custom value (e.g. "m-4" or "mx-auto my-2")
+    - background: String - Background color (default: "")
+      Options: primary, secondary, success, danger, warning, info, light, dark, 
+               white, black, transparent, or any tailwind color
+    - border: String/Boolean - Border style (default: false)
+      Options: true, false, or size value (1, 2, 4, 8)
+    - borderColor: String - Border color (default: "gray-300")
+      Options: primary, secondary, success, danger, warning, info, or any tailwind color
+    - rounded: String/Boolean - Border radius (default: false)
+      Options: true, false, sm, md, lg, xl, 2xl, full, or custom value
+    - shadow: String/Boolean - Box shadow (default: false)
+      Options: true, false, sm, md, lg, xl, 2xl, inner, none
+    - width: String - Width value (default: "")
+      Options: auto, full, screen, or any tailwind width (w-*) value
+    - maxWidth: String - Max width (default: "")
+      Options: none, xs, sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl, full, min, max, prose, 
+               screen-sm, screen-md, screen-lg, screen-xl, screen-2xl
+    - height: String - Height value (default: "")
+      Options: auto, full, screen, or any tailwind height (h-*) value
+    - position: String - CSS position (default: "")
+      Options: static, relative, absolute, fixed, sticky
+    - inset: String - Position inset values (default: "")
+      Options: 0, auto, or custom value (e.g. "inset-0" or "top-0 right-0")
+    - display: String - CSS display property (default: "")
+      Options: block, inline-block, inline, flex, inline-flex, grid, inline-grid, hidden
+    - flexDirection: String - Flex direction (default: "")
+      Options: row, row-reverse, col, col-reverse
+    - flexWrap: String - Flex wrap (default: "")
+      Options: wrap, wrap-reverse, nowrap
+    - justifyContent: String - Justify content (default: "")
+      Options: start, end, center, between, around, evenly
+    - alignItems: String - Align items (default: "")
+      Options: start, end, center, baseline, stretch
+    - gap: String/Number - Gap between items (default: "")
+      Options: 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, px
+    - overflow: String - Overflow behavior (default: "")
+      Options: auto, hidden, visible, scroll, x-auto, y-auto, x-hidden, y-hidden, x-scroll, y-scroll
+    - opacity: String/Number - Opacity level (default: "")
+      Options: 0, 5, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 95, 100
+    - zIndex: String/Number - Z-index value (default: "")
+      Options: 0, 10, 20, 30, 40, 50, auto
+    - responsive: Boolean - Apply responsive padding/margin (default: true)
+    - darkMode: Boolean - Enable dark mode support (default: true)
+    - srOnly: Boolean - Screen reader only (default: false)
+    - aria: Map - ARIA attributes (default: {})
+    - data: Map - Custom data attributes (default: {})
+    - style: String - Inline CSS styles (default: "")
+    - class: String - Additional custom classes (default: "")
+    - onClick: String - JavaScript function to call on click (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "util-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $content := .content | default "" -}}
+{{- $type := .type | default "container" -}}
+{{- $element := .element | default "div" -}}
+{{- $as := .as | default "" -}}
+{{- $padding := .padding | default "0" -}}
+{{- $margin := .margin | default "0" -}}
+{{- $background := .background | default "" -}}
+{{- $border := .border | default false -}}
+{{- $borderColor := .borderColor | default "gray-300" -}}
+{{- $rounded := .rounded | default false -}}
+{{- $shadow := .shadow | default false -}}
+{{- $width := .width | default "" -}}
+{{- $maxWidth := .maxWidth | default "" -}}
+{{- $height := .height | default "" -}}
+{{- $position := .position | default "" -}}
+{{- $inset := .inset | default "" -}}
+{{- $display := .display | default "" -}}
+{{- $flexDirection := .flexDirection | default "" -}}
+{{- $flexWrap := .flexWrap | default "" -}}
+{{- $justifyContent := .justifyContent | default "" -}}
+{{- $alignItems := .alignItems | default "" -}}
+{{- $gap := .gap | default "" -}}
+{{- $overflow := .overflow | default "" -}}
+{{- $opacity := .opacity | default "" -}}
+{{- $zIndex := .zIndex | default "" -}}
+{{- $responsive := .responsive | default true -}}
+{{- $darkMode := .darkMode | default true -}}
+{{- $srOnly := .srOnly | default false -}}
+{{- $aria := .aria | default dict -}}
+{{- $data := .data | default dict -}}
+{{- $style := .style | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $onClick := .onClick | default "" -}}
+
+{{- /* Determine element type */ -}}
+{{- if ne $as "" -}}
+  {{- $element = $as -}}
+{{- end -}}
+
+{{- /* Utility type specific default values */ -}}
+{{- if eq $type "container" -}}
+  {{- if eq $maxWidth "" -}}
+    {{- $maxWidth = "lg" -}}
+  {{- end -}}
+  {{- if eq $padding "0" -}}
+    {{- $padding = "4" -}}
+  {{- end -}}
+  {{- if eq $margin "0" -}}
+    {{- $margin = "mx-auto" -}}
+  {{- end -}}
+{{- else if eq $type "spacing" -}}
+  {{- /* Leave defaults */ -}}
+{{- else if eq $type "divider" -}}
+  {{- $element = "hr" -}}
+  {{- if eq $margin "0" -}}
+    {{- $margin = "my-4" -}}
+  {{- end -}}
+  {{- if not $border -}}
+    {{- $border = true -}}
+  {{- end -}}
+{{- else if eq $type "visibility" -}}
+  {{- /* Visibility utilities have no defaults */ -}}
+{{- else if eq $type "background" -}}
+  {{- if eq $padding "0" -}}
+    {{- $padding = "4" -}}
+  {{- end -}}
+  {{- if eq $background "" -}}
+    {{- $background = "gray-100" -}}
+  {{- end -}}
+{{- else if eq $type "shape" -}}
+  {{- if not $rounded -}}
+    {{- $rounded = "md" -}}
+  {{- end -}}
+  {{- if not $border -}}
+    {{- $border = true -}}
+  {{- end -}}
+{{- else if eq $type "scrollable" -}}
+  {{- if eq $overflow "" -}}
+    {{- $overflow = "auto" -}}
+  {{- end -}}
+  {{- if eq $height "" -}}
+    {{- $height = "80" -}}
+  {{- end -}}
+{{- else if eq $type "group" -}}
+  {{- if eq $display "" -}}
+    {{- $display = "flex" -}}
+  {{- end -}}
+  {{- if eq $gap "" -}}
+    {{- $gap = "4" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Build classes */ -}}
+{{- $classes := "" -}}
+
+{{- /* Spacing classes: Padding */ -}}
+{{- $paddingClass := "" -}}
+{{- if ne $padding "0" -}}
+  {{- if eq (printf "%T" $padding) "string" -}}
+    {{- if hasPrefix $padding "p-" -}}
+      {{- /* Use custom padding string directly */ -}}
+      {{- $paddingClass = $padding -}}
+    {{- else -}}
+      {{- /* Process different padding types */ -}}
+      {{- if eq $padding "px" -}}
+        {{- $paddingClass = "px-1" -}}
+      {{- else -}}
+        {{- $paddingClass = printf "p-%s" $padding -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $paddingClass = printf "p-%v" $padding -}}
+  {{- end -}}
+  
+  {{- if and $responsive (ne $paddingClass "") -}}
+    {{- if in "p-8 p-10 p-12 p-16 p-20 p-24" $paddingClass -}}
+      {{- /* Apply responsive padding for larger values */ -}}
+      {{- $basePadding := trimPrefix "p-" $paddingClass -}}
+      {{- $smPadding := div (int $basePadding) 2 -}}
+      {{- $paddingClass = printf "p-%d md:%s" $smPadding $paddingClass -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Spacing classes: Margin */ -}}
+{{- $marginClass := "" -}}
+{{- if ne $margin "0" -}}
+  {{- if eq (printf "%T" $margin) "string" -}}
+    {{- if hasPrefix $margin "m" -}}
+      {{- /* Use custom margin string directly */ -}}
+      {{- $marginClass = $margin -}}
+    {{- else if eq $margin "auto" -}}
+      {{- $marginClass = "mx-auto" -}}
+    {{- else if eq $margin "px" -}}
+      {{- $marginClass = "mx-px" -}}
+    {{- else -}}
+      {{- $marginClass = printf "m-%s" $margin -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $marginClass = printf "m-%v" $margin -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Background color */ -}}
+{{- $backgroundClass := "" -}}
+{{- if ne $background "" -}}
+  {{- if eq $background "primary" -}}
+    {{- $backgroundClass = "bg-blue-600 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-blue-700" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "secondary" -}}
+    {{- $backgroundClass = "bg-purple-600 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-purple-700" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "success" -}}
+    {{- $backgroundClass = "bg-green-600 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-green-700" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "danger" -}}
+    {{- $backgroundClass = "bg-red-600 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-red-700" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "warning" -}}
+    {{- $backgroundClass = "bg-yellow-500 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-yellow-600" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "info" -}}
+    {{- $backgroundClass = "bg-cyan-600 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-cyan-700" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "light" -}}
+    {{- $backgroundClass = "bg-gray-100 text-gray-800" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-gray-800 dark:text-gray-100" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "dark" -}}
+    {{- $backgroundClass = "bg-gray-800 text-gray-100" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-gray-900" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "white" -}}
+    {{- $backgroundClass = "bg-white text-gray-900" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-gray-900 dark:text-gray-100" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "black" -}}
+    {{- $backgroundClass = "bg-black text-white" -}}
+  {{- else if eq $background "transparent" -}}
+    {{- $backgroundClass = "bg-transparent" -}}
+  {{- else -}}
+    {{- /* Custom background color using Tailwind */ -}}
+    {{- $backgroundClass = printf "bg-%s" $background -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Border classes */ -}}
+{{- $borderClass := "" -}}
+{{- if $border -}}
+  {{- if eq $border true -}}
+    {{- $borderClass = "border" -}}
+  {{- else if eq (printf "%T" $border) "string" -}}
+    {{- if hasPrefix $border "border" -}}
+      {{- $borderClass = $border -}}
+    {{- else -}}
+      {{- $borderClass = printf "border-%s" $border -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $borderClass = printf "border-%v" $border -}}
+  {{- end -}}
+  
+  {{- /* Border color */ -}}
+  {{- if ne $borderColor "" -}}
+    {{- if eq $borderColor "primary" -}}
+      {{- $borderClass = printf "%s border-blue-600" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-blue-500" $borderClass -}}
+      {{- end -}}
+    {{- else if eq $borderColor "secondary" -}}
+      {{- $borderClass = printf "%s border-purple-600" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-purple-500" $borderClass -}}
+      {{- end -}}
+    {{- else if eq $borderColor "success" -}}
+      {{- $borderClass = printf "%s border-green-600" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-green-500" $borderClass -}}
+      {{- end -}}
+    {{- else if eq $borderColor "danger" -}}
+      {{- $borderClass = printf "%s border-red-600" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-red-500" $borderClass -}}
+      {{- end -}}
+    {{- else if eq $borderColor "warning" -}}
+      {{- $borderClass = printf "%s border-yellow-500" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-yellow-400" $borderClass -}}
+      {{- end -}}
+    {{- else if eq $borderColor "info" -}}
+      {{- $borderClass = printf "%s border-cyan-600" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-cyan-500" $borderClass -}}
+      {{- end -}}
+    {{- else -}}
+      {{- /* Custom border color using Tailwind */ -}}
+      {{- $borderClass = printf "%s border-%s" $borderClass $borderColor -}}
+      {{- if and $darkMode (hasPrefix $borderColor "gray-") -}}
+        {{- $darkGray := sub 1000 (int (trimPrefix "gray-" $borderColor)) -}}
+        {{- if gt $darkGray 950 -}}{{- $darkGray = 950 -}}{{- end -}}
+        {{- $borderClass = printf "%s dark:border-gray-%d" $borderClass $darkGray -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else -}}
+    {{- /* Default border color with dark mode support */ -}}
+    {{- $borderClass = printf "%s border-gray-300" $borderClass -}}
+    {{- if $darkMode -}}
+      {{- $borderClass = printf "%s dark:border-gray-700" $borderClass -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Border radius */ -}}
+{{- $roundedClass := "" -}}
+{{- if $rounded -}}
+  {{- if eq $rounded true -}}
+    {{- $roundedClass = "rounded" -}}
+  {{- else if eq (printf "%T" $rounded) "string" -}}
+    {{- if hasPrefix $rounded "rounded" -}}
+      {{- $roundedClass = $rounded -}}
+    {{- else if eq $rounded "full" -}}
+      {{- $roundedClass = "rounded-full" -}}
+    {{- else if eq $rounded "none" -}}
+      {{- $roundedClass = "rounded-none" -}}
+    {{- else -}}
+      {{- $roundedClass = printf "rounded-%s" $rounded -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Shadow */ -}}
+{{- $shadowClass := "" -}}
+{{- if $shadow -}}
+  {{- if eq $shadow true -}}
+    {{- $shadowClass = "shadow" -}}
+  {{- else if eq (printf "%T" $shadow) "string" -}}
+    {{- if hasPrefix $shadow "shadow" -}}
+      {{- $shadowClass = $shadow -}}
+    {{- else if eq $shadow "none" -}}
+      {{- $shadowClass = "shadow-none" -}}
+    {{- else if eq $shadow "inner" -}}
+      {{- $shadowClass = "shadow-inner" -}}
+    {{- else -}}
+      {{- $shadowClass = printf "shadow-%s" $shadow -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Width */ -}}
+{{- $widthClass := "" -}}
+{{- if ne $width "" -}}
+  {{- if eq $width "auto" -}}
+    {{- $widthClass = "w-auto" -}}
+  {{- else if eq $width "full" -}}
+    {{- $widthClass = "w-full" -}}
+  {{- else if eq $width "screen" -}}
+    {{- $widthClass = "w-screen" -}}
+  {{- else if hasPrefix $width "w-" -}}
+    {{- $widthClass = $width -}}
+  {{- else -}}
+    {{- $widthClass = printf "w-%s" $width -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Max width */ -}}
+{{- $maxWidthClass := "" -}}
+{{- if ne $maxWidth "" -}}
+  {{- if eq $maxWidth "none" -}}
+    {{- $maxWidthClass = "max-w-none" -}}
+  {{- else if eq $maxWidth "full" -}}
+    {{- $maxWidthClass = "max-w-full" -}}
+  {{- else if eq $maxWidth "xs" -}}
+    {{- $maxWidthClass = "max-w-xs" -}}
+  {{- else if eq $maxWidth "sm" -}}
+    {{- $maxWidthClass = "max-w-sm" -}}
+  {{- else if eq $maxWidth "md" -}}
+    {{- $maxWidthClass = "max-w-md" -}}
+  {{- else if eq $maxWidth "lg" -}}
+    {{- $maxWidthClass = "max-w-lg" -}}
+  {{- else if eq $maxWidth "xl" -}}
+    {{- $maxWidthClass = "max-w-xl" -}}
+  {{- else if eq $maxWidth "2xl" -}}
+    {{- $maxWidthClass = "max-w-2xl" -}}
+  {{- else if eq $maxWidth "3xl" -}}
+    {{- $maxWidthClass = "max-w-3xl" -}}
+  {{- else if eq $maxWidth "4xl" -}}
+    {{- $maxWidthClass = "max-w-4xl" -}}
+  {{- else if eq $maxWidth "5xl" -}}
+    {{- $maxWidthClass = "max-w-5xl" -}}
+  {{- else if eq $maxWidth "6xl" -}}
+    {{- $maxWidthClass = "max-w-6xl" -}}
+  {{- else if eq $maxWidth "7xl" -}}
+    {{- $maxWidthClass = "max-w-7xl" -}}
+  {{- else if eq $maxWidth "prose" -}}
+    {{- $maxWidthClass = "max-w-prose" -}}
+  {{- else if eq $maxWidth "screen-sm" -}}
+    {{- $maxWidthClass = "max-w-screen-sm" -}}
+  {{- else if eq $maxWidth "screen-md" -}}
+    {{- $maxWidthClass = "max-w-screen-md" -}}
+  {{- else if eq $maxWidth "screen-lg" -}}
+    {{- $maxWidthClass = "max-w-screen-lg" -}}
+  {{- else if eq $maxWidth "screen-xl" -}}
+    {{- $maxWidthClass = "max-w-screen-xl" -}}
+  {{- else if eq $maxWidth "screen-2xl" -}}
+    {{- $maxWidthClass = "max-w-screen-2xl" -}}
+  {{- else if eq $maxWidth "min" -}}
+    {{- $maxWidthClass = "max-w-min" -}}
+  {{- else if eq $maxWidth "max" -}}
+    {{- $maxWidthClass = "max-w-max" -}}
+  {{- else if hasPrefix $maxWidth "max-w-" -}}
+    {{- $maxWidthClass = $maxWidth -}}
+  {{- else -}}
+    {{- $maxWidthClass = printf "max-w-%s" $maxWidth -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Height */ -}}
+{{- $heightClass := "" -}}
+{{- if ne $height "" -}}
+  {{- if eq $height "auto" -}}
+    {{- $heightClass = "h-auto" -}}
+  {{- else if eq $height "full" -}}
+    {{- $heightClass = "h-full" -}}
+  {{- else if eq $height "screen" -}}
+    {{- $heightClass = "h-screen" -}}
+  {{- else if hasPrefix $height "h-" -}}
+    {{- $heightClass = $height -}}
+  {{- else -}}
+    {{- $heightClass = printf "h-%s" $height -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Position */ -}}
+{{- $positionClass := "" -}}
+{{- if ne $position "" -}}
+  {{- if eq $position "static" -}}
+    {{- $positionClass = "static" -}}
+  {{- else if eq $position "relative" -}}
+    {{- $positionClass = "relative" -}}
+  {{- else if eq $position "absolute" -}}
+    {{- $positionClass = "absolute" -}}
+  {{- else if eq $position "fixed" -}}
+    {{- $positionClass = "fixed" -}}
+  {{- else if eq $position "sticky" -}}
+    {{- $positionClass = "sticky" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Inset position */ -}}
+{{- $insetClass := "" -}}
+{{- if and (ne $inset "") (ne $position "") -}}
+  {{- if eq $inset "0" -}}
+    {{- $insetClass = "inset-0" -}}
+  {{- else if eq $inset "auto" -}}
+    {{- $insetClass = "inset-auto" -}}
+  {{- else if hasPrefix $inset "inset" or hasPrefix $inset "top" or hasPrefix $inset "right" or 
+             hasPrefix $inset "bottom" or hasPrefix $inset "left" -}}
+    {{- $insetClass = $inset -}}
+  {{- else -}}
+    {{- $insetClass = printf "inset-%s" $inset -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Display */ -}}
+{{- $displayClass := "" -}}
+{{- if ne $display "" -}}
+  {{- if eq $display "block" -}}
+    {{- $displayClass = "block" -}}
+  {{- else if eq $display "inline-block" -}}
+    {{- $displayClass = "inline-block" -}}
+  {{- else if eq $display "inline" -}}
+    {{- $displayClass = "inline" -}}
+  {{- else if eq $display "flex" -}}
+    {{- $displayClass = "flex" -}}
+  {{- else if eq $display "inline-flex" -}}
+    {{- $displayClass = "inline-flex" -}}
+  {{- else if eq $display "grid" -}}
+    {{- $displayClass = "grid" -}}
+  {{- else if eq $display "inline-grid" -}}
+    {{- $displayClass = "inline-grid" -}}
+  {{- else if eq $display "hidden" -}}
+    {{- $displayClass = "hidden" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Flex direction */ -}}
+{{- $flexDirectionClass := "" -}}
+{{- if hasPrefix $display "flex" -}}
+  {{- if eq $flexDirection "row" -}}
+    {{- $flexDirectionClass = "flex-row" -}}
+  {{- else if eq $flexDirection "row-reverse" -}}
+    {{- $flexDirectionClass = "flex-row-reverse" -}}
+  {{- else if eq $flexDirection "col" -}}
+    {{- $flexDirectionClass = "flex-col" -}}
+  {{- else if eq $flexDirection "col-reverse" -}}
+    {{- $flexDirectionClass = "flex-col-reverse" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Flex wrap */ -}}
+{{- $flexWrapClass := "" -}}
+{{- if hasPrefix $display "flex" -}}
+  {{- if eq $flexWrap "wrap" -}}
+    {{- $flexWrapClass = "flex-wrap" -}}
+  {{- else if eq $flexWrap "wrap-reverse" -}}
+    {{- $flexWrapClass = "flex-wrap-reverse" -}}
+  {{- else if eq $flexWrap "nowrap" -}}
+    {{- $flexWrapClass = "flex-nowrap" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Justify content */ -}}
+{{- $justifyContentClass := "" -}}
+{{- if hasPrefix $display "flex" or eq $display "grid" -}}
+  {{- if eq $justifyContent "start" -}}
+    {{- $justifyContentClass = "justify-start" -}}
+  {{- else if eq $justifyContent "end" -}}
+    {{- $justifyContentClass = "justify-end" -}}
+  {{- else if eq $justifyContent "center" -}}
+    {{- $justifyContentClass = "justify-center" -}}
+  {{- else if eq $justifyContent "between" -}}
+    {{- $justifyContentClass = "justify-between" -}}
+  {{- else if eq $justifyContent "around" -}}
+    {{- $justifyContentClass = "justify-around" -}}
+  {{- else if eq $justifyContent "evenly" -}}
+    {{- $justifyContentClass = "justify-evenly" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Align items */ -}}
+{{- $alignItemsClass := "" -}}
+{{- if hasPrefix $display "flex" or eq $display "grid" -}}
+  {{- if eq $alignItems "start" -}}
+    {{- $alignItemsClass = "items-start" -}}
+  {{- else if eq $alignItems "end" -}}
+    {{- $alignItemsClass = "items-end" -}}
+  {{- else if eq $alignItems "center" -}}
+    {{- $alignItemsClass = "items-center" -}}
+  {{- else if eq $alignItems "baseline" -}}
+    {{- $alignItemsClass = "items-baseline" -}}
+  {{- else if eq $alignItems "stretch" -}}
+    {{- $alignItemsClass = "items-stretch" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Gap */ -}}
+{{- $gapClass := "" -}}
+{{- if hasPrefix $display "flex" or eq $display "grid" -}}
+  {{- if ne $gap "" -}}
+    {{- if eq (printf "%T" $gap) "string" -}}<!-- filepath: /var/www/pimp-my-site/themes/hugo-theme-tailwind/layouts/partials/components/utility.html -->
+{{- /*
+  Utility Component
+  
+  A versatile utility helper component for common UI needs
+  
+  Parameters:
+    - id: String - Unique ID for the element (default: auto-generated)
+    - content: String - Content to display (default: "")
+    - type: String - Type of utility (default: "container")
+      Options: container, spacing, divider, visibility, background, shape, scrollable, group
+    - element: String - HTML element to use (default: "div")
+    - as: String - Alias for element (default: "")
+    - padding: String/Number - Padding size (default: "0")
+      Options: 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, px, 
+               or custom value (e.g. "p-4" or "px-4 py-2")
+    - margin: String/Number - Margin size (default: "0")
+      Options: 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, auto, px,
+               or custom value (e.g. "m-4" or "mx-auto my-2")
+    - background: String - Background color (default: "")
+      Options: primary, secondary, success, danger, warning, info, light, dark, 
+               white, black, transparent, or any tailwind color
+    - border: String/Boolean - Border style (default: false)
+      Options: true, false, or size value (1, 2, 4, 8)
+    - borderColor: String - Border color (default: "gray-300")
+      Options: primary, secondary, success, danger, warning, info, or any tailwind color
+    - rounded: String/Boolean - Border radius (default: false)
+      Options: true, false, sm, md, lg, xl, 2xl, full, or custom value
+    - shadow: String/Boolean - Box shadow (default: false)
+      Options: true, false, sm, md, lg, xl, 2xl, inner, none
+    - width: String - Width value (default: "")
+      Options: auto, full, screen, or any tailwind width (w-*) value
+    - maxWidth: String - Max width (default: "")
+      Options: none, xs, sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl, full, min, max, prose, 
+               screen-sm, screen-md, screen-lg, screen-xl, screen-2xl
+    - height: String - Height value (default: "")
+      Options: auto, full, screen, or any tailwind height (h-*) value
+    - position: String - CSS position (default: "")
+      Options: static, relative, absolute, fixed, sticky
+    - inset: String - Position inset values (default: "")
+      Options: 0, auto, or custom value (e.g. "inset-0" or "top-0 right-0")
+    - display: String - CSS display property (default: "")
+      Options: block, inline-block, inline, flex, inline-flex, grid, inline-grid, hidden
+    - flexDirection: String - Flex direction (default: "")
+      Options: row, row-reverse, col, col-reverse
+    - flexWrap: String - Flex wrap (default: "")
+      Options: wrap, wrap-reverse, nowrap
+    - justifyContent: String - Justify content (default: "")
+      Options: start, end, center, between, around, evenly
+    - alignItems: String - Align items (default: "")
+      Options: start, end, center, baseline, stretch
+    - gap: String/Number - Gap between items (default: "")
+      Options: 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, px
+    - overflow: String - Overflow behavior (default: "")
+      Options: auto, hidden, visible, scroll, x-auto, y-auto, x-hidden, y-hidden, x-scroll, y-scroll
+    - opacity: String/Number - Opacity level (default: "")
+      Options: 0, 5, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 95, 100
+    - zIndex: String/Number - Z-index value (default: "")
+      Options: 0, 10, 20, 30, 40, 50, auto
+    - responsive: Boolean - Apply responsive padding/margin (default: true)
+    - darkMode: Boolean - Enable dark mode support (default: true)
+    - srOnly: Boolean - Screen reader only (default: false)
+    - aria: Map - ARIA attributes (default: {})
+    - data: Map - Custom data attributes (default: {})
+    - style: String - Inline CSS styles (default: "")
+    - class: String - Additional custom classes (default: "")
+    - onClick: String - JavaScript function to call on click (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "util-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $content := .content | default "" -}}
+{{- $type := .type | default "container" -}}
+{{- $element := .element | default "div" -}}
+{{- $as := .as | default "" -}}
+{{- $padding := .padding | default "0" -}}
+{{- $margin := .margin | default "0" -}}
+{{- $background := .background | default "" -}}
+{{- $border := .border | default false -}}
+{{- $borderColor := .borderColor | default "gray-300" -}}
+{{- $rounded := .rounded | default false -}}
+{{- $shadow := .shadow | default false -}}
+{{- $width := .width | default "" -}}
+{{- $maxWidth := .maxWidth | default "" -}}
+{{- $height := .height | default "" -}}
+{{- $position := .position | default "" -}}
+{{- $inset := .inset | default "" -}}
+{{- $display := .display | default "" -}}
+{{- $flexDirection := .flexDirection | default "" -}}
+{{- $flexWrap := .flexWrap | default "" -}}
+{{- $justifyContent := .justifyContent | default "" -}}
+{{- $alignItems := .alignItems | default "" -}}
+{{- $gap := .gap | default "" -}}
+{{- $overflow := .overflow | default "" -}}
+{{- $opacity := .opacity | default "" -}}
+{{- $zIndex := .zIndex | default "" -}}
+{{- $responsive := .responsive | default true -}}
+{{- $darkMode := .darkMode | default true -}}
+{{- $srOnly := .srOnly | default false -}}
+{{- $aria := .aria | default dict -}}
+{{- $data := .data | default dict -}}
+{{- $style := .style | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $onClick := .onClick | default "" -}}
+
+{{- /* Determine element type */ -}}
+{{- if ne $as "" -}}
+  {{- $element = $as -}}
+{{- end -}}
+
+{{- /* Utility type specific default values */ -}}
+{{- if eq $type "container" -}}
+  {{- if eq $maxWidth "" -}}
+    {{- $maxWidth = "lg" -}}
+  {{- end -}}
+  {{- if eq $padding "0" -}}
+    {{- $padding = "4" -}}
+  {{- end -}}
+  {{- if eq $margin "0" -}}
+    {{- $margin = "mx-auto" -}}
+  {{- end -}}
+{{- else if eq $type "spacing" -}}
+  {{- /* Leave defaults */ -}}
+{{- else if eq $type "divider" -}}
+  {{- $element = "hr" -}}
+  {{- if eq $margin "0" -}}
+    {{- $margin = "my-4" -}}
+  {{- end -}}
+  {{- if not $border -}}
+    {{- $border = true -}}
+  {{- end -}}
+{{- else if eq $type "visibility" -}}
+  {{- /* Visibility utilities have no defaults */ -}}
+{{- else if eq $type "background" -}}
+  {{- if eq $padding "0" -}}
+    {{- $padding = "4" -}}
+  {{- end -}}
+  {{- if eq $background "" -}}
+    {{- $background = "gray-100" -}}
+  {{- end -}}
+{{- else if eq $type "shape" -}}
+  {{- if not $rounded -}}
+    {{- $rounded = "md" -}}
+  {{- end -}}
+  {{- if not $border -}}
+    {{- $border = true -}}
+  {{- end -}}
+{{- else if eq $type "scrollable" -}}
+  {{- if eq $overflow "" -}}
+    {{- $overflow = "auto" -}}
+  {{- end -}}
+  {{- if eq $height "" -}}
+    {{- $height = "80" -}}
+  {{- end -}}
+{{- else if eq $type "group" -}}
+  {{- if eq $display "" -}}
+    {{- $display = "flex" -}}
+  {{- end -}}
+  {{- if eq $gap "" -}}
+    {{- $gap = "4" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Build classes */ -}}
+{{- $classes := "" -}}
+
+{{- /* Spacing classes: Padding */ -}}
+{{- $paddingClass := "" -}}
+{{- if ne $padding "0" -}}
+  {{- if eq (printf "%T" $padding) "string" -}}
+    {{- if hasPrefix $padding "p-" -}}
+      {{- /* Use custom padding string directly */ -}}
+      {{- $paddingClass = $padding -}}
+    {{- else -}}
+      {{- /* Process different padding types */ -}}
+      {{- if eq $padding "px" -}}
+        {{- $paddingClass = "px-1" -}}
+      {{- else -}}
+        {{- $paddingClass = printf "p-%s" $padding -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $paddingClass = printf "p-%v" $padding -}}
+  {{- end -}}
+  
+  {{- if and $responsive (ne $paddingClass "") -}}
+    {{- if in "p-8 p-10 p-12 p-16 p-20 p-24" $paddingClass -}}
+      {{- /* Apply responsive padding for larger values */ -}}
+      {{- $basePadding := trimPrefix "p-" $paddingClass -}}
+      {{- $smPadding := div (int $basePadding) 2 -}}
+      {{- $paddingClass = printf "p-%d md:%s" $smPadding $paddingClass -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Spacing classes: Margin */ -}}
+{{- $marginClass := "" -}}
+{{- if ne $margin "0" -}}
+  {{- if eq (printf "%T" $margin) "string" -}}
+    {{- if hasPrefix $margin "m" -}}
+      {{- /* Use custom margin string directly */ -}}
+      {{- $marginClass = $margin -}}
+    {{- else if eq $margin "auto" -}}
+      {{- $marginClass = "mx-auto" -}}
+    {{- else if eq $margin "px" -}}
+      {{- $marginClass = "mx-px" -}}
+    {{- else -}}
+      {{- $marginClass = printf "m-%s" $margin -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $marginClass = printf "m-%v" $margin -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Background color */ -}}
+{{- $backgroundClass := "" -}}
+{{- if ne $background "" -}}
+  {{- if eq $background "primary" -}}
+    {{- $backgroundClass = "bg-blue-600 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-blue-700" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "secondary" -}}
+    {{- $backgroundClass = "bg-purple-600 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-purple-700" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "success" -}}
+    {{- $backgroundClass = "bg-green-600 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-green-700" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "danger" -}}
+    {{- $backgroundClass = "bg-red-600 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-red-700" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "warning" -}}
+    {{- $backgroundClass = "bg-yellow-500 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-yellow-600" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "info" -}}
+    {{- $backgroundClass = "bg-cyan-600 text-white" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-cyan-700" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "light" -}}
+    {{- $backgroundClass = "bg-gray-100 text-gray-800" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-gray-800 dark:text-gray-100" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "dark" -}}
+    {{- $backgroundClass = "bg-gray-800 text-gray-100" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-gray-900" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "white" -}}
+    {{- $backgroundClass = "bg-white text-gray-900" -}}
+    {{- if $darkMode -}}
+      {{- $backgroundClass = printf "%s dark:bg-gray-900 dark:text-gray-100" $backgroundClass -}}
+    {{- end -}}
+  {{- else if eq $background "black" -}}
+    {{- $backgroundClass = "bg-black text-white" -}}
+  {{- else if eq $background "transparent" -}}
+    {{- $backgroundClass = "bg-transparent" -}}
+  {{- else -}}
+    {{- /* Custom background color using Tailwind */ -}}
+    {{- $backgroundClass = printf "bg-%s" $background -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Border classes */ -}}
+{{- $borderClass := "" -}}
+{{- if $border -}}
+  {{- if eq $border true -}}
+    {{- $borderClass = "border" -}}
+  {{- else if eq (printf "%T" $border) "string" -}}
+    {{- if hasPrefix $border "border" -}}
+      {{- $borderClass = $border -}}
+    {{- else -}}
+      {{- $borderClass = printf "border-%s" $border -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $borderClass = printf "border-%v" $border -}}
+  {{- end -}}
+  
+  {{- /* Border color */ -}}
+  {{- if ne $borderColor "" -}}
+    {{- if eq $borderColor "primary" -}}
+      {{- $borderClass = printf "%s border-blue-600" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-blue-500" $borderClass -}}
+      {{- end -}}
+    {{- else if eq $borderColor "secondary" -}}
+      {{- $borderClass = printf "%s border-purple-600" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-purple-500" $borderClass -}}
+      {{- end -}}
+    {{- else if eq $borderColor "success" -}}
+      {{- $borderClass = printf "%s border-green-600" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-green-500" $borderClass -}}
+      {{- end -}}
+    {{- else if eq $borderColor "danger" -}}
+      {{- $borderClass = printf "%s border-red-600" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-red-500" $borderClass -}}
+      {{- end -}}
+    {{- else if eq $borderColor "warning" -}}
+      {{- $borderClass = printf "%s border-yellow-500" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-yellow-400" $borderClass -}}
+      {{- end -}}
+    {{- else if eq $borderColor "info" -}}
+      {{- $borderClass = printf "%s border-cyan-600" $borderClass -}}
+      {{- if $darkMode -}}
+        {{- $borderClass = printf "%s dark:border-cyan-500" $borderClass -}}
+      {{- end -}}
+    {{- else -}}
+      {{- /* Custom border color using Tailwind */ -}}
+      {{- $borderClass = printf "%s border-%s" $borderClass $borderColor -}}
+      {{- if and $darkMode (hasPrefix $borderColor "gray-") -}}
+        {{- $darkGray := sub 1000 (int (trimPrefix "gray-" $borderColor)) -}}
+        {{- if gt $darkGray 950 -}}{{- $darkGray = 950 -}}{{- end -}}
+        {{- $borderClass = printf "%s dark:border-gray-%d" $borderClass $darkGray -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else -}}
+    {{- /* Default border color with dark mode support */ -}}
+    {{- $borderClass = printf "%s border-gray-300" $borderClass -}}
+    {{- if $darkMode -}}
+      {{- $borderClass = printf "%s dark:border-gray-700" $borderClass -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Border radius */ -}}
+{{- $roundedClass := "" -}}
+{{- if $rounded -}}
+  {{- if eq $rounded true -}}
+    {{- $roundedClass = "rounded" -}}
+  {{- else if eq (printf "%T" $rounded) "string" -}}
+    {{- if hasPrefix $rounded "rounded" -}}
+      {{- $roundedClass = $rounded -}}
+    {{- else if eq $rounded "full" -}}
+      {{- $roundedClass = "rounded-full" -}}
+    {{- else if eq $rounded "none" -}}
+      {{- $roundedClass = "rounded-none" -}}
+    {{- else -}}
+      {{- $roundedClass = printf "rounded-%s" $rounded -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Shadow */ -}}
+{{- $shadowClass := "" -}}
+{{- if $shadow -}}
+  {{- if eq $shadow true -}}
+    {{- $shadowClass = "shadow" -}}
+  {{- else if eq (printf "%T" $shadow) "string" -}}
+    {{- if hasPrefix $shadow "shadow" -}}
+      {{- $shadowClass = $shadow -}}
+    {{- else if eq $shadow "none" -}}
+      {{- $shadowClass = "shadow-none" -}}
+    {{- else if eq $shadow "inner" -}}
+      {{- $shadowClass = "shadow-inner" -}}
+    {{- else -}}
+      {{- $shadowClass = printf "shadow-%s" $shadow -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Width */ -}}
+{{- $widthClass := "" -}}
+{{- if ne $width "" -}}
+  {{- if eq $width "auto" -}}
+    {{- $widthClass = "w-auto" -}}
+  {{- else if eq $width "full" -}}
+    {{- $widthClass = "w-full" -}}
+  {{- else if eq $width "screen" -}}
+    {{- $widthClass = "w-screen" -}}
+  {{- else if hasPrefix $width "w-" -}}
+    {{- $widthClass = $width -}}
+  {{- else -}}
+    {{- $widthClass = printf "w-%s" $width -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Max width */ -}}
+{{- $maxWidthClass := "" -}}
+{{- if ne $maxWidth "" -}}
+  {{- if eq $maxWidth "none" -}}
+    {{- $maxWidthClass = "max-w-none" -}}
+  {{- else if eq $maxWidth "full" -}}
+    {{- $maxWidthClass = "max-w-full" -}}
+  {{- else if eq $maxWidth "xs" -}}
+    {{- $maxWidthClass = "max-w-xs" -}}
+  {{- else if eq $maxWidth "sm" -}}
+    {{- $maxWidthClass = "max-w-sm" -}}
+  {{- else if eq $maxWidth "md" -}}
+    {{- $maxWidthClass = "max-w-md" -}}
+  {{- else if eq $maxWidth "lg" -}}
+    {{- $maxWidthClass = "max-w-lg" -}}
+  {{- else if eq $maxWidth "xl" -}}
+    {{- $maxWidthClass = "max-w-xl" -}}
+  {{- else if eq $maxWidth "2xl" -}}
+    {{- $maxWidthClass = "max-w-2xl" -}}
+  {{- else if eq $maxWidth "3xl" -}}
+    {{- $maxWidthClass = "max-w-3xl" -}}
+  {{- else if eq $maxWidth "4xl" -}}
+    {{- $maxWidthClass = "max-w-4xl" -}}
+  {{- else if eq $maxWidth "5xl" -}}
+    {{- $maxWidthClass = "max-w-5xl" -}}
+  {{- else if eq $maxWidth "6xl" -}}
+    {{- $maxWidthClass = "max-w-6xl" -}}
+  {{- else if eq $maxWidth "7xl" -}}
+    {{- $maxWidthClass = "max-w-7xl" -}}
+  {{- else if eq $maxWidth "prose" -}}
+    {{- $maxWidthClass = "max-w-prose" -}}
+  {{- else if eq $maxWidth "screen-sm" -}}
+    {{- $maxWidthClass = "max-w-screen-sm" -}}
+  {{- else if eq $maxWidth "screen-md" -}}
+    {{- $maxWidthClass = "max-w-screen-md" -}}
+  {{- else if eq $maxWidth "screen-lg" -}}
+    {{- $maxWidthClass = "max-w-screen-lg" -}}
+  {{- else if eq $maxWidth "screen-xl" -}}
+    {{- $maxWidthClass = "max-w-screen-xl" -}}
+  {{- else if eq $maxWidth "screen-2xl" -}}
+    {{- $maxWidthClass = "max-w-screen-2xl" -}}
+  {{- else if eq $maxWidth "min" -}}
+    {{- $maxWidthClass = "max-w-min" -}}
+  {{- else if eq $maxWidth "max" -}}
+    {{- $maxWidthClass = "max-w-max" -}}
+  {{- else if hasPrefix $maxWidth "max-w-" -}}
+    {{- $maxWidthClass = $maxWidth -}}
+  {{- else -}}
+    {{- $maxWidthClass = printf "max-w-%s" $maxWidth -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Height */ -}}
+{{- $heightClass := "" -}}
+{{- if ne $height "" -}}
+  {{- if eq $height "auto" -}}
+    {{- $heightClass = "h-auto" -}}
+  {{- else if eq $height "full" -}}
+    {{- $heightClass = "h-full" -}}
+  {{- else if eq $height "screen" -}}
+    {{- $heightClass = "h-screen" -}}
+  {{- else if hasPrefix $height "h-" -}}
+    {{- $heightClass = $height -}}
+  {{- else -}}
+    {{- $heightClass = printf "h-%s" $height -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Position */ -}}
+{{- $positionClass := "" -}}
+{{- if ne $position "" -}}
+  {{- if eq $position "static" -}}
+    {{- $positionClass = "static" -}}
+  {{- else if eq $position "relative" -}}
+    {{- $positionClass = "relative" -}}
+  {{- else if eq $position "absolute" -}}
+    {{- $positionClass = "absolute" -}}
+  {{- else if eq $position "fixed" -}}
+    {{- $positionClass = "fixed" -}}
+  {{- else if eq $position "sticky" -}}
+    {{- $positionClass = "sticky" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Inset position */ -}}
+{{- $insetClass := "" -}}
+{{- if and (ne $inset "") (ne $position "") -}}
+  {{- if eq $inset "0" -}}
+    {{- $insetClass = "inset-0" -}}
+  {{- else if eq $inset "auto" -}}
+    {{- $insetClass = "inset-auto" -}}
+  {{- else if hasPrefix $inset "inset" or hasPrefix $inset "top" or hasPrefix $inset "right" or 
+             hasPrefix $inset "bottom" or hasPrefix $inset "left" -}}
+    {{- $insetClass = $inset -}}
+  {{- else -}}
+    {{- $insetClass = printf "inset-%s" $inset -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Display */ -}}
+{{- $displayClass := "" -}}
+{{- if ne $display "" -}}
+  {{- if eq $display "block" -}}
+    {{- $displayClass = "block" -}}
+  {{- else if eq $display "inline-block" -}}
+    {{- $displayClass = "inline-block" -}}
+  {{- else if eq $display "inline" -}}
+    {{- $displayClass = "inline" -}}
+  {{- else if eq $display "flex" -}}
+    {{- $displayClass = "flex" -}}
+  {{- else if eq $display "inline-flex" -}}
+    {{- $displayClass = "inline-flex" -}}
+  {{- else if eq $display "grid" -}}
+    {{- $displayClass = "grid" -}}
+  {{- else if eq $display "inline-grid" -}}
+    {{- $displayClass = "inline-grid" -}}
+  {{- else if eq $display "hidden" -}}
+    {{- $displayClass = "hidden" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Flex direction */ -}}
+{{- $flexDirectionClass := "" -}}
+{{- if hasPrefix $display "flex" -}}
+  {{- if eq $flexDirection "row" -}}
+    {{- $flexDirectionClass = "flex-row" -}}
+  {{- else if eq $flexDirection "row-reverse" -}}
+    {{- $flexDirectionClass = "flex-row-reverse" -}}
+  {{- else if eq $flexDirection "col" -}}
+    {{- $flexDirectionClass = "flex-col" -}}
+  {{- else if eq $flexDirection "col-reverse" -}}
+    {{- $flexDirectionClass = "flex-col-reverse" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Flex wrap */ -}}
+{{- $flexWrapClass := "" -}}
+{{- if hasPrefix $display "flex" -}}
+  {{- if eq $flexWrap "wrap" -}}
+    {{- $flexWrapClass = "flex-wrap" -}}
+  {{- else if eq $flexWrap "wrap-reverse" -}}
+    {{- $flexWrapClass = "flex-wrap-reverse" -}}
+  {{- else if eq $flexWrap "nowrap" -}}
+    {{- $flexWrapClass = "flex-nowrap" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Justify content */ -}}
+{{- $justifyContentClass := "" -}}
+{{- if hasPrefix $display "flex" or eq $display "grid" -}}
+  {{- if eq $justifyContent "start" -}}
+    {{- $justifyContentClass = "justify-start" -}}
+  {{- else if eq $justifyContent "end" -}}
+    {{- $justifyContentClass = "justify-end" -}}
+  {{- else if eq $justifyContent "center" -}}
+    {{- $justifyContentClass = "justify-center" -}}
+  {{- else if eq $justifyContent "between" -}}
+    {{- $justifyContentClass = "justify-between" -}}
+  {{- else if eq $justifyContent "around" -}}
+    {{- $justifyContentClass = "justify-around" -}}
+  {{- else if eq $justifyContent "evenly" -}}
+    {{- $justifyContentClass = "justify-evenly" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Align items */ -}}
+{{- $alignItemsClass := "" -}}
+{{- if hasPrefix $display "flex" or eq $display "grid" -}}
+  {{- if eq $alignItems "start" -}}
+    {{- $alignItemsClass = "items-start" -}}
+  {{- else if eq $alignItems "end" -}}
+    {{- $alignItemsClass = "items-end" -}}
+  {{- else if eq $alignItems "center" -}}
+    {{- $alignItemsClass = "items-center" -}}
+  {{- else if eq $alignItems "baseline" -}}
+    {{- $alignItemsClass = "items-baseline" -}}
+  {{- else if eq $alignItems "stretch" -}}
+    {{- $alignItemsClass = "items-stretch" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Gap */ -}}
+{{- $gapClass := "" -}}
+{{- if hasPrefix $display "flex" or eq $display "grid" -}}
+  {{- if ne $gap "" -}}
+    {{- if eq (printf "%T" $gap) "string" -}}

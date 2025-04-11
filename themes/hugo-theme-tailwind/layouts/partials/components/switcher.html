@@ -1,0 +1,338 @@
+{{- /*
+  Switcher Component
+  
+  Parameters:
+    - id: String - Unique ID for the switcher (default: auto-generated)
+    - options: Array - Array of options to switch between (required)
+    - value: String/Number - Current selected value (default: first option)
+    - name: String - Name attribute for form submission (default: id value)
+    - size: String - Size of the switcher (default: "md")
+      Options: sm, md, lg
+    - variant: String - Visual style (default: "default")
+      Options: default, pills, tabs, underline, bordered
+    - color: String - Theme color (default: "blue")
+      Options: blue, green, red, yellow, purple, indigo, or any tailwind color
+    - fullWidth: Boolean - Make switcher fill container width (default: false)
+    - disabled: Boolean - Disable the switcher (default: false)
+    - required: Boolean - Make selection required in forms (default: false)
+    - showLabels: Boolean - Show labels for options (default: true)
+    - hideLabelsOnMobile: Boolean - Hide labels on mobile screens (default: false)
+    - labelPosition: String - Position of labels (default: "right")
+      Options: right, left, top, bottom, none
+    - iconPosition: String - Position of icons in options (default: "left")
+      Options: left, right, top, only
+    - rounded: Boolean - Use rounded styles (default: true)
+    - inline: Boolean - Display as inline element (default: false)
+    - onChange: String - JS function to call when value changes (default: "")
+    - class: String - Additional custom classes for container (default: "")
+    - optionClass: String - Additional classes for options (default: "")
+    - activeClass: String - Additional classes for active option (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "switcher-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $options := .options -}}
+{{- $value := .value | default (cond (gt (len $options) 0) (index (index $options 0) "value" | default (index $options 0)) "") -}}
+{{- $name := .name | default $id -}}
+{{- $size := .size | default "md" -}}
+{{- $variant := .variant | default "default" -}}
+{{- $color := .color | default "blue" -}}
+{{- $fullWidth := .fullWidth | default false -}}
+{{- $disabled := .disabled | default false -}}
+{{- $required := .required | default false -}}
+{{- $showLabels := .showLabels | default true -}}
+{{- $hideLabelsOnMobile := .hideLabelsOnMobile | default false -}}
+{{- $labelPosition := .labelPosition | default "right" -}}
+{{- $iconPosition := .iconPosition | default "left" -}}
+{{- $rounded := .rounded | default true -}}
+{{- $inline := .inline | default false -}}
+{{- $onChange := .onChange | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $optionClass := .optionClass | default "" -}}
+{{- $activeClass := .activeClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "flex" -}}
+{{- $optionsWrapperClass := "inline-flex" -}}
+{{- $optionBaseClass := "relative flex items-center justify-center transition-all duration-200" -}}
+{{- $inputClass := "sr-only" -}}
+{{- $labelBaseClass := "" -}}
+{{- $activeBaseClass := "" -}}
+
+{{- /* Size classes */ -}}
+{{- $optionSizeClass := "" -}}
+{{- $optionPadding := "" -}}
+{{- if eq $size "sm" -}}
+  {{- $optionSizeClass = "text-sm" -}}
+  {{- $optionPadding = "px-2.5 py-1" -}}
+{{- else if eq $size "md" -}}
+  {{- $optionSizeClass = "text-base" -}}
+  {{- $optionPadding = "px-3 py-1.5" -}}
+{{- else if eq $size "lg" -}}
+  {{- $optionSizeClass = "text-lg" -}}
+  {{- $optionPadding = "px-4 py-2" -}}
+{{- end -}}
+
+{{- /* Layout classes */ -}}
+{{- if $inline -}}
+  {{- $containerClass = printf "%s inline-flex" $containerClass -}}
+{{- end -}}
+
+{{- if $fullWidth -}}
+  {{- $containerClass = printf "%s w-full" $containerClass -}}
+  {{- $optionsWrapperClass = printf "%s w-full" $optionsWrapperClass -}}
+  {{- $optionBaseClass = printf "%s flex-1" $optionBaseClass -}}
+{{- end -}}
+
+{{- if $hideLabelsOnMobile -}}
+  {{- $labelBaseClass = printf "%s hidden sm:inline-block" $labelBaseClass -}}
+{{- end -}}
+
+{{- /* Variant specific classes */ -}}
+{{- if eq $variant "default" -}}
+  {{- $optionBaseClass = printf "%s border %s" $optionBaseClass $optionPadding -}}
+  {{- $optionBaseClass = printf "%s border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" $optionBaseClass -}}
+  {{- $activeBaseClass = printf "bg-%s-500 dark:bg-%s-600 text-white border-%s-500 dark:border-%s-600 hover:bg-%s-600 dark:hover:bg-%s-700" $color $color $color $color $color $color -}}
+  
+  {{- /* Handle the first and last items for border radius */ -}}
+  {{- if $rounded -}}
+    {{- $optionsWrapperClass = printf "%s divide-x divide-gray-300 dark:divide-gray-700 overflow-hidden rounded-md" $optionsWrapperClass -}}
+  {{- else -}}
+    {{- $optionsWrapperClass = printf "%s divide-x divide-gray-300 dark:divide-gray-700" $optionsWrapperClass -}}
+  {{- end -}}
+{{- else if eq $variant "pills" -}}
+  {{- $optionBaseClass = printf "%s %s mx-0.5 first:ml-0 last:mr-0" $optionBaseClass $optionPadding -}}
+  {{- $optionBaseClass = printf "%s bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" $optionBaseClass -}}
+  {{- $activeBaseClass = printf "bg-%s-500 dark:bg-%s-600 text-white hover:bg-%s-600 dark:hover:bg-%s-700" $color $color $color $color -}}
+  
+  {{- if $rounded -}}
+    {{- $optionBaseClass = printf "%s rounded-full" $optionBaseClass -}}
+  {{- end -}}
+{{- else if eq $variant "tabs" -}}
+  {{- $optionBaseClass = printf "%s %s border-b-2 border-transparent" $optionBaseClass $optionPadding -}}
+  {{- $optionBaseClass = printf "%s text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600" $optionBaseClass -}}
+  {{- $activeBaseClass = printf "text-gray-900 dark:text-white border-%s-500 dark:border-%s-400" $color $color -}}
+  {{- $optionsWrapperClass = printf "%s border-b border-gray-200 dark:border-gray-700" $optionsWrapperClass -}}
+{{- else if eq $variant "underline" -}}
+  {{- $optionBaseClass = printf "%s %s" $optionBaseClass $optionPadding -}}
+  {{- $optionBaseClass = printf "%s text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" $optionBaseClass -}}
+  {{- $activeBaseClass = printf "text-%s-600 dark:text-%s-400 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-%s-500 dark:after:bg-%s-400" $color $color $color $color -}}
+  {{- $optionsWrapperClass = printf "%s border-b border-gray-200 dark:border-gray-700" $optionsWrapperClass -}}
+{{- else if eq $variant "bordered" -}}
+  {{- $optionBaseClass = printf "%s %s border" $optionBaseClass $optionPadding -}}
+  {{- $optionBaseClass = printf "%s border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800" $optionBaseClass -}}
+  {{- $activeBaseClass = printf "border-%s-500 dark:border-%s-400 text-%s-600 dark:text-%s-400 bg-white dark:bg-gray-800" $color $color $color $color -}}
+  
+  {{- if $rounded -}}
+    {{- $optionBaseClass = printf "%s rounded-md mx-0.5 first:ml-0 last:mr-0" $optionBaseClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $optionClass -}}
+  {{- $optionBaseClass = printf "%s %s" $optionBaseClass $optionClass -}}
+{{- end -}}
+
+{{- if $activeClass -}}
+  {{- $activeBaseClass = printf "%s %s" $activeBaseClass $activeClass -}}
+{{- end -}}
+
+<div
+  id="{{ $id }}-container"
+  class="{{ $containerClass }}"
+  data-switcher
+  data-variant="{{ $variant }}"
+>
+  <div class="{{ $optionsWrapperClass }}" role="group" aria-label="Switcher options">
+    {{- range $index, $option := $options -}}
+      {{- $optionId := printf "%s-option-%d" $id $index -}}
+      {{- $optionValue := "" -}}
+      {{- $optionLabel := "" -}}
+      {{- $optionIcon := "" -}}
+      {{- $optionDisabled := false -}}
+      
+      {{- if kindIs "map" $option -}}
+        {{- $optionValue = $option.value | default $index -}}
+        {{- $optionLabel = $option.label | default $optionValue -}}
+        {{- $optionIcon = $option.icon | default "" -}}
+        {{- $optionDisabled = $option.disabled | default false -}}
+      {{- else -}}
+        {{- $optionValue = $option -}}
+        {{- $optionLabel = $option -}}
+      {{- end -}}
+      
+      {{- $isSelected := eq (string $value) (string $optionValue) -}}
+      {{- $isDisabled := or $disabled $optionDisabled -}}
+      
+      <label 
+        for="{{ $optionId }}"
+        class="{{ $optionBaseClass }} {{ if $isSelected }}{{ $activeBaseClass }}{{ end }} {{ if $isDisabled }}opacity-50 cursor-not-allowed{{ else }}cursor-pointer{{ end }}"
+      >
+        <input 
+          type="radio" 
+          id="{{ $optionId }}" 
+          name="{{ $name }}" 
+          value="{{ $optionValue }}"
+          class="{{ $inputClass }}"
+          {{ if $isSelected }}checked{{ end }}
+          {{ if $isDisabled }}disabled{{ end }}
+          {{ if $required }}required{{ end }}
+          data-switcher-input
+        >
+        
+        {{- /* Icon handling */ -}}
+        {{- if $optionIcon -}}
+          {{- if or (eq $iconPosition "left") (eq $iconPosition "top") -}}
+            <span class="{{ if eq $iconPosition "left" }}mr-2{{ else }}mb-1{{ end }} {{ if eq $iconPosition "top" }}flex flex-col items-center{{ end }}">
+              {{ partial "icon.html" (dict "name" $optionIcon "size" "sm") }}
+            </span>
+          {{- end -}}
+        {{- end -}}
+        
+        {{- /* Label */ -}}
+        {{- if and $showLabels (ne $labelPosition "none") -}}
+          <span class="{{ $labelBaseClass }} {{ if eq $iconPosition "top" }}mt-1{{ end }}">
+            {{ $optionLabel }}
+          </span>
+        {{- end -}}
+        
+        {{- /* Right positioned icon */ -}}
+        {{- if and $optionIcon (eq $iconPosition "right") -}}
+          <span class="ml-2">
+            {{ partial "icon.html" (dict "name" $optionIcon "size" "sm") }}
+          </span>
+        {{- end -}}
+        
+        {{- /* Icon only */ -}}
+        {{- if and $optionIcon (eq $iconPosition "only") -}}
+          {{ partial "icon.html" (dict "name" $optionIcon "size" "sm") }}
+        {{- end -}}
+      </label>
+    {{- end -}}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const switcherContainer = document.getElementById('{{ $id }}-container');
+    if (!switcherContainer) return;
+    
+    const inputs = switcherContainer.querySelectorAll('[data-switcher-input]');
+    const variant = switcherContainer.dataset.variant;
+    
+    // Active classes based on variant
+    const activeClasses = '{{ $activeBaseClass }}'.split(' ').filter(Boolean);
+	let inactiveClasses = [];
+	switch (variant) {
+	  case 'default':
+		inactiveClasses = [
+		  'border-gray-300', 'dark:border-gray-700', 'bg-white', 'dark:bg-gray-800', 
+		  'text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-50', 'dark:hover:bg-gray-700'
+		];
+		break;
+	  case 'pills':
+		inactiveClasses = [
+		  'bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300',
+		  'hover:bg-gray-200', 'dark:hover:bg-gray-700'
+		];
+		break;
+	  case 'tabs':
+		inactiveClasses = [
+		  'text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700', 'dark:hover:text-gray-300',
+		  'hover:border-gray-300', 'dark:hover:border-gray-600', 'border-transparent'
+		];
+		break;
+	  case 'underline':
+		inactiveClasses = [
+		  'text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700', 'dark:hover:text-gray-300'
+		];
+		break;
+	  case 'bordered':
+		inactiveClasses = [
+		  'border-gray-300', 'dark:border-gray-700', 'text-gray-700', 'dark:text-gray-300',
+		  'hover:bg-gray-50', 'dark:hover:bg-gray-800'
+		];
+		break;
+	  default:
+		inactiveClasses = [
+		  'border-gray-300', 'dark:border-gray-700', 'text-gray-700', 'dark:text-gray-300'
+		];
+	}
+    
+    // Handle change events
+    inputs.forEach(input => {
+      input.addEventListener('change', function(e) {
+        if (this.checked) {
+          // Update active states
+          inputs.forEach(inp => {
+            const label = inp.closest('label');
+            
+            if (inp === this) {
+              // Add active classes
+              inactiveClasses.forEach(cls => label.classList.remove(cls));
+              activeClasses.forEach(cls => label.classList.add(cls));
+            } else {
+              // Remove active classes
+              activeClasses.forEach(cls => label.classList.remove(cls));
+              inactiveClasses.forEach(cls => label.classList.add(cls));
+            }
+          });
+          
+          // Trigger change callback
+          if ('{{ $onChange }}') {
+            try {
+              window['{{ $onChange }}']({
+                value: this.value,
+                element: this
+              });
+            } catch (err) {
+              console.error('Error in onChange callback:', err);
+            }
+          }
+          
+          // Dispatch custom event
+          switcherContainer.dispatchEvent(new CustomEvent('switcher:change', {
+            detail: {
+              value: this.value,
+              element: this
+            }
+          }));
+        }
+      });
+    });
+    
+    // Expose API
+    window.switchers = window.switchers || {};
+    window.switchers['{{ $id }}'] = {
+      getValue: function() {
+        const checkedInput = switcherContainer.querySelector('[data-switcher-input]:checked');
+        return checkedInput ? checkedInput.value : null;
+      },
+      setValue: function(value) {
+        const input = switcherContainer.querySelector(`[data-switcher-input][value="${value}"]`);
+        if (input && !input.disabled) {
+          input.checked = true;
+          input.dispatchEvent(new Event('change'));
+        }
+      },
+      enable: function() {
+        inputs.forEach(input => {
+          input.disabled = false;
+          input.closest('label').classList.remove('opacity-50', 'cursor-not-allowed');
+          input.closest('label').classList.add('cursor-pointer');
+        });
+      },
+      disable: function() {
+        inputs.forEach(input => {
+          input.disabled = true;
+          input.closest('label').classList.add('opacity-50', 'cursor-not-allowed');
+          input.closest('label').classList.remove('cursor-pointer');
+        });
+      }
+    };
+  });
+</script>

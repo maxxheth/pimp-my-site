@@ -1,0 +1,558 @@
+{{- /*
+  Typography Component
+  
+  Parameters:
+    - id: String - Unique ID for the element (default: auto-generated)
+    - content: String - Content to display (required)
+    - variant: String - Typography variant (default: "body")
+      Options: h1, h2, h3, h4, h5, h6, subtitle1, subtitle2, body1, body2, caption, overline, 
+               display1, display2, display3, display4, quote, lead, code, pre
+    - size: String - Font size (default: depends on variant)
+      Options: xs, sm, base, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl, 8xl, 9xl
+    - weight: String - Font weight (default: depends on variant)
+      Options: thin, extralight, light, normal, medium, semibold, bold, extrabold, black
+    - family: String - Font family (default: "primary")
+      Options: primary, secondary, mono, serif, sans
+    - color: String - Text color (default: "default")
+      Options: default, primary, secondary, success, danger, warning, info, white, black, or any tailwind color
+    - align: String - Text alignment (default: "left")
+      Options: left, center, right, justify
+    - transform: String - Text transformation (default: "none")
+      Options: none, uppercase, lowercase, capitalize
+    - decoration: String - Text decoration (default: "none") 
+      Options: none, underline, line-through, overline
+    - italic: Boolean - Apply italic style (default: false)
+    - lineHeight: String - Line height (default: "normal")
+      Options: none, tight, snug, normal, relaxed, loose
+    - letterSpacing: String - Letter spacing (default: "normal")
+      Options: tighter, tight, normal, wide, wider, widest
+    - truncate: Boolean - Truncate text with ellipsis (default: false)
+    - clamp: Number - Clamp text to number of lines (default: 0, no clamp)
+    - responsive: Boolean - Use responsive sizing on smaller screens (default: true)
+    - prose: Boolean - Apply typography prose styles for rich text (default: false)
+    - noMargin: Boolean - Remove margin from element (default: false)
+    - gradient: Boolean - Apply gradient effect to text (default: false)
+    - gradientFrom: String - Starting gradient color (default: "blue-500")
+    - gradientTo: String - Ending gradient color (default: "purple-500")
+    - gradientDirection: String - Gradient direction (default: "right")
+      Options: right, left, top, bottom, br, bl, tr, tl
+    - element: String - HTML element to use (default: depends on variant)
+    - as: String - Alias for element (default: "")
+    - class: String - Additional custom classes (default: "")
+    - nowrap: Boolean - Prevent text from wrapping (default: false)
+    - showDebug: Boolean - Show element debugging outline (default: false)
+*/ -}}
+
+{{- $uniqueId := printf "text-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $content := .content -}}
+{{- $variant := .variant | default "body" -}}
+{{- $size := .size | default "" -}}
+{{- $weight := .weight | default "" -}}
+{{- $family := .family | default "primary" -}}
+{{- $color := .color | default "default" -}}
+{{- $align := .align | default "left" -}}
+{{- $transform := .transform | default "none" -}}
+{{- $decoration := .decoration | default "none" -}}
+{{- $italic := .italic | default false -}}
+{{- $lineHeight := .lineHeight | default "normal" -}}
+{{- $letterSpacing := .letterSpacing | default "normal" -}}
+{{- $truncate := .truncate | default false -}}
+{{- $clamp := .clamp | default 0 -}}
+{{- $responsive := .responsive | default true -}}
+{{- $prose := .prose | default false -}}
+{{- $noMargin := .noMargin | default false -}}
+{{- $gradient := .gradient | default false -}}
+{{- $gradientFrom := .gradientFrom | default "blue-500" -}}
+{{- $gradientTo := .gradientTo | default "purple-500" -}}
+{{- $gradientDirection := .gradientDirection | default "right" -}}
+{{- $element := .element | default "" -}}
+{{- $as := .as | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $nowrap := .nowrap | default false -}}
+{{- $showDebug := .showDebug | default false -}}
+
+{{- /* Set default element based on variant */ -}}
+{{- if eq $element "" -}}
+  {{- if eq $as "" -}}
+    {{- if eq $variant "h1" -}}
+      {{- $element = "h1" -}}
+    {{- else if eq $variant "h2" -}}
+      {{- $element = "h2" -}}
+    {{- else if eq $variant "h3" -}}
+      {{- $element = "h3" -}}
+    {{- else if eq $variant "h4" -}}
+      {{- $element = "h4" -}}
+    {{- else if eq $variant "h5" -}}
+      {{- $element = "h5" -}}
+    {{- else if eq $variant "h6" -}}
+      {{- $element = "h6" -}}
+    {{- else if eq $variant "subtitle1" or eq $variant "subtitle2" -}}
+      {{- $element = "h6" -}}
+    {{- else if eq $variant "quote" -}}
+      {{- $element = "blockquote" -}}
+    {{- else if eq $variant "code" -}}
+      {{- $element = "code" -}}
+    {{- else if eq $variant "pre" -}}
+      {{- $element = "pre" -}}
+    {{- else -}}
+      {{- $element = "p" -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $element = $as -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Set default styles based on variant */ -}}
+{{- $variantClasses := "" -}}
+{{- if eq $variant "h1" -}}
+  {{- $variantClasses = "text-4xl font-bold" -}}
+  {{- if eq $size "" -}}{{- $size = "4xl" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "bold" -}}{{- end -}}
+{{- else if eq $variant "h2" -}}
+  {{- $variantClasses = "text-3xl font-bold" -}}
+  {{- if eq $size "" -}}{{- $size = "3xl" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "bold" -}}{{- end -}}
+{{- else if eq $variant "h3" -}}
+  {{- $variantClasses = "text-2xl font-semibold" -}}
+  {{- if eq $size "" -}}{{- $size = "2xl" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "semibold" -}}{{- end -}}
+{{- else if eq $variant "h4" -}}
+  {{- $variantClasses = "text-xl font-semibold" -}}
+  {{- if eq $size "" -}}{{- $size = "xl" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "semibold" -}}{{- end -}}
+{{- else if eq $variant "h5" -}}
+  {{- $variantClasses = "text-lg font-medium" -}}
+  {{- if eq $size "" -}}{{- $size = "lg" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "medium" -}}{{- end -}}
+{{- else if eq $variant "h6" -}}
+  {{- $variantClasses = "text-base font-medium" -}}
+  {{- if eq $size "" -}}{{- $size = "base" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "medium" -}}{{- end -}}
+{{- else if eq $variant "subtitle1" -}}
+  {{- $variantClasses = "text-lg" -}}
+  {{- if eq $size "" -}}{{- $size = "lg" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "normal" -}}{{- end -}}
+{{- else if eq $variant "subtitle2" -}}
+  {{- $variantClasses = "text-base" -}}
+  {{- if eq $size "" -}}{{- $size = "base" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "medium" -}}{{- end -}}
+{{- else if eq $variant "body1" -}}
+  {{- $variantClasses = "text-base" -}}
+  {{- if eq $size "" -}}{{- $size = "base" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "normal" -}}{{- end -}}
+{{- else if eq $variant "body2" -}}
+  {{- $variantClasses = "text-sm" -}}
+  {{- if eq $size "" -}}{{- $size = "sm" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "normal" -}}{{- end -}}
+{{- else if eq $variant "caption" -}}
+  {{- $variantClasses = "text-xs" -}}
+  {{- if eq $size "" -}}{{- $size = "xs" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "normal" -}}{{- end -}}
+{{- else if eq $variant "overline" -}}
+  {{- $variantClasses = "text-xs uppercase tracking-wider" -}}
+  {{- if eq $size "" -}}{{- $size = "xs" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "medium" -}}{{- end -}}
+  {{- if eq $transform "" -}}{{- $transform = "uppercase" -}}{{- end -}}
+  {{- if eq $letterSpacing "" -}}{{- $letterSpacing = "wider" -}}{{- end -}}
+{{- else if eq $variant "display1" -}}
+  {{- $variantClasses = "text-7xl font-bold tracking-tight" -}}
+  {{- if eq $size "" -}}{{- $size = "7xl" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "bold" -}}{{- end -}}
+  {{- if eq $letterSpacing "" -}}{{- $letterSpacing = "tight" -}}{{- end -}}
+{{- else if eq $variant "display2" -}}
+  {{- $variantClasses = "text-6xl font-bold tracking-tight" -}}
+  {{- if eq $size "" -}}{{- $size = "6xl" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "bold" -}}{{- end -}}
+  {{- if eq $letterSpacing "" -}}{{- $letterSpacing = "tight" -}}{{- end -}}
+{{- else if eq $variant "display3" -}}
+  {{- $variantClasses = "text-5xl font-bold tracking-tight" -}}
+  {{- if eq $size "" -}}{{- $size = "5xl" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "bold" -}}{{- end -}}
+  {{- if eq $letterSpacing "" -}}{{- $letterSpacing = "tight" -}}{{- end -}}
+{{- else if eq $variant "display4" -}}
+  {{- $variantClasses = "text-4xl font-bold tracking-tight" -}}
+  {{- if eq $size "" -}}{{- $size = "4xl" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "bold" -}}{{- end -}}
+  {{- if eq $letterSpacing "" -}}{{- $letterSpacing = "tight" -}}{{- end -}}
+{{- else if eq $variant "quote" -}}
+  {{- $variantClasses = "text-xl font-medium italic border-l-4 border-gray-300 dark:border-gray-700 pl-4 py-1" -}}
+  {{- if eq $size "" -}}{{- $size = "xl" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "medium" -}}{{- end -}}
+  {{- $italic = true -}}
+{{- else if eq $variant "lead" -}}
+  {{- $variantClasses = "text-xl" -}}
+  {{- if eq $size "" -}}{{- $size = "xl" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "normal" -}}{{- end -}}
+{{- else if eq $variant "code" -}}
+  {{- $variantClasses = "font-mono text-sm bg-gray-100 dark:bg-gray-800 rounded px-1 py-0.5" -}}
+  {{- if eq $size "" -}}{{- $size = "sm" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "normal" -}}{{- end -}}
+  {{- if eq $family "" -}}{{- $family = "mono" -}}{{- end -}}
+{{- else if eq $variant "pre" -}}
+  {{- $variantClasses = "font-mono text-sm bg-gray-100 dark:bg-gray-800 rounded p-4 overflow-x-auto" -}}
+  {{- if eq $size "" -}}{{- $size = "sm" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "normal" -}}{{- end -}}
+  {{- if eq $family "" -}}{{- $family = "mono" -}}{{- end -}}
+{{- else -}}
+  {{- /* Default body variant */ -}}
+  {{- $variantClasses = "text-base" -}}
+  {{- if eq $size "" -}}{{- $size = "base" -}}{{- end -}}
+  {{- if eq $weight "" -}}{{- $weight = "normal" -}}{{- end -}}
+{{- end -}}
+
+{{- /* Font family */ -}}
+{{- $fontFamily := "" -}}
+{{- if eq $family "primary" -}}
+  {{- $fontFamily = "font-sans" -}}
+{{- else if eq $family "secondary" -}}
+  {{- $fontFamily = "font-serif" -}}
+{{- else if eq $family "mono" -}}
+  {{- $fontFamily = "font-mono" -}}
+{{- else if eq $family "serif" -}}
+  {{- $fontFamily = "font-serif" -}}
+{{- else if eq $family "sans" -}}
+  {{- $fontFamily = "font-sans" -}}
+{{- end -}}
+
+{{- /* Font size */ -}}
+{{- $fontSize := "" -}}
+{{- if ne $size "" -}}
+  {{- if eq $size "xs" -}}
+    {{- $fontSize = "text-xs" -}}
+  {{- else if eq $size "sm" -}}
+    {{- $fontSize = "text-sm" -}}
+  {{- else if eq $size "base" -}}
+    {{- $fontSize = "text-base" -}}
+  {{- else if eq $size "lg" -}}
+    {{- $fontSize = "text-lg" -}}
+  {{- else if eq $size "xl" -}}
+    {{- $fontSize = "text-xl" -}}
+  {{- else if eq $size "2xl" -}}
+    {{- $fontSize = "text-2xl" -}}
+  {{- else if eq $size "3xl" -}}
+    {{- $fontSize = "text-3xl" -}}
+  {{- else if eq $size "4xl" -}}
+    {{- $fontSize = "text-4xl" -}}
+  {{- else if eq $size "5xl" -}}
+    {{- $fontSize = "text-5xl" -}}
+  {{- else if eq $size "6xl" -}}
+    {{- $fontSize = "text-6xl" -}}
+  {{- else if eq $size "7xl" -}}
+    {{- $fontSize = "text-7xl" -}}
+  {{- else if eq $size "8xl" -}}
+    {{- $fontSize = "text-8xl" -}}
+  {{- else if eq $size "9xl" -}}
+    {{- $fontSize = "text-9xl" -}}
+  {{- end -}}
+  
+  {{- if $responsive -}}
+    {{- if eq $size "4xl" -}}
+      {{- $fontSize = "text-3xl md:text-4xl" -}}
+    {{- else if eq $size "5xl" -}}
+      {{- $fontSize = "text-4xl md:text-5xl" -}}
+    {{- else if eq $size "6xl" -}}
+      {{- $fontSize = "text-5xl md:text-6xl" -}}
+    {{- else if eq $size "7xl" -}}
+      {{- $fontSize = "text-6xl md:text-7xl" -}}
+    {{- else if eq $size "8xl" -}}
+      {{- $fontSize = "text-7xl md:text-8xl" -}}
+    {{- else if eq $size "9xl" -}}
+      {{- $fontSize = "text-8xl md:text-9xl" -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Font weight */ -}}
+{{- $fontWeight := "" -}}
+{{- if ne $weight "" -}}
+  {{- if eq $weight "thin" -}}
+    {{- $fontWeight = "font-thin" -}}
+  {{- else if eq $weight "extralight" -}}
+    {{- $fontWeight = "font-extralight" -}}
+  {{- else if eq $weight "light" -}}
+    {{- $fontWeight = "font-light" -}}
+  {{- else if eq $weight "normal" -}}
+    {{- $fontWeight = "font-normal" -}}
+  {{- else if eq $weight "medium" -}}
+    {{- $fontWeight = "font-medium" -}}
+  {{- else if eq $weight "semibold" -}}
+    {{- $fontWeight = "font-semibold" -}}
+  {{- else if eq $weight "bold" -}}
+    {{- $fontWeight = "font-bold" -}}
+  {{- else if eq $weight "extrabold" -}}
+    {{- $fontWeight = "font-extrabold" -}}
+  {{- else if eq $weight "black" -}}
+    {{- $fontWeight = "font-black" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Text color */ -}}
+{{- $textColor := "" -}}
+{{- if ne $color "default" -}}
+  {{- if eq $color "primary" -}}
+    {{- $textColor = "text-blue-600 dark:text-blue-400" -}}
+  {{- else if eq $color "secondary" -}}
+    {{- $textColor = "text-purple-600 dark:text-purple-400" -}}
+  {{- else if eq $color "success" -}}
+    {{- $textColor = "text-green-600 dark:text-green-400" -}}
+  {{- else if eq $color "danger" -}}
+    {{- $textColor = "text-red-600 dark:text-red-400" -}}
+  {{- else if eq $color "warning" -}}
+    {{- $textColor = "text-yellow-600 dark:text-yellow-400" -}}
+  {{- else if eq $color "info" -}}
+    {{- $textColor = "text-cyan-600 dark:text-cyan-400" -}}
+  {{- else if eq $color "white" -}}
+    {{- $textColor = "text-white" -}}
+  {{- else if eq $color "black" -}}
+    {{- $textColor = "text-black dark:text-white" -}}
+  {{- else -}}
+    {{- /* Custom color using Tailwind */ -}}
+    {{- $textColor = printf "text-%s" $color -}}
+  {{- end -}}
+{{- else -}}
+  {{- $textColor = "text-gray-900 dark:text-gray-100" -}}
+{{- end -}}
+
+{{- /* Text alignment */ -}}
+{{- $textAlign := "" -}}
+{{- if eq $align "left" -}}
+  {{- $textAlign = "text-left" -}}
+{{- else if eq $align "center" -}}
+  {{- $textAlign = "text-center" -}}
+{{- else if eq $align "right" -}}
+  {{- $textAlign = "text-right" -}}
+{{- else if eq $align "justify" -}}
+  {{- $textAlign = "text-justify" -}}
+{{- end -}}
+
+{{- /* Text transformation */ -}}
+{{- $textTransform := "" -}}
+{{- if ne $transform "none" -}}
+  {{- if eq $transform "uppercase" -}}
+    {{- $textTransform = "uppercase" -}}
+  {{- else if eq $transform "lowercase" -}}
+    {{- $textTransform = "lowercase" -}}
+  {{- else if eq $transform "capitalize" -}}
+    {{- $textTransform = "capitalize" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Text decoration */ -}}
+{{- $textDecoration := "" -}}
+{{- if ne $decoration "none" -}}
+  {{- if eq $decoration "underline" -}}
+    {{- $textDecoration = "underline" -}}
+  {{- else if eq $decoration "line-through" -}}
+    {{- $textDecoration = "line-through" -}}
+  {{- else if eq $decoration "overline" -}}
+    {{- $textDecoration = "overline" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Line height */ -}}
+{{- $lineHeightClass := "" -}}
+{{- if ne $lineHeight "normal" -}}
+  {{- if eq $lineHeight "none" -}}
+    {{- $lineHeightClass = "leading-none" -}}
+  {{- else if eq $lineHeight "tight" -}}
+    {{- $lineHeightClass = "leading-tight" -}}
+  {{- else if eq $lineHeight "snug" -}}
+    {{- $lineHeightClass = "leading-snug" -}}
+  {{- else if eq $lineHeight "normal" -}}
+    {{- $lineHeightClass = "leading-normal" -}}
+  {{- else if eq $lineHeight "relaxed" -}}
+    {{- $lineHeightClass = "leading-relaxed" -}}
+  {{- else if eq $lineHeight "loose" -}}
+    {{- $lineHeightClass = "leading-loose" -}}
+  {{- end -}}
+{{- else -}}
+  {{- $lineHeightClass = "leading-normal" -}}
+{{- end -}}
+
+{{- /* Letter spacing */ -}}
+{{- $letterSpacingClass := "" -}}
+{{- if ne $letterSpacing "normal" -}}
+  {{- if eq $letterSpacing "tighter" -}}
+    {{- $letterSpacingClass = "tracking-tighter" -}}
+  {{- else if eq $letterSpacing "tight" -}}
+    {{- $letterSpacingClass = "tracking-tight" -}}
+  {{- else if eq $letterSpacing "normal" -}}
+    {{- $letterSpacingClass = "tracking-normal" -}}
+  {{- else if eq $letterSpacing "wide" -}}
+    {{- $letterSpacingClass = "tracking-wide" -}}
+  {{- else if eq $letterSpacing "wider" -}}
+    {{- $letterSpacingClass = "tracking-wider" -}}
+  {{- else if eq $letterSpacing "widest" -}}
+    {{- $letterSpacingClass = "tracking-widest" -}}
+  {{- end -}}
+{{- else -}}
+  {{- $letterSpacingClass = "tracking-normal" -}}
+{{- end -}}
+
+{{- /* Truncate */ -}}
+{{- $truncateClass := "" -}}
+{{- if $truncate -}}
+  {{- $truncateClass = "truncate" -}}
+{{- end -}}
+
+{{- /* Line clamp */ -}}
+{{- $clampClass := "" -}}
+{{- if gt $clamp 0 -}}
+  {{- $clampClass = printf "line-clamp-%d" $clamp -}}
+{{- end -}}
+
+{{- /* Italic */ -}}
+{{- $italicClass := "" -}}
+{{- if $italic -}}
+  {{- $italicClass = "italic" -}}
+{{- end -}}
+
+{{- /* Margin control */ -}}
+{{- $marginClass := "" -}}
+{{- if $noMargin -}}
+  {{- $marginClass = "m-0" -}}
+{{- else -}}
+  {{- if eq $variant "h1" or eq $variant "h2" or eq $variant "h3" or 
+          eq $variant "h4" or eq $variant "h5" or eq $variant "h6" or 
+          eq $variant "subtitle1" or eq $variant "subtitle2" or 
+          eq $variant "display1" or eq $variant "display2" or 
+          eq $variant "display3" or eq $variant "display4" -}}
+    {{- $marginClass = "mb-4" -}}
+  {{- else if eq $variant "body1" or eq $variant "body2" or eq $variant "lead" -}}
+    {{- $marginClass = "mb-2" -}}
+  {{- else if eq $variant "quote" -}}
+    {{- $marginClass = "my-4" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Prose for rich text */ -}}
+{{- $proseClass := "" -}}
+{{- if $prose -}}
+  {{- $proseClass = "prose dark:prose-invert max-w-none" -}}
+{{- end -}}
+
+{{- /* Gradient text */ -}}
+{{- $gradientClass := "" -}}
+{{- if $gradient -}}
+  {{- $gradientDirection := "bg-gradient-to-r" -}}
+  
+  {{- if eq $gradientDirection "left" -}}
+    {{- $gradientDirection = "bg-gradient-to-l" -}}
+  {{- else if eq $gradientDirection "top" -}}
+    {{- $gradientDirection = "bg-gradient-to-t" -}}
+  {{- else if eq $gradientDirection "bottom" -}}
+    {{- $gradientDirection = "bg-gradient-to-b" -}}
+  {{- else if eq $gradientDirection "tr" -}}
+    {{- $gradientDirection = "bg-gradient-to-tr" -}}
+  {{- else if eq $gradientDirection "tl" -}}
+    {{- $gradientDirection = "bg-gradient-to-tl" -}}
+  {{- else if eq $gradientDirection "br" -}}
+    {{- $gradientDirection = "bg-gradient-to-br" -}}
+  {{- else if eq $gradientDirection "bl" -}}
+    {{- $gradientDirection = "bg-gradient-to-bl" -}}
+  {{- end -}}
+  
+  {{- $gradientClass = printf "%s from-%s to-%s text-transparent bg-clip-text" $gradientDirection $gradientFrom $gradientTo -}}
+  
+  {{- /* Override text color if gradient is set */ -}}
+  {{- $textColor = "" -}}
+{{- end -}}
+
+{{- /* Nowrap class */ -}}
+{{- $nowrapClass := "" -}}
+{{- if $nowrap -}}
+  {{- $nowrapClass = "whitespace-nowrap" -}}
+{{- end -}}
+
+{{- /* Debug class */ -}}
+{{- $debugClass := "" -}}
+{{- if $showDebug -}}
+  {{- $debugClass = "outline outline-1 outline-red-500 outline-offset-2" -}}
+{{- end -}}
+
+{{- /* Override classes with custom classes if provided */ -}}
+{{- $customClass := $class -}}
+
+{{- /* Combine all classes */ -}}
+{{- $classes := "" -}}
+
+{{- /* Start with the variant classes to provide base defaults */ -}}
+{{- $classes = $variantClasses -}}
+
+{{- /* Override with more specific classes */ -}}
+{{- if ne $fontFamily "" -}}
+  {{- $classes = printf "%s %s" $classes $fontFamily -}}
+{{- end -}}
+
+{{- if ne $fontSize "" -}}
+  {{- $classes = printf "%s %s" $classes $fontSize -}}
+{{- end -}}
+
+{{- if ne $fontWeight "" -}}
+  {{- $classes = printf "%s %s" $classes $fontWeight -}}
+{{- end -}}
+
+{{- if ne $textColor "" -}}
+  {{- $classes = printf "%s %s" $classes $textColor -}}
+{{- end -}}
+
+{{- if ne $textAlign "" -}}
+  {{- $classes = printf "%s %s" $classes $textAlign -}}
+{{- end -}}
+
+{{- if ne $textTransform "" -}}
+  {{- $classes = printf "%s %s" $classes $textTransform -}}
+{{- end -}}
+
+{{- if ne $textDecoration "" -}}
+  {{- $classes = printf "%s %s" $classes $textDecoration -}}
+{{- end -}}
+
+{{- if ne $italicClass "" -}}
+  {{- $classes = printf "%s %s" $classes $italicClass -}}
+{{- end -}}
+
+{{- if ne $lineHeightClass "" -}}
+  {{- $classes = printf "%s %s" $classes $lineHeightClass -}}
+{{- end -}}
+
+{{- if ne $letterSpacingClass "" -}}
+  {{- $classes = printf "%s %s" $classes $letterSpacingClass -}}
+{{- end -}}
+
+{{- if ne $truncateClass "" -}}
+  {{- $classes = printf "%s %s" $classes $truncateClass -}}
+{{- end -}}
+
+{{- if ne $clampClass "" -}}
+  {{- $classes = printf "%s %s" $classes $clampClass -}}
+{{- end -}}
+
+{{- if ne $marginClass "" -}}
+  {{- $classes = printf "%s %s" $classes $marginClass -}}
+{{- end -}}
+
+{{- if ne $proseClass "" -}}
+  {{- $classes = printf "%s %s" $classes $proseClass -}}
+{{- end -}}
+
+{{- if ne $gradientClass "" -}}
+  {{- $classes = printf "%s %s" $classes $gradientClass -}}
+{{- end -}}
+
+{{- if ne $nowrapClass "" -}}
+  {{- $classes = printf "%s %s" $classes $nowrapClass -}}
+{{- end -}}
+
+{{- if ne $debugClass "" -}}
+  {{- $classes = printf "%s %s" $classes $debugClass -}}
+{{- end -}}
+
+{{- if ne $customClass "" -}}
+  {{- $classes = printf "%s %s" $classes $customClass -}}
+{{- end -}}
+
+<{{ $element }} id="{{ $id }}" class="{{ $classes }}">
+  {{ $content | safeHTML }}
+</{{ $element }}>

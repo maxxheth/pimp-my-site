@@ -1,0 +1,535 @@
+{{- /*
+  Transition Component
+  
+  Parameters:
+    - id: String - Unique ID for the transition (default: auto-generated)
+    - content: String - Content to apply transition to (required)
+    - show: Boolean - Whether to show content initially (default: false)
+    - type: String - Type of transition (default: "fade")
+      Options: fade, scale, slide-up, slide-down, slide-left, slide-right, 
+               zoom, collapse, expand, rotate, flip, custom
+    - duration: Number - Duration of transition in ms (default: 300)
+    - delay: Number - Delay before transition starts in ms (default: 0)
+    - easing: String - Easing function (default: "ease")
+      Options: linear, ease, ease-in, ease-out, ease-in-out, or custom cubic-bezier
+    - origin: String - Transform origin (default: "center")
+      Options: center, top, right, bottom, left, top-right, bottom-right, bottom-left, top-left
+    - enterFrom: String - Initial state classes (default: depends on type)
+    - enterTo: String - Final state classes (default: depends on type)
+    - leaveFrom: String - Start state for exit (default: enterTo value)
+    - leaveTo: String - End state for exit (default: enterFrom value)
+    - mode: String - Transition mode for nested transitions (default: "default")
+      Options: default, out-in, in-out
+    - appear: Boolean - Apply transition on initial render (default: false)
+    - group: Boolean - Enable transition for child elements (default: false)
+    - stagger: Number - Delay between child transitions in ms (default: 50)
+    - hideOnEsc: Boolean - Hide when pressing ESC key (default: false)
+    - persistent: Boolean - Keep element in DOM when hidden (default: false)
+    - class: String - Additional custom classes (default: "")
+    - wrapperClass: String - Additional classes for wrapper element (default: "")
+    - onBeforeEnter: String - JS function to call before enter (default: "")
+    - onEnter: String - JS function to call on enter (default: "")
+    - onAfterEnter: String - JS function to call after enter (default: "")
+    - onBeforeLeave: String - JS function to call before leave (default: "")
+    - onLeave: String - JS function to call on leave (default: "")
+    - onAfterLeave: String - JS function to call after leave (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "transition-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $content := .content -}}
+{{- $show := .show | default false -}}
+{{- $type := .type | default "fade" -}}
+{{- $duration := .duration | default 300 -}}
+{{- $delay := .delay | default 0 -}}
+{{- $easing := .easing | default "ease" -}}
+{{- $origin := .origin | default "center" -}}
+{{- $enterFrom := .enterFrom | default "" -}}
+{{- $enterTo := .enterTo | default "" -}}
+{{- $leaveFrom := .leaveFrom | default "" -}}
+{{- $leaveTo := .leaveTo | default "" -}}
+{{- $mode := .mode | default "default" -}}
+{{- $appear := .appear | default false -}}
+{{- $group := .group | default false -}}
+{{- $stagger := .stagger | default 50 -}}
+{{- $hideOnEsc := .hideOnEsc | default false -}}
+{{- $persistent := .persistent | default false -}}
+{{- $class := .class | default "" -}}
+{{- $wrapperClass := .wrapperClass | default "" -}}
+{{- $onBeforeEnter := .onBeforeEnter | default "" -}}
+{{- $onEnter := .onEnter | default "" -}}
+{{- $onAfterEnter := .onAfterEnter | default "" -}}
+{{- $onBeforeLeave := .onBeforeLeave | default "" -}}
+{{- $onLeave := .onLeave | default "" -}}
+{{- $onAfterLeave := .onAfterLeave | default "" -}}
+
+{{- /* Base transition styles */ -}}
+{{- $transitionStyle := printf "transition-property: all; transition-timing-function: %s; transition-duration: %dms;" $easing $duration -}}
+{{- if gt $delay 0 -}}
+  {{- $transitionStyle = printf "%s transition-delay: %dms;" $transitionStyle $delay -}}
+{{- end -}}
+
+{{- if ne $origin "center" -}}
+  {{- $transitionStyle = printf "%s transform-origin: %s;" $transitionStyle $origin -}}
+{{- end -}}
+
+{{- /* Get transition-specific classes if not overridden */ -}}
+{{- if eq $enterFrom "" -}}
+  {{- if eq $type "fade" -}}
+    {{- $enterFrom = "opacity-0" -}}
+    {{- $enterTo = "opacity-100" -}}
+  {{- else if eq $type "scale" -}}
+    {{- $enterFrom = "opacity-0 scale-95" -}}
+    {{- $enterTo = "opacity-100 scale-100" -}}
+  {{- else if eq $type "slide-up" -}}
+    {{- $enterFrom = "opacity-0 translate-y-8" -}}
+    {{- $enterTo = "opacity-100 translate-y-0" -}}
+  {{- else if eq $type "slide-down" -}}
+    {{- $enterFrom = "opacity-0 -translate-y-8" -}}
+    {{- $enterTo = "opacity-100 translate-y-0" -}}
+  {{- else if eq $type "slide-left" -}}
+    {{- $enterFrom = "opacity-0 translate-x-8" -}}
+    {{- $enterTo = "opacity-100 translate-x-0" -}}
+  {{- else if eq $type "slide-right" -}}
+    {{- $enterFrom = "opacity-0 -translate-x-8" -}}
+    {{- $enterTo = "opacity-100 translate-x-0" -}}
+  {{- else if eq $type "zoom" -}}
+    {{- $enterFrom = "opacity-0 scale-50" -}}
+    {{- $enterTo = "opacity-100 scale-100" -}}
+  {{- else if eq $type "collapse" -}}
+    {{- $enterFrom = "max-h-0 overflow-hidden opacity-0" -}}
+    {{- $enterTo = "max-h-screen overflow-hidden opacity-100" -}}
+  {{- else if eq $type "expand" -}}
+    {{- $enterFrom = "max-w-0 overflow-hidden opacity-0" -}}
+    {{- $enterTo = "max-w-full overflow-hidden opacity-100" -}}
+  {{- else if eq $type "rotate" -}}
+    {{- $enterFrom = "opacity-0 rotate-90" -}}
+    {{- $enterTo = "opacity-100 rotate-0" -}}
+  {{- else if eq $type "flip" -}}
+    {{- $enterFrom = "opacity-0 rotateY-90" -}}
+    {{- $enterTo = "opacity-100 rotateY-0" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* If only enterFrom/enterTo provided, set leave transitions as reverse */ -}}
+{{- if eq $leaveFrom "" -}}
+  {{- $leaveFrom = $enterTo -}}
+{{- end -}}
+
+{{- if eq $leaveTo "" -}}
+  {{- $leaveTo = $enterFrom -}}
+{{- end -}}
+
+{{- /* Define a container class based on the actual dimensions to prevent layout shifts */ -}}
+{{- $containerClass := "relative overflow-hidden" -}}
+{{- if $wrapperClass -}}
+  {{- $containerClass = printf "%s %s" $containerClass $wrapperClass -}}
+{{- end -}}
+
+<div 
+  id="{{ $id }}"
+  class="{{ $containerClass }}"
+  data-transition
+  data-transition-type="{{ $type }}"
+  data-transition-mode="{{ $mode }}"
+  data-transition-show="{{ $show }}"
+>
+  <div 
+    id="{{ $id }}-content" 
+    class="{{ if $class }}{{ $class }}{{ end }} {{ if not $show and not $appear }}hidden{{ end }}" 
+    data-transition-content
+    style="{{ $transitionStyle }}"
+    data-enter-from="{{ $enterFrom }}"
+    data-enter-to="{{ $enterTo }}"
+    data-leave-from="{{ $leaveFrom }}"
+    data-leave-to="{{ $leaveTo }}"
+    data-group="{{ $group }}"
+    data-stagger="{{ $stagger }}"
+  >
+    {{ $content | safeHTML }}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const transitionContainer = document.getElementById('{{ $id }}');
+    const transitionContent = document.getElementById('{{ $id }}-content');
+    
+    if (!transitionContainer || !transitionContent) return;
+    
+    const options = {
+      type: transitionContainer.dataset.transitionType,
+      mode: transitionContainer.dataset.transitionMode,
+      show: transitionContainer.dataset.transitionShow === 'true',
+      persistent: '{{ $persistent }}',
+      hideOnEsc: '{{ $hideOnEsc }}',
+      duration: '{{ $duration }}',
+      delay: '{{ $delay }}',
+      group: transitionContent.dataset.group === 'true',
+      stagger: parseInt(transitionContent.dataset.stagger, 10)
+    };
+    
+    const enterFrom = transitionContent.dataset.enterFrom.split(' ').filter(Boolean);
+    const enterTo = transitionContent.dataset.enterTo.split(' ').filter(Boolean);
+    const leaveFrom = transitionContent.dataset.leaveFrom.split(' ').filter(Boolean);
+    const leaveTo = transitionContent.dataset.leaveTo.split(' ').filter(Boolean);
+    
+    let isShowing = options.show;
+    let isTransitioning = false;
+    let childElements = [];
+    
+    // Get child elements if group transition
+    if (options.group) {
+      childElements = Array.from(transitionContent.children);
+    }
+    
+    // Apply initial state if needed for appear
+    if ('{{ $appear }}' && options.show) {
+      if (options.group && childElements.length > 0) {
+        // Apply initial state to each child
+        childElements.forEach((child, index) => {
+          enterFrom.forEach(cls => child.classList.add(cls));
+          
+          // Stagger the entry
+          setTimeout(() => {
+            // Start transition
+            enterFrom.forEach(cls => child.classList.remove(cls));
+            enterTo.forEach(cls => child.classList.add(cls));
+          }, index * options.stagger);
+        });
+      } else {
+        // Apply initial state to content
+        enterFrom.forEach(cls => transitionContent.classList.add(cls));
+        
+        // Start transition after a frame
+        requestAnimationFrame(() => {
+          enterFrom.forEach(cls => transitionContent.classList.remove(cls));
+          enterTo.forEach(cls => transitionContent.classList.add(cls));
+        });
+      }
+    }
+    
+    // Function to show the content
+    function show() {
+      if (isShowing || isTransitioning) return;
+      isTransitioning = true;
+      
+      // Call beforeEnter hook
+      if ('{{ $onBeforeEnter }}') {
+        try {
+          window['{{ $onBeforeEnter }}']({
+            id: '{{ $id }}',
+            element: transitionContent
+          });
+        } catch (err) {
+          console.error('Error in onBeforeEnter callback:', err);
+        }
+      }
+      
+      // Dispatch event
+      transitionContainer.dispatchEvent(new CustomEvent('transition:beforeEnter', {
+        detail: { id: '{{ $id }}', element: transitionContent }
+      }));
+      
+      // Display the content
+      transitionContent.classList.remove('hidden');
+      
+      // Apply initial state
+      if (options.group && childElements.length > 0) {
+        // Apply to each child with staggered timing
+        childElements.forEach((child, index) => {
+          enterFrom.forEach(cls => child.classList.add(cls));
+          enterTo.forEach(cls => child.classList.remove(cls));
+          
+          // Stagger the transitions
+          setTimeout(() => {
+            // Enter hook for each child
+            transitionContainer.dispatchEvent(new CustomEvent('transition:enterChild', {
+              detail: { id: '{{ $id }}', element: child, index: index }
+            }));
+            
+            // Start transition
+            enterFrom.forEach(cls => child.classList.remove(cls));
+            enterTo.forEach(cls => child.classList.add(cls));
+          }, index * options.stagger);
+        });
+        
+        // Calculate total duration based on children
+        const totalDuration = options.duration + (childElements.length - 1) * options.stagger;
+        
+        // Call enter hook
+        setTimeout(() => {
+          if ('{{ $onEnter }}') {
+            try {
+              window['{{ $onEnter }}']({
+                id: '{{ $id }}',
+                element: transitionContent
+              });
+            } catch (err) {
+              console.error('Error in onEnter callback:', err);
+            }
+          }
+          
+          // Dispatch event
+          transitionContainer.dispatchEvent(new CustomEvent('transition:enter', {
+            detail: { id: '{{ $id }}', element: transitionContent }
+          }));
+        }, options.delay);
+        
+        // Call afterEnter hook
+        setTimeout(() => {
+          isShowing = true;
+          isTransitioning = false;
+          
+          if ('{{ $onAfterEnter }}') {
+            try {
+              window['{{ $onAfterEnter }}']({
+                id: '{{ $id }}',
+                element: transitionContent
+              });
+            } catch (err) {
+              console.error('Error in onAfterEnter callback:', err);
+            }
+          }
+          
+          // Dispatch event
+          transitionContainer.dispatchEvent(new CustomEvent('transition:afterEnter', {
+            detail: { id: '{{ $id }}', element: transitionContent }
+          }));
+        }, totalDuration + options.delay);
+      } else {
+        // Apply to content element
+        enterFrom.forEach(cls => transitionContent.classList.add(cls));
+        enterTo.forEach(cls => transitionContent.classList.remove(cls));
+        
+        // Force a reflow to make sure the initial state is applied
+        void transitionContent.offsetWidth;
+        
+        // Call enter hook
+        setTimeout(() => {
+          if ('{{ $onEnter }}') {
+            try {
+              window['{{ $onEnter }}']({
+                id: '{{ $id }}',
+                element: transitionContent
+              });
+            } catch (err) {
+              console.error('Error in onEnter callback:', err);
+            }
+          }
+          
+          // Dispatch event
+          transitionContainer.dispatchEvent(new CustomEvent('transition:enter', {
+            detail: { id: '{{ $id }}', element: transitionContent }
+          }));
+          
+          // Start transition
+          enterFrom.forEach(cls => transitionContent.classList.remove(cls));
+          enterTo.forEach(cls => transitionContent.classList.add(cls));
+        }, options.delay);
+        
+        // Call afterEnter hook when transition completes
+        setTimeout(() => {
+          isShowing = true;
+          isTransitioning = false;
+          
+          if ('{{ $onAfterEnter }}') {
+            try {
+              window['{{ $onAfterEnter }}']({
+                id: '{{ $id }}',
+                element: transitionContent
+              });
+            } catch (err) {
+              console.error('Error in onAfterEnter callback:', err);
+            }
+          }
+          
+          // Dispatch event
+          transitionContainer.dispatchEvent(new CustomEvent('transition:afterEnter', {
+            detail: { id: '{{ $id }}', element: transitionContent }
+          }));
+        }, options.duration + options.delay);
+      }
+    }
+    
+    // Function to hide the content
+    function hide() {
+      if (!isShowing || isTransitioning) return;
+      isTransitioning = true;
+      
+      // Call beforeLeave hook
+      if ('{{ $onBeforeLeave }}') {
+        try {
+          window['{{ $onBeforeLeave }}']({
+            id: '{{ $id }}',
+            element: transitionContent
+          });
+        } catch (err) {
+          console.error('Error in onBeforeLeave callback:', err);
+        }
+      }
+      
+      // Dispatch event
+      transitionContainer.dispatchEvent(new CustomEvent('transition:beforeLeave', {
+        detail: { id: '{{ $id }}', element: transitionContent }
+      }));
+      
+      if (options.group && childElements.length > 0) {
+        // Apply to each child in reverse order for nice exit effect
+        const reversedChildren = [...childElements].reverse();
+        
+        reversedChildren.forEach((child, index) => {
+          // Reset to leave-from state
+          leaveFrom.forEach(cls => child.classList.add(cls));
+          leaveTo.forEach(cls => child.classList.remove(cls));
+          
+          // Stagger the transitions
+          setTimeout(() => {
+            // Leave hook for each child
+            transitionContainer.dispatchEvent(new CustomEvent('transition:leaveChild', {
+              detail: { id: '{{ $id }}', element: child, index: childElements.length - index - 1 }
+            }));
+            
+            // Start transition
+            leaveFrom.forEach(cls => child.classList.remove(cls));
+            leaveTo.forEach(cls => child.classList.add(cls));
+          }, index * options.stagger);
+        });
+        
+        // Calculate total duration based on children
+        const totalDuration = options.duration + (childElements.length - 1) * options.stagger;
+        
+        // Call leave hook
+        setTimeout(() => {
+          if ('{{ $onLeave }}') {
+            try {
+              window['{{ $onLeave }}']({
+                id: '{{ $id }}',
+                element: transitionContent
+              });
+            } catch (err) {
+              console.error('Error in onLeave callback:', err);
+            }
+          }
+          
+          // Dispatch event
+          transitionContainer.dispatchEvent(new CustomEvent('transition:leave', {
+            detail: { id: '{{ $id }}', element: transitionContent }
+          }));
+        }, options.delay);
+        
+        // Call afterLeave hook and remove element
+        setTimeout(() => {
+          isShowing = false;
+          isTransitioning = false;
+          
+          if (!options.persistent) {
+            transitionContent.classList.add('hidden');
+          }
+          
+          if ('{{ $onAfterLeave }}') {
+            try {
+              window['{{ $onAfterLeave }}']({
+                id: '{{ $id }}',
+                element: transitionContent
+              });
+            } catch (err) {
+              console.error('Error in onAfterLeave callback:', err);
+            }
+          }
+          
+          // Dispatch event
+          transitionContainer.dispatchEvent(new CustomEvent('transition:afterLeave', {
+            detail: { id: '{{ $id }}', element: transitionContent }
+          }));
+        }, totalDuration + options.delay);
+      } else {
+        // Apply to content element
+        leaveFrom.forEach(cls => transitionContent.classList.add(cls));
+        leaveTo.forEach(cls => transitionContent.classList.remove(cls));
+        
+        // Call leave hook
+        setTimeout(() => {
+          if ('{{ $onLeave }}') {
+            try {
+              window['{{ $onLeave }}']({
+                id: '{{ $id }}',
+                element: transitionContent
+              });
+            } catch (err) {
+              console.error('Error in onLeave callback:', err);
+            }
+          }
+          
+          // Dispatch event
+          transitionContainer.dispatchEvent(new CustomEvent('transition:leave', {
+            detail: { id: '{{ $id }}', element: transitionContent }
+          }));
+          
+          // Start transition
+          leaveFrom.forEach(cls => transitionContent.classList.remove(cls));
+          leaveTo.forEach(cls => transitionContent.classList.add(cls));
+        }, options.delay);
+        
+        // Call afterLeave hook when transition completes
+        setTimeout(() => {
+          isShowing = false;
+          isTransitioning = false;
+          
+          if (!options.persistent) {
+            transitionContent.classList.add('hidden');
+          }
+          
+          if ('{{ $onAfterLeave }}') {
+            try {
+              window['{{ $onAfterLeave }}']({
+                id: '{{ $id }}',
+                element: transitionContent
+              });
+            } catch (err) {
+              console.error('Error in onAfterLeave callback:', err);
+            }
+          }
+          
+          // Dispatch event
+          transitionContainer.dispatchEvent(new CustomEvent('transition:afterLeave', {
+            detail: { id: '{{ $id }}', element: transitionContent }
+          }));
+        }, options.duration + options.delay);
+      }
+    }
+    
+    // Handle ESC key if hideOnEsc is enabled
+    if (options.hideOnEsc) {
+      document.addEventListener('keydown', function(e) {
+        if (isShowing && e.key === 'Escape') {
+          hide();
+        }
+      });
+    }
+    
+    // Expose API
+    window.transitions = window.transitions || {};
+    window.transitions['{{ $id }}'] = {
+      show: function() {
+        show();
+      },
+      hide: function() {
+        hide();
+      },
+      toggle: function() {
+        if (isShowing) {
+          hide();
+        } else {
+          show();
+        }
+      },
+      isShowing: function() {
+        return isShowing;
+      },
+      isTransitioning: function() {
+        return isTransitioning;
+      }
+    };
+  });
+</script>

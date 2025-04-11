@@ -1,0 +1,586 @@
+{{- /*
+  Tooltip Component
+  
+  Parameters:
+    - id: String - Unique ID for the tooltip (default: auto-generated)
+    - content: String - Content of the tooltip (required)
+    - trigger: String - HTML content that triggers the tooltip (default: "")
+    - placement: String - Tooltip placement relative to trigger (default: "top")
+      Options: top, right, bottom, left, top-start, top-end, right-start, right-end, 
+               bottom-start, bottom-end, left-start, left-end
+    - variant: String - Visual style variant (default: "default")
+      Options: default, dark, light, colored
+    - color: String - Theme color for colored variant (default: "blue")
+      Options: blue, green, red, yellow, purple, indigo, or any tailwind color
+    - size: String - Size of the tooltip (default: "md")
+      Options: sm, md, lg
+    - width: String - Custom width of tooltip (default: "auto")
+      Options: auto, xs, sm, md, lg, xl, full, or custom value (e.g. "240px")
+    - trigger: String - How tooltip is triggered (default: "hover")
+      Options: hover, click, focus, manual
+    - arrow: Boolean - Show arrow pointer (default: true)
+    - delay: Number - Delay in ms before showing (default: 0)
+    - hideDelay: Number - Delay in ms before hiding (default: 0)
+    - offset: Number - Distance in pixels from trigger (default: 8)
+    - zIndex: Number - Z-index for tooltip (default: 50)
+    - interactive: Boolean - Allow interaction with tooltip content (default: false)
+    - appendTo: String - Where to append tooltip in DOM (default: "body")
+      Options: body, parent
+    - hideOnEsc: Boolean - Hide when pressing ESC key (default: true)
+    - hideOnClickOutside: Boolean - Hide when clicking outside (default: true)
+    - animation: String - Animation style (default: "fade")
+      Options: fade, scale, shift-away, shift-toward, perspective, none
+    - animationDuration: Number - Duration of animation in ms (default: 200)
+    - disabled: Boolean - Disable the tooltip (default: false)
+    - class: String - Additional custom classes for tooltip (default: "")
+    - triggerClass: String - Additional classes for trigger wrapper (default: "")
+    - contentClass: String - Additional classes for tooltip content (default: "")
+    - arrowClass: String - Additional classes for tooltip arrow (default: "")
+    - showOnCreate: Boolean - Show tooltip on creation (default: false)
+    - onShow: String - JS function to call when tooltip shows (default: "")
+    - onHide: String - JS function to call when tooltip hides (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "tooltip-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $content := .content -}}
+{{- $triggerContent := .trigger | default "" -}}
+{{- $placement := .placement | default "top" -}}
+{{- $variant := .variant | default "default" -}}
+{{- $color := .color | default "blue" -}}
+{{- $size := .size | default "md" -}}
+{{- $width := .width | default "auto" -}}
+{{- $triggerType := .trigger | default "hover" -}}
+{{- $arrow := .arrow | default true -}}
+{{- $delay := .delay | default 0 -}}
+{{- $hideDelay := .hideDelay | default 0 -}}
+{{- $offset := .offset | default 8 -}}
+{{- $zIndex := .zIndex | default 50 -}}
+{{- $interactive := .interactive | default false -}}
+{{- $appendTo := .appendTo | default "body" -}}
+{{- $hideOnEsc := .hideOnEsc | default true -}}
+{{- $hideOnClickOutside := .hideOnClickOutside | default true -}}
+{{- $animation := .animation | default "fade" -}}
+{{- $animationDuration := .animationDuration | default 200 -}}
+{{- $disabled := .disabled | default false -}}
+{{- $class := .class | default "" -}}
+{{- $triggerClass := .triggerClass | default "" -}}
+{{- $contentClass := .contentClass | default "" -}}
+{{- $arrowClass := .arrowClass | default "" -}}
+{{- $showOnCreate := .showOnCreate | default false -}}
+{{- $onShow := .onShow | default "" -}}
+{{- $onHide := .onHide | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "inline-block" -}}
+{{- $tooltipBaseClass := "absolute invisible opacity-0 z-50 rounded-md shadow-sm max-w-xs transition-opacity pointer-events-none" -}}
+{{- $arrowBaseClass := "absolute invisible w-2 h-2 rotate-45 transform" -}}
+
+{{- /* Size classes */ -}}
+{{- $tooltipSizeClass := "" -}}
+{{- $tooltipPadding := "" -}}
+{{- $tooltipFontSize := "" -}}
+
+{{- if eq $size "sm" -}}
+  {{- $tooltipPadding = "px-2 py-1" -}}
+  {{- $tooltipFontSize = "text-xs" -}}
+{{- else if eq $size "md" -}}
+  {{- $tooltipPadding = "px-3 py-1.5" -}}
+  {{- $tooltipFontSize = "text-sm" -}}
+{{- else if eq $size "lg" -}}
+  {{- $tooltipPadding = "px-4 py-2" -}}
+  {{- $tooltipFontSize = "text-base" -}}
+{{- end -}}
+
+{{- $tooltipSizeClass = printf "%s %s" $tooltipPadding $tooltipFontSize -}}
+
+{{- /* Width classes */ -}}
+{{- $tooltipWidthClass := "" -}}
+{{- if eq $width "auto" -}}
+  {{- $tooltipWidthClass = "w-auto" -}}
+{{- else if eq $width "xs" -}}
+  {{- $tooltipWidthClass = "w-48" -}}
+{{- else if eq $width "sm" -}}
+  {{- $tooltipWidthClass = "w-60" -}}
+{{- else if eq $width "md" -}}
+  {{- $tooltipWidthClass = "w-72" -}}
+{{- else if eq $width "lg" -}}
+  {{- $tooltipWidthClass = "w-80" -}}
+{{- else if eq $width "xl" -}}
+  {{- $tooltipWidthClass = "w-96" -}}
+{{- else if eq $width "full" -}}
+  {{- $tooltipWidthClass = "w-full" -}}
+{{- else -}}
+  {{- /* Custom width */ -}}
+  {{- $tooltipWidthClass = printf "w-[%s]" $width -}}
+{{- end -}}
+
+{{- /* Variant specific classes */ -}}
+{{- if eq $variant "default" -}}
+  {{- $tooltipBaseClass = printf "%s bg-gray-900 text-white" $tooltipBaseClass -}}
+  {{- $arrowBaseClass = printf "%s bg-gray-900" $arrowBaseClass -}}
+{{- else if eq $variant "dark" -}}
+  {{- $tooltipBaseClass = printf "%s bg-gray-800 text-gray-100" $tooltipBaseClass -}}
+  {{- $arrowBaseClass = printf "%s bg-gray-800" $arrowBaseClass -}}
+{{- else if eq $variant "light" -}}
+  {{- $tooltipBaseClass = printf "%s bg-white text-gray-900 border border-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700" $tooltipBaseClass -}}
+  {{- $arrowBaseClass = printf "%s bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700" $arrowBaseClass -}}
+{{- else if eq $variant "colored" -}}
+  {{- $tooltipBaseClass = printf "%s bg-%s-500 text-white" $tooltipBaseClass $color -}}
+  {{- $arrowBaseClass = printf "%s bg-%s-500" $arrowBaseClass $color -}}
+{{- end -}}
+
+{{- /* Interactive class */ -}}
+{{- if $interactive -}}
+  {{- $tooltipBaseClass = printf "%s pointer-events-auto" $tooltipBaseClass -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $tooltipBaseClass = printf "%s %s" $tooltipBaseClass $class -}}
+{{- end -}}
+
+{{- if $contentClass -}}
+  {{- $tooltipBaseClass = printf "%s %s" $tooltipBaseClass $contentClass -}}
+{{- end -}}
+
+{{- if $arrowClass -}}
+  {{- $arrowBaseClass = printf "%s %s" $arrowBaseClass $arrowClass -}}
+{{- end -}}
+
+{{- /* Animation classes */ -}}
+{{- $animationClasses := "" -}}
+{{- if eq $animation "fade" -}}
+  {{- $animationClasses = "transition-opacity" -}}
+{{- else if eq $animation "scale" -}}
+  {{- $animationClasses = "transition-all transform scale-95 origin-center" -}}
+{{- else if eq $animation "shift-away" -}}
+  {{- $animationClasses = "transition-all transform translate-y-2" -}}
+{{- else if eq $animation "shift-toward" -}}
+  {{- $animationClasses = "transition-all transform -translate-y-2" -}}
+{{- else if eq $animation "perspective" -}}
+  {{- $animationClasses = "transition-all transform perspective-500 rotateX-10" -}}
+{{- end -}}
+
+{{- /* Update the tooltip base class with animation classes */ -}}
+{{- $tooltipBaseClass = printf "%s %s" $tooltipBaseClass $animationClasses -}}
+
+<div 
+  id="{{ $id }}-container" 
+  class="{{ $containerClass }} {{ $triggerClass }}"
+  data-tooltip-container
+>
+  {{- /* Tooltip Trigger */ -}}
+  <div 
+    id="{{ $id }}-trigger"
+    data-tooltip-trigger
+    {{ if $disabled }}data-tooltip-disabled="true"{{ end }}
+    aria-describedby="{{ $id }}-content"
+    tabindex="0"
+  >
+    {{ $triggerContent | safeHTML }}
+  </div>
+  
+  {{- /* Tooltip Content */ -}}
+  <div
+    id="{{ $id }}-content"
+    class="{{ $tooltipBaseClass }} {{ $tooltipSizeClass }} {{ $tooltipWidthClass }}"
+    role="tooltip"
+    data-tooltip-content
+    data-placement="{{ $placement }}"
+  >
+    <div class="relative z-10">
+      {{ $content | safeHTML }}
+    </div>
+    
+    {{- if $arrow -}}
+    <div 
+      id="{{ $id }}-arrow"
+      class="{{ $arrowBaseClass }}"
+      data-tooltip-arrow
+    ></div>
+    {{- end -}}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tooltipContainer = document.getElementById('{{ $id }}-container');
+    const tooltipTrigger = document.getElementById('{{ $id }}-trigger');
+    const tooltipContent = document.getElementById('{{ $id }}-content');
+    const tooltipArrow = document.getElementById('{{ $id }}-arrow');
+    
+    if (!tooltipContainer || !tooltipTrigger || !tooltipContent) return;
+    '
+    const options = {
+      placement: '{{ $placement }}',
+      trigger: '{{ $triggerType }}',
+      arrow: '{{ $arrow }}',
+      delay: '{{ $delay }}',
+      hideDelay: '{{ $hideDelay }}',
+      offset: '{{ $offset }}',
+      zIndex: '{{ $zIndex }}',
+      interactive: '{{ $interactive }}',
+      appendTo: '{{ $appendTo }}',
+      hideOnEsc: '{{ $hideOnEsc }}',
+      hideOnClickOutside: '{{ $hideOnClickOutside }}',
+      animation: '{{ $animation }}',
+      animationDuration: '{{ $animationDuration }}',
+      disabled: '{{ $disabled }}',
+      showOnCreate: '{{ $showOnCreate }}'
+    };
+    
+    // Ensure we modify the DOM only once it's fully loaded
+    let showTimeout, hideTimeout;
+    let isVisible = false;
+    
+    // Initialize tooltip position
+    if (options.appendTo === 'body') {
+      document.body.appendChild(tooltipContent);
+      if (tooltipArrow) document.body.appendChild(tooltipArrow);
+    }
+    
+    // Set z-index
+    tooltipContent.style.zIndex = options.zIndex;
+    if (tooltipArrow) tooltipArrow.style.zIndex = options.zIndex;
+    
+    // Set animation duration
+    tooltipContent.style.transitionDuration = `${options.animationDuration}ms`;
+    if (tooltipArrow) tooltipArrow.style.transitionDuration = `${options.animationDuration}ms`;
+    
+    // Function to position the tooltip
+    function positionTooltip() {
+      const triggerRect = tooltipTrigger.getBoundingClientRect();
+      const tooltipRect = tooltipContent.getBoundingClientRect();
+      
+      let top, left;
+      
+      // Calculate position based on placement
+      switch (options.placement) {
+        case 'top':
+          top = triggerRect.top - tooltipRect.height - options.offset;
+          left = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2);
+          break;
+        case 'top-start':
+          top = triggerRect.top - tooltipRect.height - options.offset;
+          left = triggerRect.left;
+          break;
+        case 'top-end':
+          top = triggerRect.top - tooltipRect.height - options.offset;
+          left = triggerRect.right - tooltipRect.width;
+          break;
+        case 'right':
+          top = triggerRect.top + (triggerRect.height / 2) - (tooltipRect.height / 2);
+          left = triggerRect.right + options.offset;
+          break;
+        case 'right-start':
+          top = triggerRect.top;
+          left = triggerRect.right + options.offset;
+          break;
+        case 'right-end':
+          top = triggerRect.bottom - tooltipRect.height;
+          left = triggerRect.right + options.offset;
+          break;
+        case 'bottom':
+          top = triggerRect.bottom + options.offset;
+          left = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2);
+          break;
+        case 'bottom-start':
+          top = triggerRect.bottom + options.offset;
+          left = triggerRect.left;
+          break;
+        case 'bottom-end':
+          top = triggerRect.bottom + options.offset;
+          left = triggerRect.right - tooltipRect.width;
+          break;
+        case 'left':
+          top = triggerRect.top + (triggerRect.height / 2) - (tooltipRect.height / 2);
+          left = triggerRect.left - tooltipRect.width - options.offset;
+          break;
+        case 'left-start':
+          top = triggerRect.top;
+          left = triggerRect.left - tooltipRect.width - options.offset;
+          break;
+        case 'left-end':
+          top = triggerRect.bottom - tooltipRect.height;
+          left = triggerRect.left - tooltipRect.width - options.offset;
+          break;
+        default:
+          top = triggerRect.top - tooltipRect.height - options.offset;
+          left = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2);
+      }
+      
+      // Adjust for scroll position
+      top += window.scrollY;
+      left += window.scrollX;
+      
+      // Apply position
+      tooltipContent.style.top = `${top}px`;
+      tooltipContent.style.left = `${left}px`;
+      
+      // Position arrow if present
+      if (tooltipArrow) {
+        let arrowTop, arrowLeft;
+        
+        switch (options.placement) {
+          case 'top':
+          case 'top-start':
+          case 'top-end':
+            arrowTop = top + tooltipRect.height - 1;
+            arrowLeft = left + (tooltipRect.width / 2) - 4;
+            tooltipArrow.style.transform = 'rotate(45deg)';
+            break;
+          case 'right':
+          case 'right-start':
+          case 'right-end':
+            arrowTop = top + (tooltipRect.height / 2) - 4;
+            arrowLeft = left - 4;
+            tooltipArrow.style.transform = 'rotate(-45deg)';
+            break;
+          case 'bottom':
+          case 'bottom-start':
+          case 'bottom-end':
+            arrowTop = top - 4;
+            arrowLeft = left + (tooltipRect.width / 2) - 4;
+            tooltipArrow.style.transform = 'rotate(-135deg)';
+            break;
+          case 'left':
+          case 'left-start':
+          case 'left-end':
+            arrowTop = top + (tooltipRect.height / 2) - 4;
+            arrowLeft = left + tooltipRect.width - 3;
+            tooltipArrow.style.transform = 'rotate(135deg)';
+            break;
+        }
+        
+        tooltipArrow.style.top = `${arrowTop}px`;
+        tooltipArrow.style.left = `${arrowLeft}px`;
+      }
+    }
+    
+    // Function to show tooltip
+    function showTooltip() {
+      if (options.disabled) return;
+      
+      clearTimeout(hideTimeout);
+      
+      showTimeout = setTimeout(() => {
+        if (!isVisible) {
+          // Position before showing for accurate measurements
+          tooltipContent.style.visibility = 'hidden';
+          tooltipContent.style.opacity = '0';
+          tooltipContent.style.display = 'block';
+          
+          if (tooltipArrow) {
+            tooltipArrow.style.visibility = 'hidden';
+            tooltipArrow.style.opacity = '0';
+            tooltipArrow.style.display = 'block';
+          }
+          
+          // Calculate position
+          positionTooltip();
+          
+          // Show after positioning
+          tooltipContent.style.visibility = 'visible';
+          tooltipContent.style.opacity = '1';
+          
+          if (tooltipArrow) {
+            tooltipArrow.style.visibility = 'visible';
+            tooltipArrow.style.opacity = '1';
+          }
+          
+          // Update animation classes for different animations
+          if (options.animation === 'scale') {
+            tooltipContent.style.transform = 'scale(1)';
+          } else if (options.animation === 'shift-away' || options.animation === 'shift-toward') {
+            tooltipContent.style.transform = 'translate(0, 0)';
+          } else if (options.animation === 'perspective') {
+            tooltipContent.style.transform = 'perspective(500px) rotateX(0)';
+          }
+          
+          isVisible = true;
+          
+          // Trigger onShow callback
+          if ('{{ $onShow }}') {
+            try {
+              window['{{ $onShow }}']({
+                id: '{{ $id }}',
+                element: tooltipContent
+              });
+            } catch (err) {
+              console.error('Error in onShow callback:', err);
+            }
+          }
+          
+          // Dispatch custom event
+          tooltipContainer.dispatchEvent(new CustomEvent('tooltip:show', {
+            detail: {
+              id: '{{ $id }}',
+              element: tooltipContent
+            }
+          }));
+        }
+      }, options.delay);
+    }
+    
+    // Function to hide tooltip
+    function hideTooltip() {
+      clearTimeout(showTimeout);
+      
+      hideTimeout = setTimeout(() => {
+        if (isVisible) {
+          // Reset animation classes
+          if (options.animation === 'scale') {
+            tooltipContent.style.transform = 'scale(0.95)';
+          } else if (options.animation === 'shift-away') {
+            tooltipContent.style.transform = 'translate(0, 10px)';
+          } else if (options.animation === 'shift-toward') {
+            tooltipContent.style.transform = 'translate(0, -10px)';
+          } else if (options.animation === 'perspective') {
+            tooltipContent.style.transform = 'perspective(500px) rotateX(10deg)';
+          }
+          
+          tooltipContent.style.opacity = '0';
+          
+          if (tooltipArrow) {
+            tooltipArrow.style.opacity = '0';
+          }
+          
+          // Hide after animation
+          setTimeout(() => {
+            if (!isVisible) return;
+            
+            tooltipContent.style.visibility = 'hidden';
+            tooltipContent.style.display = 'none';
+            
+            if (tooltipArrow) {
+              tooltipArrow.style.visibility = 'hidden';
+              tooltipArrow.style.display = 'none';
+            }
+            
+            isVisible = false;
+            
+            // Trigger onHide callback
+            if ('{{ $onHide }}') {
+              try {
+                window['{{ $onHide }}']({
+                  id: '{{ $id }}',
+                  element: tooltipContent
+                });
+              } catch (err) {
+                console.error('Error in onHide callback:', err);
+              }
+            }
+            
+            // Dispatch custom event
+            tooltipContainer.dispatchEvent(new CustomEvent('tooltip:hide', {
+              detail: {
+                id: '{{ $id }}',
+                element: tooltipContent
+              }
+            }));
+          }, options.animationDuration);
+        }
+      }, options.hideDelay);
+    }
+    
+    // Event listeners based on trigger type
+    if (options.trigger === 'hover' || options.trigger === 'mouseenter') {
+      tooltipTrigger.addEventListener('mouseenter', showTooltip);
+      tooltipTrigger.addEventListener('mouseleave', hideTooltip);
+      
+      if (options.interactive) {
+        tooltipContent.addEventListener('mouseenter', () => {
+          clearTimeout(hideTimeout);
+        });
+        tooltipContent.addEventListener('mouseleave', hideTooltip);
+      }
+    } else if (options.trigger === 'click') {
+      tooltipTrigger.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (isVisible) {
+          hideTooltip();
+        } else {
+          showTooltip();
+        }
+      });
+      
+      if (options.hideOnClickOutside) {
+        document.addEventListener('click', function(e) {
+          if (isVisible && 
+              e.target !== tooltipTrigger && 
+              !tooltipTrigger.contains(e.target) && 
+              e.target !== tooltipContent && 
+              !tooltipContent.contains(e.target)) {
+            hideTooltip();
+          }
+        });
+      }
+    } else if (options.trigger === 'focus') {
+      tooltipTrigger.addEventListener('focus', showTooltip);
+      tooltipTrigger.addEventListener('blur', hideTooltip);
+    }
+    
+    // Close on ESC key
+    if (options.hideOnEsc) {
+      document.addEventListener('keydown', function(e) {
+        if (isVisible && e.key === 'Escape') {
+          hideTooltip();
+        }
+      });
+    }
+    
+    // Reposition on window resize
+    window.addEventListener('resize', function() {
+      if (isVisible) {
+        positionTooltip();
+      }
+    });
+    
+    // Show on creation if enabled
+    if (options.showOnCreate && !options.disabled) {
+      showTooltip();
+    }
+    
+    // Expose API
+    window.tooltips = window.tooltips || {};
+    window.tooltips['{{ $id }}'] = {
+      show: function() {
+        showTooltip();
+      },
+      hide: function() {
+        hideTooltip();
+      },
+      toggle: function() {
+        if (isVisible) {
+          hideTooltip();
+        } else {
+          showTooltip();
+        }
+      },
+      isVisible: function() {
+        return isVisible;
+      },
+      enable: function() {
+        options.disabled = false;
+        tooltipTrigger.removeAttribute('data-tooltip-disabled');
+      },
+      disable: function() {
+        options.disabled = true;
+        tooltipTrigger.setAttribute('data-tooltip-disabled', 'true');
+        if (isVisible) {
+          hideTooltip();
+        }
+      },
+      updateContent: function(newContent) {
+        const contentWrapper = tooltipContent.querySelector('.relative');
+        if (contentWrapper) {
+          contentWrapper.innerHTML = newContent;
+        }
+        if (isVisible) {
+          positionTooltip();
+        }
+      }
+    };
+  });
+</script>

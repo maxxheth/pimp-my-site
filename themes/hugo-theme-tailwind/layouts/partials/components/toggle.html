@@ -1,0 +1,461 @@
+{{- /*
+  Toggle Component
+  
+  Parameters:
+    - id: String - Unique ID for the toggle (default: auto-generated)
+    - name: String - Name attribute for form submission (default: id value)
+    - value: String - Value attribute for the input (default: "on")
+    - checked: Boolean - Initial checked state (default: false)
+    - size: String - Size of the toggle (default: "md")
+      Options: sm, md, lg
+    - variant: String - Visual style (default: "default")
+      Options: default, pill, slim, button, ios
+    - color: String - Theme color (default: "blue")
+      Options: blue, green, red, yellow, purple, indigo, or any tailwind color
+    - label: String - Label text for the toggle (default: "")
+    - labelPosition: String - Position of the label (default: "right")
+      Options: left, right, top, bottom, none
+    - labelSize: String - Size of the label text (default: matches toggle size)
+      Options: xs, sm, md, lg, xl
+    - disabled: Boolean - Disable the toggle (default: false)
+    - readonly: Boolean - Make the toggle readonly (default: false)
+    - required: Boolean - Make the toggle required in forms (default: false)
+    - srLabel: String - Screen reader label if no visible label (default: "Toggle")
+    - onLabel: String - Text to show when checked (for button variant) (default: "On")
+    - offLabel: String - Text to show when unchecked (for button variant) (default: "Off")
+    - showIcons: Boolean - Show icons for on/off states (default: false)
+    - onIcon: String - Icon name for checked state (default: "check")
+    - offIcon: String - Icon name for unchecked state (default: "x")
+    - class: String - Additional custom classes for container (default: "")
+    - toggleClass: String - Additional classes for toggle element (default: "")
+    - labelClass: String - Additional classes for label (default: "")
+    - inputClass: String - Additional classes for input element (default: "")
+    - onChange: String - JS function to call when toggle changes (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "toggle-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $name := .name | default $id -}}
+{{- $value := .value | default "on" -}}
+{{- $checked := .checked | default false -}}
+{{- $size := .size | default "md" -}}
+{{- $variant := .variant | default "default" -}}
+{{- $color := .color | default "blue" -}}
+{{- $label := .label | default "" -}}
+{{- $labelPosition := .labelPosition | default "right" -}}
+{{- $labelSize := .labelSize | default "" -}}
+{{- $disabled := .disabled | default false -}}
+{{- $readonly := .readonly | default false -}}
+{{- $required := .required | default false -}}
+{{- $srLabel := .srLabel | default "Toggle" -}}
+{{- $onLabel := .onLabel | default "On" -}}
+{{- $offLabel := .offLabel | default "Off" -}}
+{{- $showIcons := .showIcons | default false -}}
+{{- $onIcon := .onIcon | default "check" -}}
+{{- $offIcon := .offIcon | default "x" -}}
+{{- $class := .class | default "" -}}
+{{- $toggleClass := .toggleClass | default "" -}}
+{{- $labelClass := .labelClass | default "" -}}
+{{- $inputClass := .inputClass | default "" -}}
+{{- $onChange := .onChange | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "inline-flex items-center" -}}
+{{- $toggleBaseClass := "relative inline-flex flex-shrink-0 transition-colors duration-200 ease-in-out" -}}
+{{- $inputBaseClass := "absolute w-full h-full opacity-0 cursor-pointer z-10" -}}
+{{- $toggleLabelClass := "" -}}
+{{- $sliderClass := "absolute inset-0 transition-transform duration-200 ease-in-out" -}}
+{{- $knobClass := "pointer-events-none absolute transform transition duration-200 ease-in-out" -}}
+{{- $iconClass := "absolute inset-0 flex items-center justify-center text-white transition-opacity duration-200" -}}
+{{- $onIconClass := "opacity-0" -}}
+{{- $offIconClass := "opacity-0" -}}
+
+{{- /* Size classes */ -}}
+{{- $toggleSizeClass := "" -}}
+{{- $knobSizeClass := "" -}}
+{{- $iconSizeClass := "" -}}
+{{- $toggleLabelSizeClass := "" -}}
+
+{{- if eq $size "sm" -}}
+  {{- $toggleSizeClass = "w-8 h-4" -}}
+  {{- $knobSizeClass = "w-3 h-3" -}}
+  {{- $iconSizeClass = "w-2 h-2" -}}
+  {{- $toggleLabelSizeClass = "text-sm" -}}
+{{- else if eq $size "md" -}}
+  {{- $toggleSizeClass = "w-11 h-6" -}}
+  {{- $knobSizeClass = "w-5 h-5" -}}
+  {{- $iconSizeClass = "w-3 h-3" -}}
+  {{- $toggleLabelSizeClass = "text-base" -}}
+{{- else if eq $size "lg" -}}
+  {{- $toggleSizeClass = "w-14 h-7" -}}
+  {{- $knobSizeClass = "w-6 h-6" -}}
+  {{- $iconSizeClass = "w-4 h-4" -}}
+  {{- $toggleLabelSizeClass = "text-lg" -}}
+{{- end -}}
+
+{{- /* Override label size if specified */ -}}
+{{- if $labelSize -}}
+  {{- if eq $labelSize "xs" -}}
+    {{- $toggleLabelSizeClass = "text-xs" -}}
+  {{- else if eq $labelSize "sm" -}}
+    {{- $toggleLabelSizeClass = "text-sm" -}}
+  {{- else if eq $labelSize "md" -}}
+    {{- $toggleLabelSizeClass = "text-base" -}}
+  {{- else if eq $labelSize "lg" -}}
+    {{- $toggleLabelSizeClass = "text-lg" -}}
+  {{- else if eq $labelSize "xl" -}}
+    {{- $toggleLabelSizeClass = "text-xl" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Label position classes */ -}}
+{{- if eq $labelPosition "left" -}}
+  {{- $containerClass = printf "%s flex-row-reverse" $containerClass -}}
+  {{- $toggleLabelClass = printf "%s mr-3" $toggleLabelClass -}}
+{{- else if eq $labelPosition "right" -}}
+  {{- $toggleLabelClass = printf "%s ml-3" $toggleLabelClass -}}
+{{- else if eq $labelPosition "top" -}}
+  {{- $containerClass = printf "%s flex-col-reverse" $containerClass -}}
+  {{- $toggleLabelClass = printf "%s mb-2" $toggleLabelClass -}}
+{{- else if eq $labelPosition "bottom" -}}
+  {{- $containerClass = printf "%s flex-col" $containerClass -}}
+  {{- $toggleLabelClass = printf "%s mt-2" $toggleLabelClass -}}
+{{- end -}}
+
+{{- /* Variant specific classes */ -}}
+{{- if eq $variant "default" -}}
+  {{- $toggleBaseClass = printf "%s bg-gray-300 dark:bg-gray-600 rounded-full" $toggleBaseClass -}}
+  {{- $sliderClass = printf "%s rounded-full" $sliderClass -}}
+  {{- $knobClass = printf "%s left-0.5 top-0.5 bg-white rounded-full shadow" $knobClass -}}
+  
+  {{- /* Checked state */ -}}
+  {{- $checkedClass := printf "bg-%s-500 dark:bg-%s-600" $color $color -}}
+  {{- $checkedKnobClass := "translate-x-5" -}}
+  
+  {{- if eq $size "sm" -}}
+    {{- $checkedKnobClass = "translate-x-4" -}}
+  {{- else if eq $size "lg" -}}
+    {{- $checkedKnobClass = "translate-x-7" -}}
+  {{- end -}}
+{{- else if eq $variant "pill" -}}
+  {{- $toggleBaseClass = printf "%s bg-gray-200 dark:bg-gray-700 rounded-full p-0.5" $toggleBaseClass -}}
+  {{- $sliderClass = printf "%s rounded-full" $sliderClass -}}
+  {{- $knobClass = printf "%s left-0 top-0 bg-white rounded-full shadow" $knobClass -}}
+  
+  {{- /* Checked state */ -}}
+  {{- $checkedClass := printf "bg-%s-500 dark:bg-%s-600" $color $color -}}
+  {{- $checkedKnobClass := "translate-x-5" -}}
+  
+  {{- if eq $size "sm" -}}
+    {{- $checkedKnobClass = "translate-x-4" -}}
+  {{- else if eq $size "lg" -}}
+    {{- $checkedKnobClass = "translate-x-7" -}}
+  {{- end -}}
+{{- else if eq $variant "slim" -}}
+  {{- $toggleBaseClass = printf "%s bg-gray-300 dark:bg-gray-600 rounded-sm" $toggleBaseClass -}}
+  {{- $sliderClass = printf "%s rounded-sm" $sliderClass -}}
+  {{- $knobClass = printf "%s left-0 top-0 bg-white rounded-sm shadow" $knobClass -}}
+  
+  {{- /* Checked state */ -}}
+  {{- $checkedClass := printf "bg-%s-500 dark:bg-%s-600" $color $color -}}
+  {{- $checkedKnobClass := "translate-x-5" -}}
+  
+  {{- if eq $size "sm" -}}
+    {{- $checkedKnobClass = "translate-x-4" -}}
+  {{- else if eq $size "lg" -}}
+    {{- $checkedKnobClass = "translate-x-7" -}}
+  {{- end -}}
+{{- else if eq $variant "button" -}}
+  {{- $toggleBaseClass = printf "%s bg-gray-200 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 px-2 flex items-center justify-between text-xs font-medium" $toggleBaseClass -}}
+  {{- $knobClass = printf "%s left-0 top-0 bottom-0 bg-%s-500 dark:bg-%s-600 rounded shadow" $knobClass $color $color -}}
+  {{- $toggleLabelClass = printf "%s text-xs" $toggleLabelClass -}}
+  
+  {{- /* Button variant specific - labels inside toggle */ -}}
+  {{- $onLabelClass := "pl-1 mr-auto text-white opacity-0" -}}
+  {{- $offLabelClass := "pr-1 ml-auto text-gray-700 dark:text-gray-300" -}}
+  
+  {{- /* Checked state */ -}}
+  {{- $checkedClass := "border-gray-400 dark:border-gray-500" -}}
+  {{- $checkedKnobClass := "translate-x-6" -}}
+  {{- $checkedOnLabelClass := "opacity-100" -}}
+  {{- $checkedOffLabelClass := "opacity-0" -}}
+  
+  {{- if eq $size "sm" -}}
+    {{- $checkedKnobClass = "translate-x-4" -}}
+  {{- else if eq $size "lg" -}}
+    {{- $checkedKnobClass = "translate-x-8" -}}
+  {{- end -}}
+{{- else if eq $variant "ios" -}}
+  {{- $toggleBaseClass = printf "%s bg-gray-200 dark:bg-gray-700 rounded-full p-0.5 border border-gray-300 dark:border-gray-600" $toggleBaseClass -}}
+  {{- $sliderClass = printf "%s rounded-full" $sliderClass -}}
+  {{- $knobClass = printf "%s left-0 top-0 bg-white rounded-full shadow-md" $knobClass -}}
+  
+  {{- /* Checked state */ -}}
+  {{- $checkedClass := printf "bg-%s-100 dark:bg-%s-900 border-%s-500 dark:border-%s-600" $color $color $color $color -}}
+  {{- $checkedKnobClass := printf "translate-x-5 bg-%s-500 dark:bg-%s-600" $color $color -}}
+  
+  {{- if eq $size "sm" -}}
+    {{- $checkedKnobClass = printf "translate-x-4 bg-%s-500 dark:bg-%s-600" $color $color -}}
+  {{- else if eq $size "lg" -}}
+    {{- $checkedKnobClass = printf "translate-x-7 bg-%s-500 dark:bg-%s-600" $color $color -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Icons for on/off states */ -}}
+{{- if $showIcons -}}
+  {{- $onIconClass = printf "%s opacity-0 %s" $iconClass $iconSizeClass -}}
+  {{- $offIconClass = printf "%s opacity-100 %s" $iconClass $iconSizeClass -}}
+  
+  {{- /* Checked state */ -}}
+  {{- $checkedOnIconClass := "opacity-100" -}}
+  {{- $checkedOffIconClass := "opacity-0" -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $toggleClass -}}
+  {{- $toggleBaseClass = printf "%s %s" $toggleBaseClass $toggleClass -}}
+{{- end -}}
+
+{{- if $labelClass -}}
+  {{- $toggleLabelClass = printf "%s %s" $toggleLabelClass $labelClass -}}
+{{- end -}}
+
+{{- if $inputClass -}}
+  {{- $inputBaseClass = printf "%s %s" $inputBaseClass $inputClass -}}
+{{- end -}}
+
+<label 
+  for="{{ $id }}"
+  class="{{ $containerClass }}"
+>
+  {{- if and $label (ne $labelPosition "none") -}}
+    <span class="{{ $toggleLabelClass }} {{ $toggleLabelSizeClass }}">{{ $label }}</span>
+  {{- end -}}
+  
+  <div
+    class="{{ $toggleBaseClass }} {{ $toggleSizeClass }}"
+    data-toggle
+    data-checked="{{ $checked }}"
+    data-variant="{{ $variant }}"
+  >
+    {{- /* Input element */ -}}
+    <input 
+      type="checkbox"
+      id="{{ $id }}"
+      name="{{ $name }}"
+      value="{{ $value }}"
+      class="{{ $inputBaseClass }}"
+      {{ if $checked }}checked{{ end }}
+      {{ if $disabled }}disabled{{ end }}
+      {{ if $readonly }}readonly onclick="return false"{{ end }}
+      {{ if $required }}required{{ end }}
+      aria-label="{{ if $label }}{{ $label }}{{ else }}{{ $srLabel }}{{ end }}"
+      data-toggle-input
+    >
+    
+    {{- /* Toggle slider background */ -}}
+    <span class="{{ $sliderClass }}"></span>
+    
+    {{- /* Button variant specific labels */ -}}
+    {{- if eq $variant "button" -}}
+      <span class="{{ $onLabelClass }}" data-on-label>{{ $onLabel }}</span>
+      <span class="{{ $offLabelClass }}" data-off-label>{{ $offLabel }}</span>
+    {{- end -}}
+    
+    {{- /* Toggle knob */ -}}
+    <span class="{{ $knobClass }} {{ $knobSizeClass }}" data-toggle-knob>
+      {{- if $showIcons -}}
+        <span class="{{ $onIconClass }}" data-on-icon>
+          {{ partial "icon.html" (dict "name" $onIcon "size" "xs") }}
+        </span>
+        <span class="{{ $offIconClass }}" data-off-icon>
+          {{ partial "icon.html" (dict "name" $offIcon "size" "xs") }}
+        </span>
+      {{- end -}}
+    </span>
+  </div>
+  
+  {{- if and $label (eq $labelPosition "none") -}}
+    <span class="sr-only">{{ $label }}</span>
+  {{- end -}}
+</label>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.querySelector('#{{ $id }}');
+    const toggleContainer = toggle.closest('[data-toggle]');
+    if (!toggle || !toggleContainer) return;
+    
+    const variant = toggleContainer.dataset.variant;
+    
+    // Cache elements
+    const knob = toggleContainer.querySelector('[data-toggle-knob]');
+    const onLabel = toggleContainer.querySelector('[data-on-label]');
+    const offLabel = toggleContainer.querySelector('[data-off-label]');
+    const onIcon = toggleContainer.querySelector('[data-on-icon]');
+    const offIcon = toggleContainer.querySelector('[data-off-icon]');
+    
+    // Set initial state
+    updateToggleState(toggle.checked);
+    
+    // Handle change event
+    toggle.addEventListener('change', function() {
+      updateToggleState(this.checked);
+      
+      // Trigger onChange callback
+      if ('{{ $onChange }}') {
+        try {
+          window['{{ $onChange }}']({
+            checked: this.checked,
+            element: this
+          });
+        } catch (err) {
+          console.error('Error in onChange callback:', err);
+        }
+      }
+      
+      // Dispatch custom event
+      toggle.dispatchEvent(new CustomEvent('toggle:change', {
+        detail: {
+          checked: this.checked
+        }
+      }));
+    });
+    
+    // Update toggle visual state
+    function updateToggleState(checked) {
+      toggleContainer.dataset.checked = checked;
+      
+      // Apply variant-specific checked styles
+	  const variant = '{{ $variant }}';
+      if (checked) {
+		if (variant === 'default' || variant === 'pill' || variant === 'slim') {
+		  toggleContainer.classList.add('{{ $checkedClass }}');
+		  toggleContainer.classList.remove('bg-gray-300', 'dark:bg-gray-600', 'bg-gray-200', 'dark:bg-gray-700');
+		  
+		  if (knob) {
+			knob.classList.add('{{ $checkedKnobClass }}');
+		  }
+		} else if (variant === 'button') {
+		  toggleContainer.classList.add('{{ $checkedClass }}');
+		  
+		  if (knob) {
+			knob.classList.add('{{ $checkedKnobClass }}');
+		  }
+		  
+		  if (onLabel) {
+			onLabel.classList.add('{{ $checkedOnLabelClass }}');
+		  }
+		  
+		  if (offLabel) {
+			offLabel.classList.add('{{ $checkedOffLabelClass }}');
+		  }
+		} else if (variant === 'ios') {
+		  toggleContainer.classList.add('{{ $checkedClass }}');
+		  toggleContainer.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'border-gray-300', 'dark:border-gray-600');
+		  
+		  if (knob) {
+			knob.classList.add('{{ $checkedKnobClass }}');
+			knob.classList.remove('bg-white');
+		  }
+		}
+        
+        // Handle icons if enabled
+        if ('{{ $showIcons }}' === 'true') {
+          if (onIcon) {
+            onIcon.classList.add('{{ $checkedOnIconClass }}');
+          }
+          
+          if (offIcon) {
+            offIcon.classList.add('{{ $checkedOffIconClass }}');
+          }
+        }
+      } else {
+		if (variant === 'default' || variant === 'pill' || variant === 'slim') {
+			toggleContainer.classList.remove('{{ $checkedClass }}');
+			
+			if (variant === 'default') {
+				toggleContainer.classList.add('bg-gray-300', 'dark:bg-gray-600');
+			} else {
+				toggleContainer.classList.add('bg-gray-200', 'dark:bg-gray-700');
+			}
+			
+			if (knob) {
+				knob.classList.remove('{{ $checkedKnobClass }}');
+			}
+		} else if (variant === 'button') {
+			toggleContainer.classList.remove('{{ $checkedClass }}');
+			
+			if (knob) {
+				knob.classList.remove('{{ $checkedKnobClass }}');
+			}
+			
+			if (onLabel) {
+				onLabel.classList.remove('{{ $checkedOnLabelClass }}');
+			}
+			
+			if (offLabel) {
+				offLabel.classList.remove('{{ $checkedOffLabelClass }}');
+			}
+		} else if (variant === 'ios') {
+			toggleContainer.classList.remove('{{ $checkedClass }}');
+			toggleContainer.classList.add('bg-gray-200', 'dark:bg-gray-700', 'border-gray-300', 'dark:border-gray-600');
+			
+			if (knob) {
+				knob.classList.remove('{{ $checkedKnobClass }}');
+				knob.classList.add('bg-white');
+			}
+		}
+        
+        // Handle icons if enabled
+        if ('{{ $showIcons }}' === 'true') {
+          if (onIcon) {
+            onIcon.classList.remove('{{ $checkedOnIconClass }}');
+          }
+          
+          if (offIcon) {
+            offIcon.classList.remove('{{ $checkedOffIconClass }}');
+          }
+        }
+      }
+    }
+    
+    // Expose API
+    window.toggles = window.toggles || {};
+    window.toggles['{{ $id }}'] = {
+      check: function() {
+        if (!toggle.checked && !toggle.disabled && !toggle.readOnly) {
+          toggle.checked = true;
+          toggle.dispatchEvent(new Event('change'));
+        }
+      },
+      uncheck: function() {
+        if (toggle.checked && !toggle.disabled && !toggle.readOnly) {
+          toggle.checked = false;
+          toggle.dispatchEvent(new Event('change'));
+        }
+      },
+      toggle: function() {
+        if (!toggle.disabled && !toggle.readOnly) {
+          toggle.checked = !toggle.checked;
+          toggle.dispatchEvent(new Event('change'));
+        }
+      },
+      isChecked: function() {
+        return toggle.checked;
+      },
+      enable: function() {
+        toggle.disabled = false;
+        toggleContainer.classList.remove('opacity-50', 'cursor-not-allowed');
+      },
+      disable: function() {
+        toggle.disabled = true;
+        toggleContainer.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+    };
+  });
+</script>

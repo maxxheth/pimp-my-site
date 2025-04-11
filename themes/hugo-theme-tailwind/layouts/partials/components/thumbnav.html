@@ -1,0 +1,389 @@
+{{- /*
+  Thumbnav Component
+  
+  Parameters:
+    - id: String - Unique ID for the thumbnav (default: auto-generated)
+    - items: Array - Array of thumbnail items (required)
+    - activeItem: Number/String - Index or ID of active item (default: 0)
+    - size: String - Size of the thumbnails (default: "md")
+      Options: xs, sm, md, lg, xl
+    - orientation: String - Layout direction (default: "horizontal")
+      Options: horizontal, vertical
+    - variant: String - Visual style (default: "default")
+      Options: default, bordered, shadow, overlay, rounded
+    - spacing: String - Space between items (default: "normal")
+      Options: none, tight, normal, relaxed
+    - columns: Number - Number of columns in grid layout (default: 0)
+    - mobileColumns: Number - Number of columns on mobile (default: 2)
+    - tabletColumns: Number - Number of columns on tablet (default: 3)
+    - desktopColumns: Number - Number of columns on desktop (default: 4)
+    - aspectRatio: String - Aspect ratio for thumbnails (default: "square")
+      Options: square, 16/9, 4/3, 3/2, auto
+    - showLabels: Boolean - Show labels under thumbnails (default: false)
+    - labelPosition: String - Position of labels (default: "bottom")
+      Options: bottom, top, overlay
+    - fullWidth: Boolean - Make thumbnav fill container width (default: false)
+    - hoverEffect: String - Effect on hover (default: "opacity")
+      Options: none, opacity, scale, zoom, border, glow
+    - color: String - Theme color (default: "blue")
+      Options: blue, green, red, yellow, purple, indigo, or any tailwind color
+    - scrollable: Boolean - Allow horizontal scrolling (default: false)
+    - objectFit: String - How thumbnail image should fit (default: "cover")
+      Options: cover, contain, fill, none, scale-down
+    - onChange: String - JS function to call when selection changes (default: "")
+    - class: String - Additional custom classes for container (default: "")
+    - itemClass: String - Additional classes for thumbnail items (default: "")
+    - activeClass: String - Additional classes for active item (default: "")
+    - imageClass: String - Additional classes for thumbnail images (default: "")
+    - labelClass: String - Additional classes for thumbnail labels (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "thumbnav-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $items := .items -}}
+{{- $activeItem := .activeItem | default 0 -}}
+{{- $size := .size | default "md" -}}
+{{- $orientation := .orientation | default "horizontal" -}}
+{{- $variant := .variant | default "default" -}}
+{{- $spacing := .spacing | default "normal" -}}
+{{- $columns := .columns | default 0 -}}
+{{- $mobileColumns := .mobileColumns | default 2 -}}
+{{- $tabletColumns := .tabletColumns | default 3 -}}
+{{- $desktopColumns := .desktopColumns | default 4 -}}
+{{- $aspectRatio := .aspectRatio | default "square" -}}
+{{- $showLabels := .showLabels | default false -}}
+{{- $labelPosition := .labelPosition | default "bottom" -}}
+{{- $fullWidth := .fullWidth | default false -}}
+{{- $hoverEffect := .hoverEffect | default "opacity" -}}
+{{- $color := .color | default "blue" -}}
+{{- $scrollable := .scrollable | default false -}}
+{{- $objectFit := .objectFit | default "cover" -}}
+{{- $onChange := .onChange | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $itemClass := .itemClass | default "" -}}
+{{- $activeClass := .activeClass | default "" -}}
+{{- $imageClass := .imageClass | default "" -}}
+{{- $labelClass := .labelClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "thumbnav" -}}
+{{- $thumbListClass := "flex" -}}
+{{- $thumbItemClass := "relative flex-shrink-0 cursor-pointer transition-all duration-200" -}}
+{{- $thumbImageClass := "block" -}}
+{{- $thumbLabelClass := "text-sm text-gray-800 dark:text-gray-200" -}}
+{{- $activeItemClass := "" -}}
+
+{{- /* Size classes */ -}}
+{{- $thumbSizeClass := "" -}}
+{{- if eq $size "xs" -}}
+  {{- $thumbSizeClass = "w-16 h-16" -}}
+  {{- $thumbLabelClass = printf "%s text-xs" $thumbLabelClass -}}
+{{- else if eq $size "sm" -}}
+  {{- $thumbSizeClass = "w-20 h-20" -}}
+  {{- $thumbLabelClass = printf "%s text-xs" $thumbLabelClass -}}
+{{- else if eq $size "md" -}}
+  {{- $thumbSizeClass = "w-24 h-24" -}}
+{{- else if eq $size "lg" -}}
+  {{- $thumbSizeClass = "w-32 h-32" -}}
+  {{- $thumbLabelClass = printf "%s text-base" $thumbLabelClass -}}
+{{- else if eq $size "xl" -}}
+  {{- $thumbSizeClass = "w-40 h-40" -}}
+  {{- $thumbLabelClass = printf "%s text-base" $thumbLabelClass -}}
+{{- end -}}
+
+{{- /* Aspect ratio classes */ -}}
+{{- if ne $aspectRatio "auto" -}}
+  {{- $thumbImageClass = printf "%s object-%s" $thumbImageClass $objectFit -}}
+  
+  {{- if eq $aspectRatio "square" -}}
+    {{- $thumbImageClass = printf "%s aspect-square" $thumbImageClass -}}
+  {{- else if eq $aspectRatio "16/9" -}}
+    {{- $thumbImageClass = printf "%s aspect-video" $thumbImageClass -}}
+  {{- else if eq $aspectRatio "4/3" -}}
+    {{- $thumbImageClass = printf "%s aspect-[4/3]" $thumbImageClass -}}
+  {{- else if eq $aspectRatio "3/2" -}}
+    {{- $thumbImageClass = printf "%s aspect-[3/2]" $thumbImageClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Orientation classes */ -}}
+{{- $isVertical := eq $orientation "vertical" -}}
+{{- if $isVertical -}}
+  {{- $thumbListClass = printf "%s flex-col" $thumbListClass -}}
+{{- end -}}
+
+{{- /* Spacing classes */ -}}
+{{- $spacingClass := "" -}}
+{{- if eq $spacing "none" -}}
+  {{- $spacingClass = $isVertical | ternary "space-y-0" "space-x-0" -}}
+{{- else if eq $spacing "tight" -}}
+  {{- $spacingClass = $isVertical | ternary "space-y-1" "space-x-1" -}}
+{{- else if eq $spacing "normal" -}}
+  {{- $spacingClass = $isVertical | ternary "space-y-2" "space-x-2" -}}
+{{- else if eq $spacing "relaxed" -}}
+  {{- $spacingClass = $isVertical | ternary "space-y-4" "space-x-4" -}}
+{{- end -}}
+
+{{- /* Grid layout classes */ -}}
+{{- if gt $columns 0 -}}
+  {{- $thumbListClass = "grid gap-2" -}}
+  {{- $thumbListClass = printf "%s grid-cols-%d sm:grid-cols-%d md:grid-cols-%d lg:grid-cols-%d" $thumbListClass $mobileColumns $mobileColumns $tabletColumns $desktopColumns -}}
+  {{- $spacingClass = "" -}}
+{{- end -}}
+
+{{- /* Variant specific classes */ -}}
+{{- if eq $variant "default" -}}
+  {{- $thumbItemClass = printf "%s bg-white dark:bg-gray-800" $thumbItemClass -}}
+  {{- $activeItemClass = printf "ring-2 ring-%s-500 dark:ring-%s-400" $color $color -}}
+{{- else if eq $variant "bordered" -}}
+  {{- $thumbItemClass = printf "%s border border-gray-300 dark:border-gray-700" $thumbItemClass -}}
+  {{- $activeItemClass = printf "border-2 border-%s-500 dark:border-%s-400" $color $color -}}
+{{- else if eq $variant "shadow" -}}
+  {{- $thumbItemClass = printf "%s bg-white dark:bg-gray-800 shadow-sm" $thumbItemClass -}}
+  {{- $activeItemClass = printf "shadow-md ring-2 ring-%s-500 dark:ring-%s-400" $color $color -}}
+{{- else if eq $variant "overlay" -}}
+  {{- $thumbItemClass = printf "%s bg-white dark:bg-gray-800 overflow-hidden" $thumbItemClass -}}
+  {{- $activeItemClass = printf "after:absolute after:inset-0 after:bg-%s-500 after:bg-opacity-25 dark:after:bg-opacity-40" $color $color -}}
+{{- else if eq $variant "rounded" -}}
+  {{- $thumbItemClass = printf "%s bg-white dark:bg-gray-800 rounded-lg overflow-hidden" $thumbItemClass -}}
+  {{- $activeItemClass = printf "ring-2 ring-%s-500 dark:ring-%s-400" $color $color -}}
+{{- end -}}
+
+{{- /* Hover effect classes */ -}}
+{{- if eq $hoverEffect "opacity" -}}
+  {{- $thumbItemClass = printf "%s hover:opacity-80" $thumbItemClass -}}
+{{- else if eq $hoverEffect "scale" -}}
+  {{- $thumbItemClass = printf "%s hover:scale-105" $thumbItemClass -}}
+{{- else if eq $hoverEffect "zoom" -}}
+  {{- $thumbImageClass = printf "%s transition-transform duration-300" $thumbImageClass -}}
+  {{- $thumbItemClass = printf "%s overflow-hidden" $thumbItemClass -}}
+  {{- $thumbItemClass = printf "%s hover:[&_img]:scale-110" $thumbItemClass -}}
+{{- else if eq $hoverEffect "border" -}}
+  {{- $thumbItemClass = printf "%s hover:border-gray-400 dark:hover:border-gray-500" $thumbItemClass -}}
+{{- else if eq $hoverEffect "glow" -}}
+  {{- $thumbItemClass = printf "%s hover:shadow-md hover:shadow-%s-100 dark:hover:shadow-%s-900" $thumbItemClass $color $color -}}
+{{- end -}}
+
+{{- /* Layout specific classes */ -}}
+{{- if $fullWidth -}}
+  {{- $containerClass = printf "%s w-full" $containerClass -}}
+  {{- $thumbListClass = printf "%s w-full" $thumbListClass -}}
+  
+  {{- if eq $columns 0 -}}
+    {{- $thumbItemClass = printf "%s flex-1" $thumbItemClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $scrollable and not $isVertical and eq $columns 0 -}}
+  {{- $thumbListClass = printf "%s overflow-x-auto pb-2 scrollbar-thin" $thumbListClass -}}
+  {{- $containerClass = printf "%s overflow-hidden" $containerClass -}}
+{{- end -}}
+
+{{- /* Label position classes */ -}}
+{{- if $showLabels -}}
+  {{- if eq $labelPosition "bottom" -}}
+    {{- $thumbItemClass = printf "%s flex flex-col" $thumbItemClass -}}
+    {{- $thumbLabelClass = printf "%s mt-1" $thumbLabelClass -}}
+  {{- else if eq $labelPosition "top" -}}
+    {{- $thumbItemClass = printf "%s flex flex-col-reverse" $thumbItemClass -}}
+    {{- $thumbLabelClass = printf "%s mb-1" $thumbLabelClass -}}
+  {{- else if eq $labelPosition "overlay" -}}
+    {{- $thumbLabelClass = printf "%s absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-1 text-center" $thumbLabelClass -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $itemClass -}}
+  {{- $thumbItemClass = printf "%s %s" $thumbItemClass $itemClass -}}
+{{- end -}}
+
+{{- if $activeClass -}}
+  {{- $activeItemClass = printf "%s %s" $activeItemClass $activeClass -}}
+{{- end -}}
+
+{{- if $imageClass -}}
+  {{- $thumbImageClass = printf "%s %s" $thumbImageClass $imageClass -}}
+{{- end -}}
+
+{{- if $labelClass -}}
+  {{- $thumbLabelClass = printf "%s %s" $thumbLabelClass $labelClass -}}
+{{- end -}}
+
+<div 
+  id="{{ $id }}"
+  class="{{ $containerClass }}"
+  data-thumbnav
+  data-variant="{{ $variant }}"
+  data-orientation="{{ $orientation }}"
+>
+  <div class="{{ $thumbListClass }} {{ $spacingClass }}">
+    {{- range $index, $item := $items -}}
+      {{- $itemId := "" -}}
+      {{- $itemImage := "" -}}
+      {{- $itemLabel := "" -}}
+      {{- $itemAlt := "" -}}
+      {{- $itemHref := "" -}}
+      {{- $itemWidth := "" -}}
+      {{- $itemHeight := "" -}}
+      
+      {{- if kindIs "map" $item -}}
+        {{- $itemId = $item.id | default (printf "item-%d" $index) -}}
+        {{- $itemImage = $item.image -}}
+        {{- $itemLabel = $item.label | default "" -}}
+        {{- $itemAlt = $item.alt | default $itemLabel -}}
+        {{- $itemHref = $item.href | default "#" -}}
+        {{- $itemWidth = $item.width | default "" -}}
+        {{- $itemHeight = $item.height | default "" -}}
+      {{- else -}}
+        {{- $itemId = printf "item-%d" $index -}}
+        {{- $itemImage = $item -}}
+        {{- $itemAlt = printf "Thumbnail %d" (add $index 1) -}}
+        {{- $itemHref = "#" -}}
+      {{- end -}}
+      
+      {{- $isActive := or (eq $activeItem $index) (eq $activeItem $itemId) -}}
+      
+      <div 
+        id="{{ $id }}-{{ $itemId }}"
+        class="{{ $thumbItemClass }} {{ $thumbSizeClass }} {{ if $isActive }}{{ $activeItemClass }}{{ end }}"
+        data-thumbnail
+        data-item-id="{{ $itemId }}"
+        data-item-index="{{ $index }}"
+        {{ if $isActive }}aria-current="true"{{ end }}
+        role="button"
+        tabindex="0"
+      >
+        <img 
+          src="{{ $itemImage }}"
+          alt="{{ $itemAlt }}"
+          class="{{ $thumbImageClass }} w-full h-full"
+          {{ if $itemWidth }}width="{{ $itemWidth }}"{{ end }}
+          {{ if $itemHeight }}height="{{ $itemHeight }}"{{ end }}
+          loading="lazy"
+        >
+        
+        {{- if and $showLabels $itemLabel -}}
+          <span class="{{ $thumbLabelClass }}">{{ $itemLabel }}</span>
+        {{- end -}}
+        
+        <a href="{{ $itemHref }}" class="absolute inset-0" aria-hidden="true"></a>
+      </div>
+    {{- end -}}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const thumbnav = document.getElementById('{{ $id }}');
+    if (!thumbnav) return;
+    
+    const thumbnails = thumbnav.querySelectorAll('[data-thumbnail]');
+    
+    // Handle thumbnail clicks
+    thumbnails.forEach(thumb => {
+      thumb.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Get item info
+        const itemId = this.dataset.itemId;
+        const itemIndex = parseInt(this.dataset.itemIndex, 10);
+        
+        // Update active state
+        updateActiveThumbnail(itemId, itemIndex);
+        
+        // Trigger onChange callback
+        if ('{{ $onChange }}') {
+          try {
+            window['{{ $onChange }}']({
+              itemId: itemId,
+              itemIndex: itemIndex,
+              element: this
+            });
+          } catch (err) {
+            console.error('Error in onChange callback:', err);
+          }
+        }
+        
+        // Dispatch custom event
+        thumbnav.dispatchEvent(new CustomEvent('thumbnav:change', {
+          detail: {
+            itemId: itemId,
+            itemIndex: itemIndex,
+            element: this
+          }
+        }));
+      });
+      
+      // Keyboard support
+      thumb.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.click();
+        }
+      });
+    });
+    
+    // Update active thumbnail
+    function updateActiveThumbnail(itemId, itemIndex) {
+      // Remove active state from all thumbnails
+      thumbnails.forEach(thumb => {
+        thumb.classList.remove('{{ $activeItemClass }}');
+        thumb.removeAttribute('aria-current');
+      });
+      
+      // Add active state to selected thumbnail
+      const activeThumbnail = thumbnav.querySelector(`[data-item-id="${itemId}"]`);
+      if (activeThumbnail) {
+        activeThumbnail.classList.add('{{ $activeItemClass }}');
+        activeThumbnail.setAttribute('aria-current', 'true');
+      }
+    }
+    
+    // Scroll active item into view if scrollable
+    if ('{{ $scrollable }}' === 'true') {
+      const activeThumbnail = thumbnav.querySelector('[aria-current="true"]');
+      if (activeThumbnail) {
+        // Use scrollIntoView with options for smooth scrolling
+        activeThumbnail.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }
+    }
+    
+    // Expose API
+    window.thumbnavs = window.thumbnavs || {};
+    window.thumbnavs['{{ $id }}'] = {
+      setActiveItem: function(itemId) {
+        const thumb = thumbnav.querySelector(`[data-item-id="${itemId}"]`);
+        if (thumb) {
+          const itemIndex = parseInt(thumb.dataset.itemIndex, 10);
+          updateActiveThumbnail(itemId, itemIndex);
+        }
+      },
+      getActiveItem: function() {
+        const activeThumbnail = thumbnav.querySelector('[aria-current="true"]');
+        return activeThumbnail ? {
+          id: activeThumbnail.dataset.itemId,
+          index: parseInt(activeThumbnail.dataset.itemIndex, 10),
+          element: activeThumbnail
+        } : null;
+      },
+      scrollToItem: function(itemId) {
+        const thumb = thumbnav.querySelector(`[data-item-id="${itemId}"]`);
+        if (thumb) {
+          thumb.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+          });
+        }
+      }
+    };
+  });
+</script>

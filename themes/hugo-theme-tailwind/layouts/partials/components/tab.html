@@ -1,0 +1,722 @@
+{{- /*
+  Tab Component
+  
+  Parameters:
+    - id: String - Unique ID for the tabs (default: auto-generated)
+    - tabs: Array - Array of tab objects (required)
+    - activeTab: Number/String - Active tab index or ID (default: 0)
+    - variant: String - Visual style of tabs (default: "default")
+      Options: default, pills, underline, bordered, minimal
+    - size: String - Size of tabs (default: "md")
+      Options: sm, md, lg
+    - color: String - Theme color (default: "blue")
+      Options: blue, green, red, yellow, purple, indigo, or any tailwind color
+    - orientation: String - Tab list orientation (default: "horizontal")
+      Options: horizontal, vertical
+    - fullWidth: Boolean - Stretch tabs to full width (default: false)
+    - justified: Boolean - Equal width tabs (default: false)
+    - centered: Boolean - Center align tabs (default: false)
+    - rounded: Boolean - Use rounded styles (default: true)
+    - lazy: Boolean - Load tab content only when activated (default: true)
+    - fade: Boolean - Fade animation between tabs (default: false)
+    - iconPosition: String - Position of icons in tabs (default: "left")
+      Options: left, right, top, only
+    - mobileStacked: Boolean - Stack tabs on mobile (default: false)
+    - mobileAccordion: Boolean - Convert to accordion on mobile (default: false)
+    - mobileBreakpoint: String - Breakpoint for mobile behavior (default: "md")
+      Options: sm, md, lg, xl, 2xl
+    - scrollable: Boolean - Allow tab list to scroll horizontally (default: false)
+    - onChange: String - JS function to call when tab changes (default: "")
+    - class: String - Additional custom classes for container (default: "")
+    - tablistClass: String - Additional classes for tab list (default: "")
+    - tabClass: String - Additional classes for tab buttons (default: "")
+    - tabpanelClass: String - Additional classes for tab panels (default: "")
+    - activeTabClass: String - Additional classes for active tab (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "tab-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $tabs := .tabs -}}
+{{- $activeTab := .activeTab | default 0 -}}
+{{- $variant := .variant | default "default" -}}
+{{- $size := .size | default "md" -}}
+{{- $color := .color | default "blue" -}}
+{{- $orientation := .orientation | default "horizontal" -}}
+{{- $fullWidth := .fullWidth | default false -}}
+{{- $justified := .justified | default false -}}
+{{- $centered := .centered | default false -}}
+{{- $rounded := .rounded | default true -}}
+{{- $lazy := .lazy | default true -}}
+{{- $fade := .fade | default false -}}
+{{- $iconPosition := .iconPosition | default "left" -}}
+{{- $mobileStacked := .mobileStacked | default false -}}
+{{- $mobileAccordion := .mobileAccordion | default false -}}
+{{- $mobileBreakpoint := .mobileBreakpoint | default "md" -}}
+{{- $scrollable := .scrollable | default false -}}
+{{- $onChange := .onChange | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $tablistClass := .tablistClass | default "" -}}
+{{- $tabClass := .tabClass | default "" -}}
+{{- $tabpanelClass := .tabpanelClass | default "" -}}
+{{- $activeTabClass := .activeTabClass | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $containerClass := "tab-container" -}}
+{{- $tablistBaseClass := "flex" -}}
+{{- $tabBaseClass := "inline-flex items-center font-medium transition-all duration-200" -}}
+{{- $tabpanelBaseClass := "tab-panel" -}}
+{{- $activeTabBaseClass := "" -}}
+
+{{- /* Size classes */ -}}
+{{- $tabSizeClass := "" -}}
+{{- if eq $size "sm" -}}
+  {{- $tabSizeClass = "text-sm px-2.5 py-1.5" -}}
+{{- else if eq $size "md" -}}
+  {{- $tabSizeClass = "px-3 py-2" -}}
+{{- else if eq $size "lg" -}}
+  {{- $tabSizeClass = "text-lg px-4 py-2.5" -}}
+{{- end -}}
+
+{{- /* Orientation classes */ -}}
+{{- $isVertical := eq $orientation "vertical" -}}
+{{- if $isVertical -}}
+  {{- $containerClass = printf "%s flex" $containerClass -}}
+  {{- $tablistBaseClass = printf "%s flex-col" $tablistBaseClass -}}
+{{- end -}}
+
+{{- /* Layout classes */ -}}
+{{- if $fullWidth and not $isVertical -}}
+  {{- $tablistBaseClass = printf "%s w-full" $tablistBaseClass -}}
+{{- end -}}
+
+{{- if $justified and not $isVertical -}}
+  {{- $tablistBaseClass = printf "%s justify-between" $tablistBaseClass -}}
+  {{- $tabBaseClass = printf "%s flex-1 text-center justify-center" $tabBaseClass -}}
+{{- else if $centered and not $isVertical -}}
+  {{- $tablistBaseClass = printf "%s justify-center" $tablistBaseClass -}}
+{{- end -}}
+
+{{- if $scrollable and not $isVertical -}}
+  {{- $tablistBaseClass = printf "%s overflow-x-auto whitespace-nowrap scrollbar-thin" $tablistBaseClass -}}
+{{- end -}}
+
+{{- /* Fade animation */ -}}
+{{- if $fade -}}
+  {{- $tabpanelBaseClass = printf "%s transition-opacity duration-150" $tabpanelBaseClass -}}
+{{- end -}}
+
+{{- /* Mobile responsive classes */ -}}
+{{- if $mobileStacked -}}
+  {{- $tablistBaseClass = printf "%s flex-col %s:flex-row" $tablistBaseClass $mobileBreakpoint -}}
+  {{- $tabBaseClass = printf "%s w-full %s:w-auto" $tabBaseClass $mobileBreakpoint -}}
+{{- end -}}
+
+{{- /* Variant specific classes */ -}}
+{{- if eq $variant "default" -}}
+  {{- $tabBaseClass = printf "%s %s border-b-2 border-transparent mx-1 first:ml-0 last:mr-0" $tabBaseClass $tabSizeClass -}}
+  {{- $tabBaseClass = printf "%s text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600" $tabBaseClass -}}
+  {{- $activeTabBaseClass = printf "text-gray-900 dark:text-white border-%s-500 dark:border-%s-400" $color $color -}}
+  {{- $tablistBaseClass = printf "%s border-b border-gray-200 dark:border-gray-700" $tablistBaseClass -}}
+{{- else if eq $variant "pills" -}}
+  {{- $tabBaseClass = printf "%s %s mx-1 first:ml-0 last:mr-0" $tabBaseClass $tabSizeClass -}}
+  {{- $tabBaseClass = printf "%s text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700" $tabBaseClass -}}
+  {{- $activeTabBaseClass = printf "bg-%s-500 dark:bg-%s-600 text-white hover:bg-%s-600 dark:hover:bg-%s-700" $color $color $color $color -}}
+  
+  {{- if $rounded -}}
+    {{- $tabBaseClass = printf "%s rounded-full" $tabBaseClass -}}
+  {{- end -}}
+{{- else if eq $variant "underline" -}}
+  {{- $tabBaseClass = printf "%s %s" $tabBaseClass $tabSizeClass -}}
+  {{- $tabBaseClass = printf "%s text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 relative" $tabBaseClass -}}
+  {{- $activeTabBaseClass = printf "text-%s-600 dark:text-%s-400 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-%s-500 dark:after:bg-%s-400" $color $color $color $color -}}
+  {{- $tablistBaseClass = printf "%s border-b border-gray-200 dark:border-gray-700" $tablistBaseClass -}}
+{{- else if eq $variant "bordered" -}}
+  {{- $tabBaseClass = printf "%s %s mx-1 first:ml-0 last:mr-0 border border-transparent" $tabBaseClass $tabSizeClass -}}
+  {{- $tabBaseClass = printf "%s text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600" $tabBaseClass -}}
+  {{- $activeTabBaseClass = printf "text-gray-900 dark:text-white border-%s-500 dark:border-%s-400 bg-white dark:bg-gray-800" $color $color -}}
+  
+  {{- if $rounded -}}
+    {{- $tabBaseClass = printf "%s rounded-t-md" $tabBaseClass -}}
+  {{- end -}}
+{{- else if eq $variant "minimal" -}}
+  {{- $tabBaseClass = printf "%s %s mx-1 first:ml-0 last:mr-0" $tabBaseClass $tabSizeClass -}}
+  {{- $tabBaseClass = printf "%s text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" $tabBaseClass -}}
+  {{- $activeTabBaseClass = printf "text-%s-600 dark:text-%s-400 font-semibold" $color $color -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $class -}}
+  {{- $containerClass = printf "%s %s" $containerClass $class -}}
+{{- end -}}
+
+{{- if $tablistClass -}}
+  {{- $tablistBaseClass = printf "%s %s" $tablistBaseClass $tablistClass -}}
+{{- end -}}
+
+{{- if $tabClass -}}
+  {{- $tabBaseClass = printf "%s %s" $tabBaseClass $tabClass -}}
+{{- end -}}
+
+{{- if $tabpanelClass -}}
+  {{- $tabpanelBaseClass = printf "%s %s" $tabpanelBaseClass $tabpanelClass -}}
+{{- end -}}
+
+{{- if $activeTabClass -}}
+  {{- $activeTabBaseClass = printf "%s %s" $activeTabBaseClass $activeTabClass -}}
+{{- end -}}
+
+<div 
+  id="{{ $id }}"
+  class="{{ $containerClass }}"
+  data-tabs
+  data-variant="{{ $variant }}"
+  data-orientation="{{ $orientation }}"
+  data-lazy="{{ $lazy }}"
+  data-fade="{{ $fade }}"
+  data-mobile-accordion="{{ $mobileAccordion }}"
+  data-mobile-breakpoint="{{ $mobileBreakpoint }}"
+>
+  <!-- Tab List -->
+  <div 
+    class="{{ $tablistBaseClass }}"
+    role="tablist"
+    aria-orientation="{{ $orientation }}"
+    data-tabs-list
+  >
+    {{- range $index, $tab := $tabs -}}
+      {{- $tabId := "" -}}
+      {{- $tabLabel := "" -}}
+      {{- $tabIcon := "" -}}
+      {{- $tabDisabled := false -}}
+      {{- $tabBadge := "" -}}
+      
+      {{- if kindIs "map" $tab -}}
+        {{- $tabId = $tab.id | default (printf "tab-%d" $index) -}}
+        {{- $tabLabel = $tab.label -}}
+        {{- $tabIcon = $tab.icon | default "" -}}
+        {{- $tabDisabled = $tab.disabled | default false -}}
+        {{- $tabBadge = $tab.badge | default "" -}}
+      {{- else -}}
+        {{- $tabId = printf "tab-%d" $index -}}
+        {{- $tabLabel = $tab -}}
+      {{- end -}}
+      
+      {{- $isActive := or (eq $activeTab $index) (eq $activeTab $tabId) -}}
+      
+      <button 
+        id="{{ $id }}-{{ $tabId }}"
+        class="{{ $tabBaseClass }} {{ if $isActive }}{{ $activeTabBaseClass }}{{ end }}"
+        role="tab"
+        aria-selected="{{ if $isActive }}true{{ else }}false{{ end }}"
+        aria-controls="{{ $id }}-panel-{{ $tabId }}"
+        {{ if $tabDisabled }}disabled aria-disabled="true"{{ end }}
+        tabindex="{{ if $isActive }}0{{ else }}-1{{ end }}"
+        data-tabs-tab
+        data-tab-id="{{ $tabId }}"
+        data-tab-index="{{ $index }}"
+      >
+        {{- /* Icon positioning */ -}}
+        {{- if $tabIcon -}}
+          {{- if or (eq $iconPosition "left") (eq $iconPosition "top") -}}
+            <span class="{{ if eq $iconPosition "left" }}mr-2{{ else }}mb-1{{ end }} {{ if eq $iconPosition "top" }}flex flex-col items-center{{ end }}">
+              {{ partial "icon.html" (dict "name" $tabIcon "size" "sm") }}
+            </span>
+          {{- end -}}
+        {{- end -}}
+        
+        {{- /* Label - hide if icon only */ -}}
+        {{- if ne $iconPosition "only" -}}
+          <span>{{ $tabLabel }}</span>
+        {{- end -}}
+        
+        {{- /* Right positioned icon */ -}}
+        {{- if and $tabIcon (eq $iconPosition "right") -}}
+          <span class="ml-2">
+            {{ partial "icon.html" (dict "name" $tabIcon "size" "sm") }}
+          </span>
+        {{- end -}}
+        
+        {{- /* Icon only */ -}}
+        {{- if and $tabIcon (eq $iconPosition "only") -}}
+          {{ partial "icon.html" (dict "name" $tabIcon "size" "sm") }}
+        {{- end -}}
+        
+        {{- /* Badge if provided */ -}}
+        {{- if $tabBadge -}}
+          <span class="ml-2 inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-800 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
+            {{ $tabBadge }}
+          </span>
+        {{- end -}}
+      </button>
+    {{- end -}}
+  </div>
+  
+  <!-- Tab Panels -->
+  <div class="tab-panels {{ if $isVertical }}flex-1{{ end }}" data-tabs-panels>
+    {{- range $index, $tab := $tabs -}}
+      {{- $tabId := "" -}}
+      {{- $tabContent := "" -}}
+      
+      {{- if kindIs "map" $tab -}}
+        {{- $tabId = $tab.id | default (printf "tab-%d" $index) -}}
+        {{- $tabContent = $tab.content | default "" -}}
+      {{- else -}}
+        {{- $tabId = printf "tab-%d" $index -}}
+        {{- $tabContent = "" -}}
+      {{- end -}}
+      
+      {{- $isActive := or (eq $activeTab $index) (eq $activeTab $tabId) -}}
+      
+      <div 
+        id="{{ $id }}-panel-{{ $tabId }}"
+        class="{{ $tabpanelBaseClass }} {{ if $fade }}{{ if $isActive }}opacity-100{{ else }}opacity-0{{ end }}{{ end }} {{ if not $isActive }}hidden{{ end }}"
+        role="tabpanel"
+        aria-labelledby="{{ $id }}-{{ $tabId }}"
+        tabindex="0"
+        {{ if and $lazy (not $isActive) }}data-lazy-load="true"{{ end }}
+        data-tabs-panel
+        data-panel-id="{{ $tabId }}"
+        data-panel-index="{{ $index }}"
+      >
+        {{- if or (not $lazy) $isActive -}}
+          {{ $tabContent | safeHTML }}
+        {{- else -}}
+          <div data-lazy-content>{{ $tabContent }}</div>
+        {{- end -}}
+      </div>
+    {{- end -}}
+  </div>
+  
+  <!-- Mobile accordion structure - only rendered if mobileAccordion is true -->
+  {{- if $mobileAccordion -}}
+  <div 
+    class="block {{ $mobileBreakpoint }}:hidden"
+    data-tabs-accordion
+  >
+    {{- range $index, $tab := $tabs -}}
+      {{- $tabId := "" -}}
+      {{- $tabLabel := "" -}}
+      {{- $tabIcon := "" -}}
+      {{- $tabContent := "" -}}
+      {{- $tabDisabled := false -}}
+      {{- $tabBadge := "" -}}
+      
+      {{- if kindIs "map" $tab -}}
+        {{- $tabId = $tab.id | default (printf "tab-%d" $index) -}}
+        {{- $tabLabel = $tab.label -}}
+        {{- $tabIcon = $tab.icon | default "" -}}
+        {{- $tabContent = $tab.content | default "" -}}
+        {{- $tabDisabled = $tab.disabled | default false -}}
+        {{- $tabBadge = $tab.badge | default "" -}}
+      {{- else -}}
+        {{- $tabId = printf "tab-%d" $index -}}
+        {{- $tabLabel = $tab -}}
+        {{- $tabContent = "" -}}
+      {{- end -}}
+      
+      {{- $isActive := or (eq $activeTab $index) (eq $activeTab $tabId) -}}
+      
+      <div class="accordion-item border-b border-gray-200 dark:border-gray-700">
+        <button 
+          class="w-full flex justify-between items-center p-3 text-left {{ if $isActive }}text-{{ $color }}-600 dark:text-{{ $color }}-400{{ else }}text-gray-700 dark:text-gray-300{{ end }}"
+          aria-expanded="{{ if $isActive }}true{{ else }}false{{ end }}"
+          {{ if $tabDisabled }}disabled aria-disabled="true"{{ end }}
+          data-accordion-trigger
+          data-tab-id="{{ $tabId }}"
+          data-tab-index="{{ $index }}"
+        >
+          <span class="flex items-center">
+            {{- if $tabIcon -}}
+              <span class="mr-2">
+                {{ partial "icon.html" (dict "name" $tabIcon "size" "sm") }}
+              </span>
+            {{- end -}}
+            
+            {{ $tabLabel }}
+            
+            {{- if $tabBadge -}}
+              <span class="ml-2 inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-800 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
+                {{ $tabBadge }}
+              </span>
+            {{- end -}}
+          </span>
+          
+          <svg class="h-5 w-5 transition-transform {{ if $isActive }}rotate-180{{ end }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        <div 
+          class="p-3 {{ if not $isActive }}hidden{{ end }}"
+          data-accordion-content
+          data-panel-id="{{ $tabId }}"
+          data-panel-index="{{ $index }}"
+        >
+          {{- if or (not $lazy) $isActive -}}
+            {{ $tabContent | safeHTML }}
+          {{- else -}}
+            <div data-lazy-content>{{ $tabContent }}</div>
+          {{- end -}}
+        </div>
+      </div>
+    {{- end -}}
+  </div>
+  {{- end -}}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabContainer = document.getElementById('{{ $id }}');
+    if (!tabContainer) return;
+    
+    const options = {
+      variant: tabContainer.dataset.variant,
+      orientation: tabContainer.dataset.orientation,
+      lazy: tabContainer.dataset.lazy === 'true',
+      fade: tabContainer.dataset.fade === 'true',
+      mobileAccordion: tabContainer.dataset.mobileAccordion === 'true',
+      mobileBreakpoint: tabContainer.dataset.mobileBreakpoint
+    };
+    
+    // Elements
+    const tabList = tabContainer.querySelector('[data-tabs-list]');
+    const tabs = tabContainer.querySelectorAll('[data-tabs-tab]');
+    const panels = tabContainer.querySelectorAll('[data-tabs-panel]');
+    const accordion = tabContainer.querySelector('[data-tabs-accordion]');
+    const accordionTriggers = tabContainer.querySelectorAll('[data-accordion-trigger]');
+    const accordionContents = tabContainer.querySelectorAll('[data-accordion-content]');
+
+	const variant = '{{ $variant }}';
+    
+    // Active classes based on variant
+    const activeClasses = '{{ $activeTabBaseClass }}'.split(' ').filter(Boolean);
+	const inactiveClasses = [];
+	
+	// Set inactive classes based on variant
+	switch(variant) {
+	  case 'default':
+		inactiveClasses.push(
+		  'text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700', 
+		  'dark:hover:text-gray-300', 'hover:border-gray-300', 
+		  'dark:hover:border-gray-600', 'border-transparent'
+		);
+		break;
+	  case 'pills':
+		inactiveClasses.push(
+		  'text-gray-700', 'dark:text-gray-300', 'bg-gray-100',
+		  'dark:bg-gray-800', 'hover:bg-gray-200', 'dark:hover:bg-gray-700'
+		);
+		break;
+	  case 'underline':
+		inactiveClasses.push(
+		  'text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700',
+		  'dark:hover:text-gray-300'
+		);
+		break;
+	  case 'bordered':
+		inactiveClasses.push(
+		  'text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700',
+		  'dark:hover:text-gray-300', 'hover:border-gray-300',
+		  'dark:hover:border-gray-600', 'border-transparent'
+		);
+		break;
+	  case 'minimal':
+		inactiveClasses.push(
+		  'text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700', 
+		  'dark:hover:text-gray-300'
+		);
+		break;
+	  default:
+		inactiveClasses.push(
+		  'text-gray-500', 'dark:text-gray-400', 'hover:text-gray-700',
+		  'dark:hover:text-gray-300'
+		);
+	}
+    
+    // Set active tab
+    function setActiveTab(tabId, tabIndex) {
+      // Update tab state
+      tabs.forEach(tab => {
+        const isActive = tab.dataset.tabId === tabId;
+        
+        // Update ARIA and tab states
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        tab.tabIndex = isActive ? 0 : -1;
+        
+        // Update classes
+        if (isActive) {
+          inactiveClasses.forEach(cls => tab.classList.remove(cls));
+          activeClasses.forEach(cls => tab.classList.add(cls));
+        } else {
+          activeClasses.forEach(cls => tab.classList.remove(cls));
+          inactiveClasses.forEach(cls => tab.classList.add(cls));
+        }
+      });
+      
+      // Update panels
+      panels.forEach(panel => {
+        const isActive = panel.dataset.panelId === tabId;
+        
+        if (isActive) {
+          // Show panel
+          panel.classList.remove('hidden');
+          
+          // Handle fade animation
+          if (options.fade) {
+            panel.classList.remove('opacity-0');
+            panel.classList.add('opacity-100');
+          }
+          
+          // Load lazy content if needed
+          if (options.lazy && panel.hasAttribute('data-lazy-load')) {
+            const lazyContent = panel.querySelector('[data-lazy-content]');
+            if (lazyContent) {
+              panel.innerHTML = lazyContent.innerHTML;
+              panel.removeAttribute('data-lazy-load');
+            }
+          }
+        } else {
+          // Handle fade animation
+          if (options.fade) {
+            panel.classList.remove('opacity-100');
+            panel.classList.add('opacity-0');
+            
+            // Hide after animation completes
+            setTimeout(() => {
+              if (panel.dataset.panelId !== tabContainer.dataset.activeTabId) {
+                panel.classList.add('hidden');
+              }
+            }, 150);
+          } else {
+            panel.classList.add('hidden');
+          }
+        }
+      });
+      
+      // Update accordion if present
+      if (options.mobileAccordion && accordion) {
+        accordionTriggers.forEach(trigger => {
+          const isActive = trigger.dataset.tabId === tabId;
+          trigger.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+          
+          // Update indicator arrow
+          const arrow = trigger.querySelector('svg');
+          if (arrow) {
+            if (isActive) {
+              arrow.classList.add('rotate-180');
+            } else {
+              arrow.classList.remove('rotate-180');
+            }
+          }
+          
+          // Update text color
+          if (isActive) {
+            trigger.classList.add('text-{{ $color }}-600', 'dark:text-{{ $color }}-400');
+            trigger.classList.remove('text-gray-700', 'dark:text-gray-300');
+          } else {
+            trigger.classList.remove('text-{{ $color }}-600', 'dark:text-{{ $color }}-400');
+            trigger.classList.add('text-gray-700', 'dark:text-gray-300');
+          }
+        });
+        
+        accordionContents.forEach(content => {
+          const isActive = content.dataset.panelId === tabId;
+          
+          if (isActive) {
+            content.classList.remove('hidden');
+            
+            // Load lazy content if needed
+            if (options.lazy && content.querySelector('[data-lazy-content]')) {
+              const lazyContent = content.querySelector('[data-lazy-content]');
+              if (lazyContent) {
+                content.innerHTML = lazyContent.innerHTML;
+              }
+            }
+          } else {
+            content.classList.add('hidden');
+          }
+        });
+      }
+      
+      // Store active tab
+      tabContainer.dataset.activeTabId = tabId;
+      tabContainer.dataset.activeTabIndex = tabIndex;
+      
+      // Trigger onChange callback
+      if ('{{ $onChange }}') {
+        try {
+          window['{{ $onChange }}']({
+            tabId: tabId,
+            tabIndex: parseInt(tabIndex, 10),
+            container: tabContainer
+          });
+        } catch (err) {
+          console.error('Error in onChange callback:', err);
+        }
+      }
+      
+      // Dispatch custom event
+      tabContainer.dispatchEvent(new CustomEvent('tab:change', {
+        detail: {
+          tabId: tabId,
+          tabIndex: parseInt(tabIndex, 10)
+        }
+      }));
+    }
+    
+    // Handle tab clicks
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        if (this.getAttribute('aria-disabled') === 'true') return;
+        
+        const tabId = this.dataset.tabId;
+        const tabIndex = this.dataset.tabIndex;
+        setActiveTab(tabId, tabIndex);
+      });
+      
+      // Keyboard navigation
+      tab.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || 
+            e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          
+          const isVertical = options.orientation === 'vertical';
+          const currentIndex = parseInt(this.dataset.tabIndex, 10);
+          let newIndex;
+          
+          if ((isVertical && (e.key === 'ArrowUp')) || 
+              (!isVertical && (e.key === 'ArrowLeft'))) {
+            // Previous tab
+            newIndex = currentIndex - 1;
+            if (newIndex < 0) newIndex = tabs.length - 1;
+          } else if ((isVertical && (e.key === 'ArrowDown')) || 
+                    (!isVertical && (e.key === 'ArrowRight'))) {
+            // Next tab
+            newIndex = currentIndex + 1;
+            if (newIndex >= tabs.length) newIndex = 0;
+          }
+          
+          // Find next non-disabled tab
+          let nextTab = tabs[newIndex];
+          while (nextTab && nextTab.getAttribute('aria-disabled') === 'true') {
+            if ((isVertical && (e.key === 'ArrowUp')) || 
+                (!isVertical && (e.key === 'ArrowLeft'))) {
+              newIndex = newIndex - 1;
+              if (newIndex < 0) newIndex = tabs.length - 1;
+            } else {
+              newIndex = newIndex + 1;
+              if (newIndex >= tabs.length) newIndex = 0;
+            }
+            nextTab = tabs[newIndex];
+          }
+          
+          if (nextTab) {
+            nextTab.click();
+            nextTab.focus();
+          }
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          tabs[0].click();
+          tabs[0].focus();
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          tabs[tabs.length - 1].click();
+          tabs[tabs.length - 1].focus();
+        }
+      });
+    });
+    
+    // Handle accordion triggers
+    if (options.mobileAccordion) {
+      accordionTriggers.forEach(trigger => {
+        trigger.addEventListener('click', function() {
+          if (this.getAttribute('aria-disabled') === 'true') return;
+          
+          const tabId = this.dataset.tabId;
+          const tabIndex = this.dataset.tabIndex;
+          setActiveTab(tabId, tabIndex);
+        });
+      });
+    }
+    
+    // Handle mobile breakpoint changes
+    if (options.mobileAccordion) {
+      const mediaQuery = window.matchMedia(`(min-width: ${getBreakpointWidth(options.mobileBreakpoint)})`);
+      
+      function handleViewportChange(e) {
+        if (e.matches) {
+          // Switch to tabs
+          if (accordion) accordion.style.display = 'none';
+          if (tabList) tabList.style.display = '';
+          tabContainer.querySelector('[data-tabs-panels]').style.display = '';
+        } else {
+          // Switch to accordion
+          if (accordion) accordion.style.display = 'block';
+          if (tabList) tabList.style.display = 'none';
+          tabContainer.querySelector('[data-tabs-panels]').style.display = 'none';
+        }
+      }
+      
+      // Initial check
+      handleViewportChange(mediaQuery);
+      
+      // Listen for changes
+      mediaQuery.addEventListener('change', handleViewportChange);
+    }
+    
+    // Helper to get breakpoint width
+    function getBreakpointWidth(breakpoint) {
+      const breakpoints = {
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px'
+      };
+      return breakpoints[breakpoint] || '768px';
+    }
+    
+    // Expose API
+    window.tabs = window.tabs || {};
+    window.tabs['{{ $id }}'] = {
+      activateTab: function(tabIdOrIndex) {
+        let tabId, tabIndex;
+        
+        if (typeof tabIdOrIndex === 'number') {
+          // Activate by index
+          const tab = tabContainer.querySelector(`[data-tab-index="${tabIdOrIndex}"]`);
+          if (tab) {
+            tabId = tab.dataset.tabId;
+            tabIndex = tabIdOrIndex;
+          }
+        } else {
+          // Activate by ID
+          const tab = tabContainer.querySelector(`[data-tab-id="${tabIdOrIndex}"]`);
+          if (tab) {
+            tabId = tabIdOrIndex;
+            tabIndex = tab.dataset.tabIndex;
+          }
+        }
+        
+        if (tabId) {
+          setActiveTab(tabId, tabIndex);
+        }
+      },
+      getActiveTab: function() {
+        return {
+          id: tabContainer.dataset.activeTabId,
+          index: parseInt(tabContainer.dataset.activeTabIndex, 10)
+        };
+      },
+      getTabs: function() {
+        return Array.from(tabs).map(tab => ({
+          id: tab.dataset.tabId,
+          index: parseInt(tab.dataset.tabIndex, 10),
+          element: tab
+        }));
+      }
+    };
+  });
+</script>

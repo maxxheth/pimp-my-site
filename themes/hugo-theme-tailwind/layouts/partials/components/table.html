@@ -1,0 +1,674 @@
+{{- /*
+  Table Component
+  
+  Parameters:
+    - id: String - Unique ID for the table (default: auto-generated)
+    - data: Array - Array of data objects (required)
+    - columns: Array - Array of column definitions (required)
+    - caption: String - Table caption for accessibility (default: "")
+    - striped: Boolean - Apply striped rows (default: false)
+    - hoverable: Boolean - Apply hover effect on rows (default: true)
+    - bordered: Boolean - Add borders to table (default: false)
+    - dividers: Boolean - Add dividers between rows (default: true)
+    - compact: Boolean - Use more compact spacing (default: false)
+    - fullWidth: Boolean - Make table full width (default: true)
+    - responsive: Boolean - Make table horizontally scrollable on small screens (default: true)
+    - sortable: Boolean - Enable column sorting (default: false)
+    - sortColumn: String/Number - Initial sort column (default: "")
+    - sortDirection: String - Initial sort direction (default: "asc")
+      Options: asc, desc
+    - selectable: Boolean - Enable row selection with checkboxes (default: false)
+    - selectedRows: Array - Array of initially selected row IDs (default: empty)
+    - emptyText: String - Text to display when no data (default: "No data available")
+    - size: String - Size of table (default: "md")
+      Options: sm, md, lg
+    - headerFixed: Boolean - Fix header at top when scrolling (default: false)
+    - headerBackground: String - Background color for header (default: "")
+      Options: light, dark, primary, or any tailwind color
+    - footerColumns: Array - Array defining footer columns (default: empty)
+    - wrapperClass: String - Additional classes for outer wrapper (default: "")
+    - containerClass: String - Additional classes for container (default: "")
+    - class: String - Additional classes for table element (default: "")
+    - headerClass: String - Additional classes for thead (default: "")
+    - bodyClass: String - Additional classes for tbody (default: "")
+    - footerClass: String - Additional classes for tfoot (default: "")
+    - rowClass: String - Additional classes for rows (default: "")
+    - cellClass: String - Additional classes for cells (default: "")
+    - onRowClick: String - JS function name to call when row is clicked (default: "")
+    - onSort: String - JS function name to call when sorting changes (default: "")
+    - onSelect: String - JS function name to call when selection changes (default: "")
+*/ -}}
+
+{{- $uniqueId := printf "table-%s" (now.Unix) -}}
+{{- $id := .id | default $uniqueId -}}
+{{- $data := .data -}}
+{{- $columns := .columns -}}
+{{- $caption := .caption | default "" -}}
+{{- $striped := .striped | default false -}}
+{{- $hoverable := .hoverable | default true -}}
+{{- $bordered := .bordered | default false -}}
+{{- $dividers := .dividers | default true -}}
+{{- $compact := .compact | default false -}}
+{{- $fullWidth := .fullWidth | default true -}}
+{{- $responsive := .responsive | default true -}}
+{{- $sortable := .sortable | default false -}}
+{{- $sortColumn := .sortColumn | default "" -}}
+{{- $sortDirection := .sortDirection | default "asc" -}}
+{{- $selectable := .selectable | default false -}}
+{{- $selectedRows := .selectedRows | default slice -}}
+{{- $emptyText := .emptyText | default "No data available" -}}
+{{- $size := .size | default "md" -}}
+{{- $headerFixed := .headerFixed | default false -}}
+{{- $headerBackground := .headerBackground | default "" -}}
+{{- $footerColumns := .footerColumns | default slice -}}
+{{- $wrapperClass := .wrapperClass | default "" -}}
+{{- $containerClass := .containerClass | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $headerClass := .headerClass | default "" -}}
+{{- $bodyClass := .bodyClass | default "" -}}
+{{- $footerClass := .footerClass | default "" -}}
+{{- $rowClass := .rowClass | default "" -}}
+{{- $cellClass := .cellClass | default "" -}}
+{{- $onRowClick := .onRowClick | default "" -}}
+{{- $onSort := .onSort | default "" -}}
+{{- $onSelect := .onSelect | default "" -}}
+
+{{- /* Base classes */ -}}
+{{- $wrapperBaseClass := "relative" -}}
+{{- $containerBaseClass := "overflow-hidden" -}}
+{{- $tableBaseClass := "min-w-full table-auto" -}}
+{{- $theadBaseClass := "bg-gray-50 dark:bg-gray-800" -}}
+{{- $tbodyBaseClass := "bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800" -}}
+{{- $tfootBaseClass := "bg-gray-50 dark:bg-gray-800" -}}
+{{- $thBaseClass := "text-left font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" -}}
+{{- $tdBaseClass := "whitespace-nowrap text-gray-900 dark:text-gray-100" -}}
+{{- $trBaseClass := "" -}}
+
+{{- /* Size classes */ -}}
+{{- $cellSizeClass := "" -}}
+{{- if eq $size "sm" -}}
+  {{- $cellSizeClass = "px-3 py-2 text-sm" -}}
+{{- else if eq $size "md" -}}
+  {{- $cellSizeClass = "px-4 py-3" -}}
+{{- else if eq $size "lg" -}}
+  {{- $cellSizeClass = "px-6 py-4" -}}
+{{- end -}}
+
+{{- /* Variable styling classes */ -}}
+{{- if $fullWidth -}}
+  {{- $tableBaseClass = printf "%s w-full" $tableBaseClass -}}
+{{- end -}}
+
+{{- if $bordered -}}
+  {{- $tableBaseClass = printf "%s border border-gray-300 dark:border-gray-700" $tableBaseClass -}}
+  {{- $thBaseClass = printf "%s border border-gray-300 dark:border-gray-700" $thBaseClass -}}
+  {{- $tdBaseClass = printf "%s border border-gray-300 dark:border-gray-700" $tdBaseClass -}}
+{{- end -}}
+
+{{- if $dividers -}}
+  {{- $tbodyBaseClass = printf "%s divide-y divide-gray-200 dark:divide-gray-800" $tbodyBaseClass -}}
+{{- else -}}
+  {{- $tbodyBaseClass = printf "%s" $tbodyBaseClass -}}
+{{- end -}}
+
+{{- if $headerFixed -}}
+  {{- $theadBaseClass = printf "%s sticky top-0 z-10" $theadBaseClass -}}
+{{- end -}}
+
+{{- if $headerBackground -}}
+  {{- if eq $headerBackground "light" -}}
+    {{- $theadBaseClass = printf "%s bg-white dark:bg-gray-900" $theadBaseClass -}}
+  {{- else if eq $headerBackground "dark" -}}
+    {{- $theadBaseClass = printf "%s bg-gray-800 dark:bg-gray-900 text-white" $theadBaseClass -}}
+  {{- else if eq $headerBackground "primary" -}}
+    {{- $theadBaseClass = printf "%s bg-blue-600 dark:bg-blue-700 text-white" $theadBaseClass -}}
+  {{- else -}}
+    {{- $theadBaseClass = printf "%s bg-%s-600 text-white" $theadBaseClass $headerBackground -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $responsive -}}
+  {{- $containerBaseClass = printf "%s overflow-x-auto" $containerBaseClass -}}
+{{- end -}}
+
+{{- /* Add custom classes */ -}}
+{{- if $wrapperClass -}}
+  {{- $wrapperBaseClass = printf "%s %s" $wrapperBaseClass $wrapperClass -}}
+{{- end -}}
+
+{{- if $containerClass -}}
+  {{- $containerBaseClass = printf "%s %s" $containerBaseClass $containerClass -}}
+{{- end -}}
+
+{{- if $class -}}
+  {{- $tableBaseClass = printf "%s %s" $tableBaseClass $class -}}
+{{- end -}}
+
+{{- if $headerClass -}}
+  {{- $theadBaseClass = printf "%s %s" $theadBaseClass $headerClass -}}
+{{- end -}}
+
+{{- if $bodyClass -}}
+  {{- $tbodyBaseClass = printf "%s %s" $tbodyBaseClass $bodyClass -}}
+{{- end -}}
+
+{{- if $footerClass -}}
+  {{- $tfootBaseClass = printf "%s %s" $tfootBaseClass $footerClass -}}
+{{- end -}}
+
+{{- if $rowClass -}}
+  {{- $trBaseClass = printf "%s %s" $trBaseClass $rowClass -}}
+{{- end -}}
+
+{{- if $cellClass -}}
+  {{- $tdBaseClass = printf "%s %s" $tdBaseClass $cellClass -}}
+{{- end -}}
+
+<div class="{{ $wrapperBaseClass }}" id="{{ $id }}-wrapper">
+  <div class="{{ $containerBaseClass }}" id="{{ $id }}-container">
+    <table 
+      id="{{ $id }}" 
+      class="{{ $tableBaseClass }}"
+      {{- if $caption }} aria-describedby="{{ $id }}-caption"{{ end }}
+      data-table
+      data-sortable="{{ $sortable }}"
+      data-selectable="{{ $selectable }}"
+    >
+      {{- if $caption -}}
+      <caption id="{{ $id }}-caption" class="sr-only">{{ $caption }}</caption>
+      {{- end -}}
+      
+      <thead class="{{ $theadBaseClass }}">
+        <tr>
+          {{- if $selectable -}}
+          <th scope="col" class="{{ $thBaseClass }} {{ $cellSizeClass }} w-12">
+            <div class="flex items-center">
+              <input
+                id="{{ $id }}-select-all"
+                type="checkbox"
+                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:focus:ring-blue-600"
+                data-select-all
+              >
+              <label for="{{ $id }}-select-all" class="sr-only">Select all</label>
+            </div>
+          </th>
+          {{- end -}}
+          
+          {{- range $colIndex, $column := $columns -}}
+            {{- $field := $column.field -}}
+            {{- $header := $column.header | default $field -}}
+            {{- $width := $column.width | default "" -}}
+            {{- $align := $column.align | default "left" -}}
+            {{- $sortField := $column.sortField | default $field -}}
+            {{- $sortable := $column.sortable | default false -}}
+            {{- $hidden := $column.hidden | default false -}}
+            
+            {{- $columnId := printf "%s-col-%d" $id $colIndex -}}
+            {{- $alignClass := "" -}}
+            {{- $sortableClass := "" -}}
+            {{- $hiddenClass := "" -}}
+            
+            {{- if eq $align "center" -}}
+              {{- $alignClass = "text-center" -}}
+            {{- else if eq $align "right" -}}
+              {{- $alignClass = "text-right" -}}
+            {{- end -}}
+            
+            {{- if and $sortable $column.sortable -}}
+              {{- $sortableClass = "cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" -}}
+            {{- end -}}
+            
+            {{- if $hidden -}}
+              {{- $hiddenClass = "hidden sm:table-cell" -}}
+            {{- end -}}
+            
+            {{- $isCurrentSort := eq (string $sortColumn) (string $field) -}}
+            
+            <th 
+              id="{{ $columnId }}"
+              scope="col"
+              class="{{ $thBaseClass }} {{ $cellSizeClass }} {{ $alignClass }} {{ $sortableClass }} {{ $hiddenClass }}"
+              {{- if $width }} style="width: '{{ $width }}';"{{ end }}
+              {{- if and $sortable $column.sortable }}
+              data-sortable-column
+              data-field="{{ $sortField }}"
+              data-is-current-sort="{{ $isCurrentSort }}"
+              data-current-direction="{{ if $isCurrentSort }}{{ $sortDirection }}{{ end }}"
+              {{- end }}
+            >
+              <div class="flex items-center {{ if eq $align "center" }}justify-center{{ else if eq $align "right" }}justify-end{{ end }}">
+                <span>{{ $header }}</span>
+                {{- if and $sortable $column.sortable -}}
+                  <span class="ml-1 inline-flex flex-none">
+                    {{- if $isCurrentSort -}}
+                      {{- if eq $sortDirection "asc" -}}
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                      {{- else -}}
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      {{- end -}}
+                    {{- else -}}
+                      <svg class="h-4 w-4 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                      </svg>
+                    {{- end -}}
+                  </span>
+                {{- end -}}
+              </div>
+            </th>
+          {{- end -}}
+        </tr>
+      </thead>
+      
+      <tbody class="{{ $tbodyBaseClass }}">
+        {{- $dataLength := len $data -}}
+        {{- if eq $dataLength 0 -}}
+          <tr>
+            <td 
+              colspan="{{ add (len $columns) (cond $selectable 1 0) }}"
+              class="{{ $tdBaseClass }} {{ $cellSizeClass }} text-center text-gray-500 dark:text-gray-400"
+            >
+              {{ $emptyText }}
+            </td>
+          </tr>
+        {{- else -}}
+          {{- range $rowIndex, $row := $data -}}
+            {{- $rowId := index $row "id" | default $rowIndex -}}
+            {{- $isSelected := in $selectedRows $rowId -}}
+            
+            {{- $rowCurrentClass := $trBaseClass -}}
+            {{- if $hoverable -}}
+              {{- $rowCurrentClass = printf "%s hover:bg-gray-50 dark:hover:bg-gray-800" $rowCurrentClass -}}
+            {{- end -}}
+            
+            {{- if $striped -}}
+              {{- if eq (mod $rowIndex 2) 1 -}}
+                {{- $rowCurrentClass = printf "%s bg-gray-50 dark:bg-gray-800" $rowCurrentClass -}}
+              {{- end -}}
+            {{- end -}}
+            
+            {{- if $isSelected -}}
+              {{- $rowCurrentClass = printf "%s bg-blue-50 dark:bg-blue-900" $rowCurrentClass -}}
+            {{- end -}}
+            
+            <tr 
+              id="{{ $id }}-row-{{ $rowId }}"
+              class="{{ $rowCurrentClass }}"
+              data-row-id="{{ $rowId }}"
+              {{- if $onRowClick }} data-clickable="true"{{ end }}
+              {{- if $isSelected }} data-selected="true"{{ end }}
+            >
+              {{- if $selectable -}}
+              <td class="{{ $tdBaseClass }} {{ $cellSizeClass }} w-12">
+                <div class="flex items-center">
+                  <input
+                    id="{{ $id }}-select-{{ $rowId }}"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:focus:ring-blue-600"
+                    {{- if $isSelected }} checked{{ end }}
+                    data-row-checkbox
+                    data-row-id="{{ $rowId }}"
+                  >
+                  <label for="{{ $id }}-select-{{ $rowId }}" class="sr-only">Select row {{ $rowId }}</label>
+                </div>
+              </td>
+              {{- end -}}
+              
+              {{- range $colIndex, $column := $columns -}}
+                {{- $field := $column.field -}}
+                {{- $template := $column.template | default "" -}}
+                {{- $align := $column.align | default "left" -}}
+                {{- $hidden := $column.hidden | default false -}}
+                
+                {{- $cellValue := index $row $field -}}
+                {{- if not $cellValue -}}
+                  {{- $cellValue = "" -}}
+                {{- end -}}
+                
+                {{- $cellCurrentClass := $tdBaseClass -}}
+                {{- $alignClass := "" -}}
+                {{- $hiddenClass := "" -}}
+                
+                {{- if eq $align "center" -}}
+                  {{- $alignClass = "text-center" -}}
+                {{- else if eq $align "right" -}}
+                  {{- $alignClass = "text-right" -}}
+                {{- end -}}
+                
+                {{- if $hidden -}}
+                  {{- $hiddenClass = "hidden sm:table-cell" -}}
+                {{- end -}}
+                
+                <td 
+                  class="{{ $cellCurrentClass }} {{ $cellSizeClass }} {{ $alignClass }} {{ $hiddenClass }}"
+                  data-field="{{ $field }}"
+                >
+                  {{- if $template -}}
+                    {{ $template | replaceRE "{{\\.value}}" $cellValue | safeHTML }}
+                  {{- else -}}
+                    {{ $cellValue }}
+                  {{- end -}}
+                </td>
+              {{- end -}}
+            </tr>
+          {{- end -}}
+        {{- end -}}
+      </tbody>
+      
+      {{- if gt (len $footerColumns) 0 -}}
+      <tfoot class="{{ $tfootBaseClass }}">
+        <tr>
+          {{- if $selectable -}}
+            <td class="{{ $tdBaseClass }} {{ $cellSizeClass }}"></td>
+          {{- end -}}
+          
+          {{- range $colIndex, $column := $columns -}}
+            {{- $field := $column.field -}}
+            {{- $align := $column.align | default "left" -}}
+            {{- $hidden := $column.hidden | default false -}}
+            
+            {{- $footerValue := "" -}}
+            {{- range $fIndex, $fColumn := $footerColumns -}}
+              {{- if eq $fColumn.field $field -}}
+                {{- $footerValue = $fColumn.value -}}
+              {{- end -}}
+            {{- end -}}
+            
+            {{- $alignClass := "" -}}
+            {{- $hiddenClass := "" -}}
+            
+            {{- if eq $align "center" -}}
+              {{- $alignClass = "text-center" -}}
+            {{- else if eq $align "right" -}}
+              {{- $alignClass = "text-right" -}}
+            {{- end -}}
+            
+            {{- if $hidden -}}
+              {{- $hiddenClass = "hidden sm:table-cell" -}}
+            {{- end -}}
+            
+            <td class="{{ $tdBaseClass }} {{ $cellSizeClass }} font-medium {{ $alignClass }} {{ $hiddenClass }}">
+              {{ $footerValue }}
+            </td>
+          {{- end -}}
+        </tr>
+      </tfoot>
+      {{- end -}}
+    </table>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('{{ $id }}');
+    if (!table) return;
+    
+    const options = {
+      sortable: table.dataset.sortable === 'true',
+      selectable: table.dataset.selectable === 'true',
+      initialSort: {
+        column: '{{ $sortColumn }}',
+        direction: '{{ $sortDirection }}'
+      }
+    };
+    
+    // Elements
+    const rows = table.querySelectorAll('tbody tr');
+    const sortableColumns = table.querySelectorAll('[data-sortable-column]');
+    const selectAllCheckbox = table.querySelector('[data-select-all]');
+    const rowCheckboxes = table.querySelectorAll('[data-row-checkbox]');
+    
+    // Track selected rows
+    let selectedRows = ["{{ range $index, $selectedRow := $selectedRows }}{{ if $index }},{{ end }}'{{ $selectedRow }}'{{ end }}"];
+    
+    // Set up sorting
+    if (options.sortable) {
+      sortableColumns.forEach(column => {
+        column.addEventListener('click', function() {
+          const field = this.dataset.field;
+          let direction = 'asc';
+          
+          // Toggle direction if already sorting by this column
+          if (this.dataset.isCurrentSort === 'true') {
+            direction = this.dataset.currentDirection === 'asc' ? 'desc' : 'asc';
+          }
+          
+          // Update sort indicators
+          sortableColumns.forEach(col => {
+            col.dataset.isCurrentSort = 'false';
+            col.dataset.currentDirection = '';
+            
+            // Remove sort indicators
+            const sortIndicator = col.querySelector('svg');
+            if (sortIndicator) {
+              sortIndicator.classList.add('text-gray-300', 'dark:text-gray-600');
+              sortIndicator.classList.remove('text-gray-500', 'dark:text-gray-400');
+              sortIndicator.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />';
+            }
+          });
+          
+          // Set current sort
+          this.dataset.isCurrentSort = 'true';
+          this.dataset.currentDirection = direction;
+          
+          // Update sort indicator
+          const sortIndicator = this.querySelector('svg');
+          if (sortIndicator) {
+            sortIndicator.classList.remove('text-gray-300', 'dark:text-gray-600');
+            sortIndicator.classList.add('text-gray-500', 'dark:text-gray-400');
+            
+            if (direction === 'asc') {
+              sortIndicator.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />';
+            } else {
+              sortIndicator.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />';
+            }
+          }
+          
+          // Trigger sort callback
+          if ('{{ $onSort }}') {
+            try {
+              window['{{ $onSort }}']({
+                field: field,
+                direction: direction
+              });
+            } catch (err) {
+              console.error('Error in onSort callback:', err);
+            }
+          }
+          
+          // Dispatch custom event
+          table.dispatchEvent(new CustomEvent('table:sort', {
+            detail: {
+              field: field,
+              direction: direction
+            }
+          }));
+        });
+      });
+    }
+    
+    // Set up row selection
+    if (options.selectable) {
+      // Handle select all checkbox
+      if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+          const isChecked = this.checked;
+          
+          rowCheckboxes.forEach(checkbox => {
+            checkbox.checked = isChecked;
+            
+            const row = table.querySelector(`tr[data-row-id="${checkbox.dataset.rowId}"]`);
+            if (row) {
+              if (isChecked) {
+                row.classList.add('bg-blue-50', 'dark:bg-blue-900');
+                row.dataset.selected = 'true';
+                if (!selectedRows.includes(checkbox.dataset.rowId)) {
+                  selectedRows.push(checkbox.dataset.rowId);
+                }
+              } else {
+                row.classList.remove('bg-blue-50', 'dark:bg-blue-900');
+                row.dataset.selected = 'false';
+                selectedRows = selectedRows.filter(id => id !== checkbox.dataset.rowId);
+              }
+            }
+          });
+          
+          // Trigger selection callback
+          if ('{{ $onSelect }}') {
+            try {
+              window['{{ $onSelect }}']({
+                selectedRows: selectedRows
+              });
+            } catch (err) {
+              console.error('Error in onSelect callback:', err);
+            }
+          }
+          
+          // Dispatch custom event
+          table.dispatchEvent(new CustomEvent('table:select', {
+            detail: {
+              selectedRows: selectedRows
+            }
+          }));
+        });
+      }
+      
+      // Handle individual row checkboxes
+      rowCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const rowId = this.dataset.rowId;
+          const isChecked = this.checked;
+          
+          const row = table.querySelector(`tr[data-row-id="${rowId}"]`);
+          if (row) {
+            if (isChecked) {
+              row.classList.add('bg-blue-50', 'dark:bg-blue-900');
+              row.dataset.selected = 'true';
+              if (!selectedRows.includes(rowId)) {
+                selectedRows.push(rowId);
+              }
+            } else {
+              row.classList.remove('bg-blue-50', 'dark:bg-blue-900');
+              row.dataset.selected = 'false';
+              selectedRows = selectedRows.filter(id => id !== rowId);
+            }
+          }
+          
+          // Update "select all" checkbox
+          if (selectAllCheckbox) {
+            selectAllCheckbox.checked = rowCheckboxes.length > 0 && 
+              Array.from(rowCheckboxes).every(cb => cb.checked);
+            
+            selectAllCheckbox.indeterminate = !selectAllCheckbox.checked && 
+              Array.from(rowCheckboxes).some(cb => cb.checked);
+          }
+          
+          // Trigger selection callback
+          if ('{{ $onSelect }}') {
+            try {
+              window['{{ $onSelect }}']({
+                selectedRows: selectedRows
+              });
+            } catch (err) {
+              console.error('Error in onSelect callback:', err);
+            }
+          }
+          
+          // Dispatch custom event
+          table.dispatchEvent(new CustomEvent('table:select', {
+            detail: {
+              selectedRows: selectedRows
+            }
+          }));
+        });
+      });
+      
+      // Check "select all" initial state
+      if (selectAllCheckbox && rowCheckboxes.length > 0) {
+        selectAllCheckbox.checked = Array.from(rowCheckboxes).every(cb => cb.checked);
+        selectAllCheckbox.indeterminate = !selectAllCheckbox.checked && 
+          Array.from(rowCheckboxes).some(cb => cb.checked);
+      }
+    }
+    
+    // Set up row clicking
+    if ('{{ $onRowClick }}') {
+      rows.forEach(row => {
+        if (row.dataset.clickable === 'true') {
+          row.classList.add('cursor-pointer');
+          
+          row.addEventListener('click', function(e) {
+            // Don't trigger if clicked on a checkbox or its container
+            if (e.target.closest('[data-row-checkbox]') || 
+                e.target.closest('.w-12')) {
+              return;
+            }
+            
+            const rowId = this.dataset.rowId;
+            
+            try {
+              window['{{ $onRowClick }}']({
+                rowId: rowId,
+                row: this
+              });
+            } catch (err) {
+              console.error('Error in onRowClick callback:', err);
+            }
+            
+            // Dispatch custom event
+            table.dispatchEvent(new CustomEvent('table:row-click', {
+              detail: {
+                rowId: rowId,
+                row: this
+              }
+            }));
+          });
+        }
+      });
+    }
+    
+    // Expose API
+    window.tables = window.tables || {};
+    window.tables['{{ $id }}'] = {
+      getSelectedRows: function() {
+        return [...selectedRows];
+      },
+      selectRow: function(rowId) {
+        const checkbox = table.querySelector(`[data-row-checkbox][data-row-id="${rowId}"]`);
+        if (checkbox && !checkbox.checked) {
+          checkbox.checked = true;
+          checkbox.dispatchEvent(new Event('change'));
+        }
+      },
+      unselectRow: function(rowId) {
+        const checkbox = table.querySelector(`[data-row-checkbox][data-row-id="${rowId}"]`);
+        if (checkbox && checkbox.checked) {
+          checkbox.checked = false;
+          checkbox.dispatchEvent(new Event('change'));
+        }
+      },
+      selectAll: function() {
+        if (selectAllCheckbox && !selectAllCheckbox.checked) {
+          selectAllCheckbox.checked = true;
+          selectAllCheckbox.dispatchEvent(new Event('change'));
+        }
+      },
+      unselectAll: function() {
+        if (selectAllCheckbox && (selectAllCheckbox.checked || selectAllCheckbox.indeterminate)) {
+          selectAllCheckbox.checked = false;
+          selectAllCheckbox.dispatchEvent(new Event('change'));
+        }
+      },
+      sort: function(field, direction = 'asc') {
+        const column = table.querySelector(`[data-sortable-column][data-field="${field}"]`);
+        if (column) {
+          column.dataset.currentDirection = direction === 'asc' ? 'desc' : 'asc';
+          column.click();
+        }
+      }
+    };
+  });
+</script>
